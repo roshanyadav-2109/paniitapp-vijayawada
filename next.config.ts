@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
       // the per-image licence and attribution.
       { protocol: "https", hostname: "upload.wikimedia.org" },
       { protocol: "https", hostname: "thumb.wikimedia.org" },
+      { protocol: "https", hostname: "www.deccanchronicle.com" },
     ],
   },
   async headers() {

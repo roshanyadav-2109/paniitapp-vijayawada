@@ -50,3 +50,28 @@ update public.key_participants
    and full_name = 'Sri Ajai Chowdhry';
 
 commit;
+
+-- ---------------------------------------------------------------------------
+-- Follow-up: Nara Lokesh portrait replaced at the organisers' request.
+--
+-- The Commons image was a conference shot with a banner behind him. This one
+-- is a clean press portrait that crops well to the card's square photo area.
+--
+--   https://www.deccanchronicle.com/h-upload/2026/02/27/2016043-nara-lokesh.webp
+--   Source: Deccan Chronicle. All rights reserved — unlike the Commons images
+--   above this carries no open licence, so clear reuse with the publisher if
+--   this ships publicly.
+--
+-- Hotlinked; www.deccanchronicle.com is allowed in next.config.ts. A news CDN
+-- is less stable than Commons, so if it starts 404ing or blocking hotlinks the
+-- card falls back to initials — re-host to the speakers bucket if that matters.
+-- ---------------------------------------------------------------------------
+
+begin;
+
+update public.key_participants
+   set photo_url = 'https://www.deccanchronicle.com/h-upload/2026/02/27/2016043-nara-lokesh.webp'
+ where event_id = 'a9d40000-0000-4000-8000-000000000002'
+   and full_name = 'Sri Nara Lokesh';
+
+commit;
