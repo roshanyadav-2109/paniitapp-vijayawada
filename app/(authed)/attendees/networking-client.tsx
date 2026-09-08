@@ -41,7 +41,7 @@ export interface AttendeeRow {
   office_hours_enabled: boolean | null;
 }
 
-type SubTab = "people" | "connections";
+type SubTab = "foryou" | "people" | "connections";
 
 interface Filters {
   q: string;
@@ -89,17 +89,30 @@ function roleLabel(role: string): string {
   return role.charAt(0).toUpperCase() + role.slice(1).replace(/_/g, " ");
 }
 
+export interface RecommendedRow extends AttendeeRow {
+  /** Short phrases explaining why this person surfaced. */
+  matchReasons: string[];
+}
+
 export function NetworkingClient({
   initialRows,
   roles,
   userId,
+  recommended,
+  canMatch,
 }: {
+  recommended: RecommendedRow[];
+  canMatch: boolean;
   initialRows: AttendeeRow[];
   roles: string[];
   userId: string | null;
 }) {
   const supabase = useMemo(() => createClient(), []);
-  const [tab, setTab] = useState<SubTab>("people");
+  // Land on "For you" when we have something to recommend — that is the
+  // reason to open this tab at a 800-person summit.
+  const [tab, setTab] = useState<SubTab>(
+    recommended.length > 0 ? "foryou" : "people"
+  );
   const [rows, setRows] = useState<AttendeeRow[]>(initialRows);
   const [connections, setConnections] = useState<AttendeeRow[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -242,7 +255,8 @@ export function NetworkingClient({
     return () => io.disconnect();
   }, [rows.length, done, loading, filters, fetchPage, tab]);
 
-  const visible = tab === "people" ? rows : connections ?? [];
+  const visible =
+    tab === "people" ? rows : tab === "foryou" ? recommended : connections ?? [];
   const extraCount = activeExtraCount(filters);
 
   function clearAll() {
@@ -252,8 +266,11 @@ export function NetworkingClient({
 
   return (
     <div>
-      {/* Sub-tabs — two separate buttons */}
-      <div className="mb-3 grid grid-cols-2 gap-2">
+      {/* Sub-tabs */}
+      <div className="mb-3 grid grid-cols-3 gap-2">
+        <FilterButton active={tab === "foryou"} onClick={() => setTab("foryou")}>
+          For you
+        </FilterButton>
         <FilterButton active={tab === "people"} onClick={() => setTab("people")}>
           People
         </FilterButton>
@@ -265,8 +282,8 @@ export function NetworkingClient({
         </FilterButton>
       </div>
 
-      {/* Search + filter trigger */}
-      <div className="mb-3 flex items-center gap-2">
+      {/* Search + filter trigger — People tab only */}
+      <div className={tab === "people" ? "mb-3 flex items-center gap-2" : "hidden"}>
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 size-[18px] -translate-y-1/2 text-brand-800/55" />
           <input
@@ -373,11 +390,21 @@ export function NetworkingClient({
               <Search />
             </EmptyMedia>
             <EmptyTitle>
-              {tab === "connections" ? "No connections yet" : "No matches"}
+              {tab === "connections"
+                ? "No connections yet"
+                : tab === "foryou"
+                ? canMatch
+                  ? "No matches yet"
+                  : "Tell us what you're after"
+                : "No matches"}
             </EmptyTitle>
             <EmptyDescription>
               {tab === "connections"
                 ? "Scan another attendee's QR badge to connect."
+                : tab === "foryou"
+                ? canMatch
+                  ? "As more delegates complete their profiles, suggestions will appear here."
+                  : "Add what you're looking for and what you can offer in your profile, and we'll suggest who to meet."
                 : "Try a different search or clear filters."}
             </EmptyDescription>
           </EmptyHeader>
@@ -385,7 +412,15 @@ export function NetworkingClient({
       ) : (
         <ul className="flex flex-col gap-2">
           {visible.map((p) => (
-            <AttendeeListItem key={p.id} p={p} />
+            <AttendeeListItem
+              key={p.id}
+              p={p}
+              reasons={
+                tab === "foryou" && "matchReasons" in p
+                  ? (p as RecommendedRow).matchReasons
+                  : undefined
+              }
+            />
           ))}
         </ul>
       )}
@@ -457,7 +492,14 @@ function RoleChip({
   );
 }
 
-function AttendeeListItem({ p }: { p: AttendeeRow }) {
+function AttendeeListItem({
+  p,
+  reasons,
+}: {
+  p: AttendeeRow;
+  /** Why this person was recommended. Shown only on the "For you" tab. */
+  reasons?: string[];
+}) {
   const campus = shortCampus(p.iit_campus);
   const grad = p.graduation_year ? `'${String(p.graduation_year).slice(-2)}` : "";
   return (
@@ -496,6 +538,18 @@ function AttendeeListItem({ p }: { p: AttendeeRow }) {
             ) : null}
             <SocialIcons p={p} />
           </div>
+          {reasons && reasons.length > 0 ? (
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {reasons.map((r) => (
+                <span
+                  key={r}
+                  className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-medium text-brand-800 ring-1 ring-brand-100"
+                >
+                  {r}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </div>
       </Link>
     </li>
