@@ -77,7 +77,12 @@ export function KeyParticipantsStrip({ people }: { people: Person[] }) {
           <ChevronLeft className="size-4" strokeWidth={1.8} />
         </button>
         <div className="relative w-full max-w-[280px]">
-          <ParticipantCard key={`${cur.id}-${idx}`} person={cur} />
+          <ParticipantCard
+            key={`${cur.id}-${idx}`}
+            person={cur}
+            animate={list.length > 1}
+            paused={paused}
+          />
         </div>
         <button
           type="button"
@@ -107,28 +112,53 @@ export function KeyParticipantsStrip({ people }: { people: Person[] }) {
   );
 }
 
-function ParticipantCard({ person }: { person: Person }) {
+function ParticipantCard({
+  person,
+  animate,
+  paused,
+}: {
+  person: Person;
+  /** The slide keyframes end at opacity 0 with fill-mode forwards, so
+   *  they must only run when another card is coming to replace this one.
+   *  With a single participant the interval never fires and the card would
+   *  animate itself off screen and stay gone. */
+  animate: boolean;
+  paused: boolean;
+}) {
   return (
     <article
       className="relative isolate aspect-[3/4] w-full overflow-hidden rounded-lg bg-white ring-1 ring-brand-100 will-change-transform"
-      style={{
-        animation: `participant-bounce ${ROTATE_MS}ms cubic-bezier(0.45, 0.05, 0.2, 1.05) forwards`,
-      }}
+      style={
+        animate
+          ? {
+              animation: `participant-bounce ${ROTATE_MS}ms cubic-bezier(0.45, 0.05, 0.2, 1.05) forwards`,
+              // Hover/touch pauses rotation; without this the animation keeps
+              // running and dumps the card at opacity 0 mid-hover.
+              animationPlayState: paused ? "paused" : "running",
+            }
+          : undefined
+      }
     >
-      {/* Photo fills the whole card, behind the arc. */}
-      {person.photo_url ? (
-        <Image
-          src={person.photo_url}
-          alt={person.full_name}
-          fill
-          className="object-cover object-top"
-          sizes="(min-width: 768px) 280px, 70vw"
-        />
-      ) : (
-        <div className="grid h-full place-items-center bg-brand-50 text-4xl font-semibold text-brand-800">
-          {initials(person.full_name)}
-        </div>
-      )}
+      {/* The arc starts at 75% of a 3/4 card, so the area above it is exactly
+          square (0.75 x 4/3 x width = width). Constraining the photo to that
+          square means the square source images land 1:1 with no crop at all,
+          and no face can end up hidden behind the arc. Filling the whole card
+          instead scaled every photo up by a third and pushed chins under it. */}
+      <div className="absolute inset-x-0 top-0 aspect-square w-full overflow-hidden bg-brand-50/40">
+        {person.photo_url ? (
+          <Image
+            src={person.photo_url}
+            alt={person.full_name}
+            fill
+            className="object-cover object-top"
+            sizes="(min-width: 768px) 280px, 70vw"
+          />
+        ) : (
+          <div className="grid h-full place-items-center text-4xl font-semibold text-brand-800">
+            {initials(person.full_name)}
+          </div>
+        )}
+      </div>
 
       {/* The blue arc, unchanged apart from dropping -z-10 so it now sits over
           the photo instead of behind the old white card face. */}
