@@ -115,42 +115,41 @@ function ParticipantCard({ person }: { person: Person }) {
         animation: `participant-bounce ${ROTATE_MS}ms cubic-bezier(0.45, 0.05, 0.2, 1.05) forwards`,
       }}
     >
-      {/* Blue arc at the bottom 25% */}
+      {/* Photo fills the whole card, behind the arc. */}
+      {person.photo_url ? (
+        <Image
+          src={person.photo_url}
+          alt={person.full_name}
+          fill
+          className="object-cover object-top"
+          sizes="(min-width: 768px) 280px, 70vw"
+        />
+      ) : (
+        <div className="grid h-full place-items-center bg-brand-50 text-4xl font-semibold text-brand-800">
+          {initials(person.full_name)}
+        </div>
+      )}
+
+      {/* The blue arc, unchanged apart from dropping -z-10 so it now sits over
+          the photo instead of behind the old white card face. */}
       <div
-        className="pointer-events-none absolute left-1/2 top-[75%] -z-10 h-[60%] w-[200%] -translate-x-1/2 rounded-[50%] bg-[radial-gradient(circle,#3b329e_0%,#1B1464_70%,#0d0930_100%)]"
+        className="pointer-events-none absolute left-1/2 top-[75%] h-[60%] w-[200%] -translate-x-1/2 rounded-[50%] bg-[radial-gradient(circle,#3b329e_0%,#1B1464_70%,#0d0930_100%)]"
         aria-hidden
       />
 
-      <div className="flex h-full flex-col items-center justify-end pb-6 pt-6">
-        <div className="relative size-28 overflow-hidden rounded-full ring-4 ring-white">
-          {person.photo_url ? (
-            <Image
-              src={person.photo_url}
-              alt={person.full_name}
-              fill
-              className="object-cover"
-              sizes="112px"
-            />
-          ) : (
-            <div className="grid h-full place-items-center bg-brand-50 text-2xl font-semibold text-brand-800">
-              {initials(person.full_name)}
-            </div>
-          )}
-        </div>
-        <div className="mt-3 flex w-full flex-1 flex-col justify-end px-4 text-center">
-          <p className="text-[15px] font-semibold leading-tight text-white drop-shadow-sm">
-            {person.full_name}
+      <div className="absolute inset-x-0 bottom-0 px-4 pb-5 text-center">
+        <p className="text-[15px] font-semibold leading-tight text-white drop-shadow-sm">
+          {person.full_name}
+        </p>
+        {person.designation || person.company ? (
+          <p className="mt-1 line-clamp-2 text-[12px] font-medium leading-snug text-white/85">
+            {[person.designation, person.company].filter(Boolean).join(" · ")}
           </p>
-          {person.designation || person.company ? (
-            <p className="mt-1 text-[12px] font-medium leading-snug text-white/85">
-              {[person.designation, person.company].filter(Boolean).join(" · ")}
-            </p>
-          ) : (
-            <span className="inline-flex items-center justify-center gap-1 text-[11px] text-white/70">
-              <UserRound className="size-3" strokeWidth={1.7} /> Participant
-            </span>
-          )}
-        </div>
+        ) : (
+          <span className="inline-flex items-center justify-center gap-1 text-[11px] text-white/70">
+            <UserRound className="size-3" strokeWidth={1.7} /> Participant
+          </span>
+        )}
       </div>
     </article>
   );
