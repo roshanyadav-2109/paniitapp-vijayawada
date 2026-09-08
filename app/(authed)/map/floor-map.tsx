@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { MapPin, Search } from "lucide-react";
+import { MapPin, Search } from "@/components/icons";
 import {
   Sheet,
   SheetContent,

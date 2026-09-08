@@ -1,4 +1,4 @@
-import { MapPin } from "lucide-react";
+import { MapPin } from "@/components/icons";
 import { createClient } from "@/lib/supabase/server";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { FloorMap, type VenueRow, type SessionAtVenue } from "./floor-map";

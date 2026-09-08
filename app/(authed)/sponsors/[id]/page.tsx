@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ExternalLink, MapPin } from "lucide-react";
+import { ExternalLink, MapPin } from "@/components/icons";
 import { createClient } from "@/lib/supabase/server";
 import { CopyOfferCode } from "./copy-code";
 import { EVENT_ID } from "@/lib/event-config";

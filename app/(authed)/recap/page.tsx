@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Download, FileText } from "lucide-react";
+import { Download, FileText } from "@/components/icons";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { initials } from "@/lib/utils";

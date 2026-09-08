@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink } from "@/components/icons";
 import {
   EVENT_CITY,
   EVENT_DATE_TEXT,

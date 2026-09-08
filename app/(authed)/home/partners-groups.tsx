@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Building2 } from "lucide-react";
+import { Building2 } from "@/components/icons";
 
 interface PartnerCard {
   id: string;

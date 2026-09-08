@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, LogOut, Pencil, QrCode, Camera } from "lucide-react";
+import { ChevronRight, LogOut, Pencil, QrCode, Camera } from "@/components/icons";
 import { createClient } from "@/lib/supabase/server";
 import { rethrowIfRedirect } from "@/lib/redirect";
 import { OfficeHoursToggle } from "@/components/features/office-hours-toggle";

@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/components/icons";
 import { createClient } from "@/lib/supabase/client";
 import { MyQr } from "./my-qr";
 

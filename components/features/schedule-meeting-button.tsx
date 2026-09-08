@@ -2,7 +2,7 @@
 
 import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarClock, Loader2 } from "lucide-react";
+import { CalendarClock, Loader2 } from "@/components/icons";
 import {
   Sheet,
   SheetContent,

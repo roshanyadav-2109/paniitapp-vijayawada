@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { CalendarOff } from "lucide-react";
+import { CalendarOff } from "@/components/icons";
 import { createClient } from "@/lib/supabase/server";
 import { ChatWindow } from "./chat-window";
 

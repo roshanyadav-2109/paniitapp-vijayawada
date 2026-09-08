@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Bell, BellOff, Loader2 } from "lucide-react";
+import { Bell, BellOff, Loader2 } from "@/components/icons";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 

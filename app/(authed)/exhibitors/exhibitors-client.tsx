@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ExternalLink, MapPin, Search, Store } from "lucide-react";
+import { ExternalLink, MapPin, Search, Store } from "@/components/icons";
 import {
   Empty,
   EmptyHeader,

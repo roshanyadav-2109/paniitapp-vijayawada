@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/components/icons";
 import { setOfficeHours } from "@/app/actions/office-hours";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";

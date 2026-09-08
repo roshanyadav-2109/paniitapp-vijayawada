@@ -9,7 +9,7 @@ import {
   QrCode,
   ScanLine,
   ShieldCheck,
-} from "lucide-react";
+} from "@/components/icons";
 import { MyQrDialog } from "@/components/features/my-qr-dialog";
 
 interface Props {

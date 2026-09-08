@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Shield } from "lucide-react";
+import { Shield } from "@/components/icons";
 import { createClient } from "@/lib/supabase/server";
 import { AnnouncementComposer } from "./announcement-composer";
 import { EVENT_ID } from "@/lib/event-config";

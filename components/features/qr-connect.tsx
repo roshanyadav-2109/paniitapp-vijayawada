@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { QrCode } from "lucide-react";
+import { QrCode } from "@/components/icons";
 import {
   Sheet,
   SheetContent,

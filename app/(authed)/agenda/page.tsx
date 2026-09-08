@@ -1,4 +1,4 @@
-import { CalendarOff } from "lucide-react";
+import { CalendarOff } from "@/components/icons";
 import { formatInTimeZone } from "date-fns-tz";
 import { createClient } from "@/lib/supabase/server";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";

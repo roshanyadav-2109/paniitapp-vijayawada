@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { QrCode } from "lucide-react";
+import { QrCode } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { GatePassDialog } from "./gatepass-dialog";
 

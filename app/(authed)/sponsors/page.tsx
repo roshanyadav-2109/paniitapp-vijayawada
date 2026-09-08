@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Building } from "lucide-react";
+import { Building } from "@/components/icons";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/features/empty-state";
 import { EVENT_ID, EVENT_NAME } from "@/lib/event-config";

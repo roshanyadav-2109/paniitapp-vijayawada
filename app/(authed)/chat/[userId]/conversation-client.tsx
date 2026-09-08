@@ -9,7 +9,7 @@ import {
   useState,
   useTransition,
 } from "react";
-import { ArrowLeft, Check, CheckCheck, Loader2 } from "lucide-react";
+import { ArrowLeft, Check, CheckCheck, Loader2 } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/client";
 import { sendMessage } from "@/app/actions/send-message";

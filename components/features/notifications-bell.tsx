@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bell } from "lucide-react";
+import { Bell } from "@/components/icons";
 import { EVENT_ID } from "@/lib/event-config";
 
 function PremiumBell({ className }: { className?: string }) {

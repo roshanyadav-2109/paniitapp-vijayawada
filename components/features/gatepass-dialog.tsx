@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/components/icons";
 import { createClient } from "@/lib/supabase/client";
 import { ProfileAvatar } from "@/components/features/default-avatar";
 import { EVENT_NAME } from "@/lib/event-config";

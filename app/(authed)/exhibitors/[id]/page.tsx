@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Store, ExternalLink, MapPin } from "lucide-react";
+import { Store, ExternalLink, MapPin } from "@/components/icons";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EVENT_ID } from "@/lib/event-config";

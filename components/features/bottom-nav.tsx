@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Mic, Store, CalendarClock } from "lucide-react";
+import { Mic, Store, CalendarClock } from "@/components/icons";
 import { NetworkNodes, PremiumHouse } from "./nav-icons";
 import { cn } from "@/lib/utils";
 

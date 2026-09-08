@@ -5,7 +5,7 @@ import {
   ChevronRight,
   MapPin,
   Compass,
-} from "lucide-react";
+} from "@/components/icons";
 import { formatInTimeZone } from "date-fns-tz";
 import { createClient } from "@/lib/supabase/server";
 import { rethrowIfRedirect } from "@/lib/redirect";
