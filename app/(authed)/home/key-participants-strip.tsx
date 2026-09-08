@@ -142,7 +142,7 @@ function ParticipantCard({ person }: { person: Person }) {
             {person.full_name}
           </p>
           {person.designation || person.company ? (
-            <p className="mt-1 text-[12px] font-medium text-white/85">
+            <p className="mt-1 text-[12px] font-medium leading-snug text-white/85">
               {[person.designation, person.company].filter(Boolean).join(" · ")}
             </p>
           ) : (

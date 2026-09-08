@@ -23,7 +23,7 @@ export function BottomNav() {
       aria-label="Primary"
       className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-brand-100 bg-white shadow-[0_-8px_24px_-18px_rgba(13,9,48,0.18)] lg:hidden"
     >
-      <ul className="mx-auto grid h-[72px] w-full max-w-2xl grid-cols-5">
+      <ul className="mx-auto grid h-[88px] w-full max-w-2xl grid-cols-6">
         {TABS.map(({ href, label, icon: Icon }) => {
           const active =
             pathname === href ||
@@ -34,15 +34,15 @@ export function BottomNav() {
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex w-full flex-col items-center justify-center gap-1.5 transition-colors",
+                  "flex w-full flex-col items-center justify-center gap-1.5 px-0.5 transition-colors",
                   active ? "text-brand-800" : "text-brand-800/45 hover:text-brand-800"
                 )}
               >
                 <Icon
-                  className="h-[20px] w-[20px]"
+                  className="h-[22px] w-[22px]"
                   strokeWidth={active ? 2.25 : 1.7}
                 />
-                <span className="text-[11px] font-semibold leading-none tracking-tight">
+                <span className="text-[10px] font-semibold leading-none tracking-tight">
                   {label}
                 </span>
               </Link>
