@@ -66,3 +66,43 @@ export const EVENT_VIDEO_URL =
  */
 export const EVENT_ID =
   process.env.NEXT_PUBLIC_EVENT_ID ?? "a9d40000-0000-4000-8000-000000000002";
+
+/**
+ * Folder prefix inside the shared `LOGOS` storage bucket.
+ *
+ * Storage is NOT event-scoped the way the database now is — the bucket has
+ * tier folders ("Title Sponsor", "Gold Sponsor", ...) at its root, holding
+ * the Bangalore edition's logos. Reading those directly would show Bangalore's
+ * sponsors here, so this edition reads from `ap-2026/<tier>/` instead.
+ *
+ * Upload AP sponsor logos to `ap-2026/Title Sponsor/` etc. Until then the
+ * sponsor board is empty, which is the correct state — better blank than
+ * showing another summit's partners.
+ */
+export const EVENT_STORAGE_PREFIX = "ap-2026";
+
+/**
+ * Home-screen hero carousel.
+ *
+ * TODO — these are still the Bangalore edition's promotional banners and
+ * guest-panel photos, hosted on the PanIIT S3 bucket. Replace with AP artwork
+ * before launch.
+ */
+export const EVENT_HERO_SLIDES: { src: string; alt: string }[] = [
+  {
+    src: "https://afilemanager.s3.dualstack.ap-southeast-1.amazonaws.com/prod/cid_359/pan_image_1_1_50.png",
+    alt: "PanIIT Andhra Pradesh Summit 2026 — promotional banner 1",
+  },
+  {
+    src: "https://afilemanager.s3.dualstack.ap-southeast-1.amazonaws.com/prod/cid_359/pan_image_2_50.png",
+    alt: "PanIIT Andhra Pradesh Summit 2026 — promotional banner 2",
+  },
+  {
+    src: "https://afilemanager.s3.dualstack.ap-southeast-1.amazonaws.com/prod/cid_2567/PANIITGuestpanel1.png",
+    alt: "PanIIT Andhra Pradesh Summit 2026 — guest panel 1",
+  },
+  {
+    src: "https://afilemanager.s3.dualstack.ap-southeast-1.amazonaws.com/prod/cid_2567/PANIITpanel2.png",
+    alt: "PanIIT Andhra Pradesh Summit 2026 — guest panel 2",
+  },
+];

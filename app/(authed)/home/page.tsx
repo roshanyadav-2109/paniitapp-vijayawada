@@ -17,6 +17,7 @@ import {
   EVENT_NAME,
   EVENT_ID,
   EVENT_SHORT_NAME,
+  EVENT_STORAGE_PREFIX,
   EVENT_TAGLINE,
   EVENT_VENUE,
 } from "@/lib/event-config";
@@ -80,7 +81,10 @@ export default async function HomePage() {
       SPONSOR_TIER_FOLDERS.map((folder) =>
         supabase.storage
           .from(LOGO_BUCKET)
-          .list(folder, { limit: 100, sortBy: { column: "name", order: "asc" } })
+          .list(`${EVENT_STORAGE_PREFIX}/${folder}`, {
+            limit: 100,
+            sortBy: { column: "name", order: "asc" },
+          })
           .then((res) => ({ folder, data: res.data ?? [] }))
       )
     );
@@ -96,7 +100,7 @@ export default async function HomePage() {
           .map((item) => {
             const { data: pub } = supabase.storage
               .from(LOGO_BUCKET)
-              .getPublicUrl(`${folder}/${item.name}`);
+              .getPublicUrl(`${EVENT_STORAGE_PREFIX}/${folder}/${item.name}`);
             return pub.publicUrl;
           });
         return { name: folder, logos };

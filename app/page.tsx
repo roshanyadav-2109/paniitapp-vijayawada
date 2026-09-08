@@ -105,10 +105,10 @@ export default async function SignInPage() {
         <div className="mx-auto flex h-full min-h-0 w-full max-w-md flex-col rounded-t-3xl bg-white px-6 pb-3 pt-6 shadow-[0_-20px_50px_-25px_rgba(13,9,48,0.35)] sm:px-8 lg:my-auto lg:h-auto lg:min-h-[32rem] lg:max-w-sm lg:rounded-2xl lg:p-9 lg:shadow-none">
           {/* Top spacer — smaller so the greeting sits a touch above
               vertical centre and the sign-in stack reads as a single
-              grouped block (greeting → button → trouble link). */}
+              grouped block (greeting → button). */}
           <div className="basis-[12%] shrink-0" aria-hidden />
 
-          {/* Form group (greeting + button + trouble) */}
+          {/* Form group (greeting + button) */}
           <div className="flex-shrink-0">
             <div className="flex flex-col items-center text-center">
               <GreetingRotator />
@@ -120,16 +120,6 @@ export default async function SignInPage() {
             <div className="mt-6">
               <SignInForm />
             </div>
-
-            <p className="mt-4 text-center text-xs leading-5 text-brand-800">
-              Trouble?{" "}
-              <a
-                href="mailto:summit@paniit.org"
-                className="font-medium text-brand-800 hover:text-brand-900"
-              >
-                summit@paniit.org
-              </a>
-            </p>
           </div>
 
           {/* Bottom spacer absorbs remaining height */}

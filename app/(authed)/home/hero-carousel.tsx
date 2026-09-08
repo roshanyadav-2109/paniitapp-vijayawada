@@ -1,30 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { EVENT_HERO_SLIDES } from "@/lib/event-config";
 
-interface Slide {
-  src: string;
-  alt: string;
-}
+type Slide = (typeof EVENT_HERO_SLIDES)[number];
 
-const SLIDES: Slide[] = [
-  {
-    src: "https://afilemanager.s3.dualstack.ap-southeast-1.amazonaws.com/prod/cid_359/pan_image_1_1_50.png",
-    alt: "PAN IIT 2026 — promotional banner 1",
-  },
-  {
-    src: "https://afilemanager.s3.dualstack.ap-southeast-1.amazonaws.com/prod/cid_359/pan_image_2_50.png",
-    alt: "PAN IIT 2026 — promotional banner 2",
-  },
-  {
-    src: "https://afilemanager.s3.dualstack.ap-southeast-1.amazonaws.com/prod/cid_2567/PANIITGuestpanel1.png",
-    alt: "PAN IIT 2026 — guest panel 1",
-  },
-  {
-    src: "https://afilemanager.s3.dualstack.ap-southeast-1.amazonaws.com/prod/cid_2567/PANIITpanel2.png",
-    alt: "PAN IIT 2026 — guest panel 2",
-  },
-];
+const SLIDES: Slide[] = EVENT_HERO_SLIDES;
 
 const N = SLIDES.length;
 const INTERVAL_MS = 4500;

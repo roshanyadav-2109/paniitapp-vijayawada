@@ -50,6 +50,16 @@ loadEnvFile(".env");
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has("--dry-run");
 const bucket = process.env.SPONSOR_LOGOS_BUCKET || "logos";
+// The LOGOS bucket is shared with the Bangalore edition, whose tier folders
+// sit at the bucket root. This edition's logos live under a prefix so the two
+// summits do not read each other's partners.
+const storagePrefix = (process.env.SPONSOR_LOGOS_PREFIX || "ap-2026").replace(/^\/+|\/+$/g, "");
+// sponsors.event_id is NOT NULL and defaults to the Bangalore event, so this
+// must be set explicitly or AP sponsors land in the Bangalore app.
+const eventId = process.env.NEXT_PUBLIC_EVENT_ID;
+if (!eventId) {
+  throw new Error("NEXT_PUBLIC_EVENT_ID is required so sponsors are tagged to the right summit.");
+}
 const signedSeconds = parseInteger(process.env.SPONSOR_LOGOS_SIGNED_SECONDS);
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -64,15 +74,16 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
-const rootFolders = await listFolderNames(bucket, "");
+const rootFolders = await listFolderNames(bucket, storagePrefix);
 const sponsors = [];
 
 for (const tierFolder of TIER_FOLDERS) {
   const folder = resolveFolderName(rootFolders, tierFolder.aliases) ?? tierFolder.aliases[0];
-  const objects = await listImages(bucket, folder);
+  const folderPath = `${storagePrefix}/${folder}`;
+  const objects = await listImages(bucket, folderPath);
 
   if (objects.length === 0) {
-    console.warn(`No sponsor logos found in "${bucket}/${folder}".`);
+    console.warn(`No sponsor logos found in "${bucket}/${folderPath}".`);
     continue;
   }
 
@@ -106,6 +117,7 @@ async function syncSponsor(sponsor) {
   const { data: existing, error: selectError } = await supabase
     .from("sponsors")
     .select("id")
+    .eq("event_id", eventId)
     .eq("name", sponsor.name)
     .eq("tier", sponsor.tier)
     .limit(1);
@@ -123,6 +135,7 @@ async function syncSponsor(sponsor) {
   }
 
   const { error } = await supabase.from("sponsors").insert({
+    event_id: eventId,
     name: sponsor.name,
     tier: sponsor.tier,
     logo_url: sponsor.logo_url,
