@@ -81,6 +81,24 @@ const MAP = {
   UserRound: "user-rounded",
   Users: "users-group-rounded",
   X: "close",
+
+  // Bottom / desktop nav. Each tab has a linear (inactive) and bold (active)
+  // form — Solar's own convention, and a clearer state change than nudging
+  // stroke width. Chosen to be distinct from one another at 22px: a clipboard
+  // for the programme, grouped people for the directory, a speech bubble for
+  // discussion, a shop front for the expo, a dated calendar for 1:1s.
+  NavHome: "home-2",
+  NavHomeActive: "@home-2-bold",
+  NavAgenda: "clipboard-list",
+  NavAgendaActive: "@clipboard-list-bold",
+  NavNetwork: "users-group-rounded",
+  NavNetworkActive: "@users-group-rounded-bold",
+  NavDiscuss: "chat-round-dots",
+  NavDiscussActive: "@chat-round-dots-bold",
+  NavExpo: "shop-2",
+  NavExpoActive: "@shop-2-bold",
+  NavMeetings: "calendar-date",
+  NavMeetingsActive: "@calendar-date-bold",
 };
 
 // Solar has no equivalent for these in ANY style, so they stay on Lucide.
@@ -107,8 +125,9 @@ for (const [name, raw] of Object.entries(MAP)) {
   // Solar bakes stroke-width onto the inner elements. Strip it so the svg-level
   // strokeWidth prop is inherited, which is how the app already drives Lucide
   // (e.g. strokeWidth={1.8}).
+  const filled = /fill="currentColor"/.test(icon.body) && !/stroke="currentColor"/.test(icon.body);
   const body = icon.body.replace(/\s*stroke-width="[^"]*"/g, "");
-  entries.push({ name, id, body });
+  entries.push({ name, id, body, filled });
 }
 
 if (missing.length) {
@@ -132,7 +151,7 @@ export type LucideIcon = React.ForwardRefExoticComponent<
   IconProps & React.RefAttributes<SVGSVGElement>
 >;
 
-function icon(displayName: string, body: string): LucideIcon {
+function icon(displayName: string, body: string, filled = false): LucideIcon {
   const Component = React.forwardRef<SVGSVGElement, IconProps>(function SolarIcon(
     { size = 24, strokeWidth = 1.5, width, height, ...props },
     ref
@@ -144,9 +163,9 @@ function icon(displayName: string, body: string): LucideIcon {
         viewBox="0 0 24 24"
         width={width ?? size}
         height={height ?? size}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={strokeWidth}
+        fill={filled ? "currentColor" : "none"}
+        stroke={filled ? undefined : "currentColor"}
+        strokeWidth={filled ? undefined : strokeWidth}
         aria-hidden="true"
         {...props}
         dangerouslySetInnerHTML={{ __html: body }}
@@ -162,7 +181,7 @@ ${entries
     (e) =>
       `/** solar:${e.id} */\nexport const ${e.name} = icon(${JSON.stringify(
         e.name
-      )}, ${JSON.stringify(e.body)});`
+      )}, ${JSON.stringify(e.body)}${e.filled ? ", true" : ""});`
   )
   .join("\n")}
 

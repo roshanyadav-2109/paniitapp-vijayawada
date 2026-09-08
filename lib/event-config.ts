@@ -88,7 +88,33 @@ export const EVENT_STORAGE_PREFIX = "ap-2026";
  * guest-panel photos, hosted on the PanIIT S3 bucket. Replace with AP artwork
  * before launch.
  */
-export const EVENT_HERO_SLIDES: { src: string; alt: string }[] = [
+export const EVENT_HERO_SLIDES: {
+  src: string;
+  alt: string;
+  /** Optional overlay caption. Set both to label a person on the banner. */
+  name?: string;
+  role?: string;
+}[] = [
+  {
+    // The one genuinely AP banner we have, so it leads. Re-hosted rather than
+    // hotlinked from the almashines CDN.
+    src: "https://fncnndrexzmqqengbkvi.supabase.co/storage/v1/object/public/speakers/ap-2026/hero-registration.webp",
+    alt: "PanIIT Andhra Pradesh Summit 2026 — 3 October 2026, Dr. B. R. Ambedkar Kala Vedika, Vijayawada. Registration open.",
+  },
+  {
+    // Portrait source, cut to a 16:9 band around the face so it sits in the
+    // banner without letterboxing.
+    src: "https://fncnndrexzmqqengbkvi.supabase.co/storage/v1/object/public/speakers/ap-2026/hero-swadeep.webp",
+    alt: "Swadeep Pillarisetti, Co-Chair of the PanIIT Andhra Pradesh Summit 2026",
+    name: "Swadeep Pillarisetti",
+    role: "Co-Chair · Summit",
+  },
+  {
+    src: "https://fncnndrexzmqqengbkvi.supabase.co/storage/v1/object/public/speakers/ap-2026/hero-cm.webp",
+    alt: "Sri Nara Chandra Babu Naidu, Hon'ble Chief Minister of Andhra Pradesh",
+    name: "Sri Nara Chandra Babu Naidu",
+    role: "Hon'ble Chief Minister of Andhra Pradesh",
+  },
   {
     src: "https://afilemanager.s3.dualstack.ap-southeast-1.amazonaws.com/prod/cid_359/pan_image_1_1_50.png",
     alt: "PanIIT Andhra Pradesh Summit 2026 — promotional banner 1",

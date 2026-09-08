@@ -28,6 +28,7 @@ export function DesktopNavTabs() {
           <Link
             key={href}
             href={href}
+            prefetch
             aria-current={active ? "page" : undefined}
             className={cn(
               "relative px-1 py-3 text-[13px] font-semibold tracking-tight transition-colors",

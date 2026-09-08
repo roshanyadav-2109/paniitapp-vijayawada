@@ -8,10 +8,7 @@ import {
   sessionVenueName,
   type SessionCardData,
 } from "@/components/features/session-card";
-import {
-  PageWithFilters,
-  FiltersCard,
-} from "@/components/features/page-with-filters";
+import { PageWithFilters } from "@/components/features/page-with-filters";
 import { AgendaFilters } from "./agenda-filters";
 import { AgendaRealtime } from "@/components/features/agenda-realtime";
 import { SUMMIT_TZ } from "@/lib/constants";
@@ -146,11 +143,7 @@ export default async function AgendaPage({
           </p>
         </div>
       }
-      filters={
-        <FiltersCard>
-          <AgendaFilters venues={venueOptions} />
-        </FiltersCard>
-      }
+      filters={<AgendaFilters venues={venueOptions} />}
     >
       {userInterests.length === 0 ? (
         <div className="mb-4 rounded-lg border border-brand-100 bg-brand-50/40 p-3">

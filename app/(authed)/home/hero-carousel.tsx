@@ -95,6 +95,26 @@ export function HeroCarousel() {
               decoding="async"
               className="block h-auto w-full lg:h-full lg:object-cover"
             />
+            {/* Caption for slides that label a person. Scrim only where the
+                text sits, so the banner artwork is untouched. */}
+            {s.name ? (
+              <>
+                <div
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/75 via-black/35 to-transparent"
+                  aria-hidden
+                />
+                <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
+                  <p className="text-[15px] font-semibold leading-tight text-white drop-shadow sm:text-[17px]">
+                    {s.name}
+                  </p>
+                  {s.role ? (
+                    <p className="mt-0.5 text-[11px] font-medium text-white/85 sm:text-[12px]">
+                      {s.role}
+                    </p>
+                  ) : null}
+                </div>
+              </>
+            ) : null}
           </article>
         ))}
       </div>
