@@ -57,3 +57,21 @@ update public.key_participants set photo_url = 'https://fncnndrexzmqqengbkvi.sup
   where event_id = 'a9d40000-0000-4000-8000-000000000002' and full_name = 'Sri Nara Chandra Babu Naidu';
 
 commit;
+
+-- ---------------------------------------------------------------------------
+-- Image spec for the speakers bucket — read before re-uploading anything.
+--
+-- Files must be 640x700 (aspect 0.914), produced with sharp's fit:'cover',
+-- position:'top'. Do NOT use fit:'contain'.
+--
+-- Why: the card's photo box is h-[82%] of a 3/4 card, so its aspect is
+-- 1 / (0.82 * 4/3) = 0.914. Matching that exactly means the browser crops
+-- nothing further.
+--
+-- 'contain' was used at one point to stop the photos looking zoomed. It pads
+-- to the target box with a background colour, and because the brochure crops
+-- are landscape (~520x470) that baked white bars into the top and bottom of
+-- every file — measured at 41 rows top and 28 rows bottom on a 600x600
+-- upload. Those bars then showed in the card as a white band between the
+-- photo and the arc, which looked like a layout bug but was inside the image.
+-- ---------------------------------------------------------------------------
