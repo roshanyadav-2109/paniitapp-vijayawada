@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Bell } from "lucide-react";
+import { EVENT_ID } from "@/lib/event-config";
 
 function PremiumBell({ className }: { className?: string }) {
   return (
@@ -103,16 +104,23 @@ export function NotificationsBell() {
       const { data } = await supabase
         .from("announcements")
         .select("id, title, body, priority, created_at")
+        .eq("event_id", EVENT_ID)
         .order("created_at", { ascending: false })
         .limit(20);
       if (!cancelled) setItems((data as Announcement[] | null) ?? []);
     })();
 
     const ch = supabase
-      .channel("announcements")
+      .channel(`announcements-${EVENT_ID}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "announcements" },
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "announcements",
+          // Without this the other summit's announcements appear live here.
+          filter: `event_id=eq.${EVENT_ID}`,
+        },
         (payload) => {
           const row = payload.new as Announcement;
           setItems((prev) => [row, ...prev].slice(0, 20));

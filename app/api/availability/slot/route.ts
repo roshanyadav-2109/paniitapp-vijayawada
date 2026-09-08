@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
+import { EVENT_ID } from "@/lib/event-config";
 
 const Body = z.object({
   slot: z.object({ start: z.string(), end: z.string() }),
@@ -38,6 +39,7 @@ export async function POST(req: Request) {
   const { data: acceptedMeetings, error: acceptedErr } = await admin
     .from("meetings")
     .select("accepted_slot")
+    .eq("event_id", EVENT_ID)
     .or(`requester_id.eq.${user.id},invitee_id.eq.${user.id}`)
     .eq("status", "accepted");
   if (acceptedErr) return NextResponse.json({ error: acceptedErr.message }, { status: 500 });
@@ -52,12 +54,14 @@ export async function POST(req: Request) {
 
   const { error } = await admin.from("availability_slots").upsert(
     {
+      event_id: EVENT_ID,
       user_id: user.id,
       slot_start: slot.start,
       slot_end: slot.end,
       status: parsed.data.status,
     },
-    { onConflict: "user_id,slot_start" }
+    // Matches availability_slots_event_user_slot_uidx (migration 0015).
+    { onConflict: "event_id,user_id,slot_start" }
   );
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

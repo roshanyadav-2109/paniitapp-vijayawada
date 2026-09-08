@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ExternalLink, MapPin } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { CopyOfferCode } from "./copy-code";
+import { EVENT_ID } from "@/lib/event-config";
 
 interface SponsorRow {
   id: string;
@@ -44,6 +45,7 @@ export default async function SponsorDetailPage({
         "id, name, tier, description, offer_title, offer_description, offer_redeem_code, booth_number, website, logo_url"
       )
       .eq("id", id)
+      .eq("event_id", EVENT_ID)
       .maybeSingle();
     sponsor = (data as SponsorRow | null) ?? null;
   } catch {

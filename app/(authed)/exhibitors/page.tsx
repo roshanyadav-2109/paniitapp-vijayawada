@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { rethrowIfRedirect } from "@/lib/redirect";
 import { ExhibitorsClient, type ExhibitorRow } from "./exhibitors-client";
+import { EVENT_ID } from "@/lib/event-config";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export default async function ExhibitorsPage() {
       .select(
         "id, name, tagline, logo_url, category, booth_number, location_floor, website"
       )
+      .eq("event_id", EVENT_ID)
       .order("display_order", { ascending: true })
       .order("name", { ascending: true });
     rows = (data as ExhibitorRow[] | null) ?? [];

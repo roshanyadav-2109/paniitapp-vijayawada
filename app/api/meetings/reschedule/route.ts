@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
+import { EVENT_ID } from "@/lib/event-config";
 
 const SlotSchema = z.object({ start: z.string(), end: z.string() });
 const Body = z.object({
@@ -74,6 +75,7 @@ export async function POST(req: Request) {
   const { data: availability, error: availErr } = await admin
     .from("availability_slots")
     .select("slot_start, slot_end, status")
+    .eq("event_id", EVENT_ID)
     .eq("user_id", nextInviteeId);
   if (availErr) return NextResponse.json({ error: availErr.message }, { status: 500 });
 
@@ -98,6 +100,7 @@ export async function POST(req: Request) {
   const { data: acceptedMeetings, error: acceptedErr } = await admin
     .from("meetings")
     .select("accepted_slot")
+    .eq("event_id", EVENT_ID)
     .or(
       `requester_id.eq.${user.id},invitee_id.eq.${user.id},requester_id.eq.${nextInviteeId},invitee_id.eq.${nextInviteeId}`
     )
@@ -122,6 +125,7 @@ export async function POST(req: Request) {
     const { error: releaseErr } = await admin
       .from("availability_slots")
       .update({ status: "available", meeting_id: null })
+      .eq("event_id", EVENT_ID)
       .eq("user_id", meeting.invitee_id)
       .eq("slot_start", accepted.start)
       .eq("status", "booked");

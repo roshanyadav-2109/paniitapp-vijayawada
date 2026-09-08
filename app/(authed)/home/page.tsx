@@ -15,7 +15,9 @@ import {
   EVENT_DATE_LABEL,
   EVENT_MAPS_URL,
   EVENT_NAME,
+  EVENT_ID,
   EVENT_SHORT_NAME,
+  EVENT_TAGLINE,
   EVENT_VENUE,
 } from "@/lib/event-config";
 import { HeroCarousel } from "./hero-carousel";
@@ -108,6 +110,7 @@ export default async function HomePage() {
             .select(
               "id, requester_id, invitee_id, accepted_slot, status, requester:requester_id(id, full_name), invitee:invitee_id(id, full_name)"
             )
+            .eq("event_id", EVENT_ID)
             .or(`requester_id.eq.${user.id},invitee_id.eq.${user.id}`)
             .eq("status", "accepted")
         : Promise.resolve({ data: [] as unknown[] }),
@@ -203,7 +206,7 @@ export default async function HomePage() {
             PAN IIT 2026 · {EVENT_SHORT_NAME}
           </p>
           <h2 className="mt-1 text-[19px] font-semibold leading-tight tracking-tight">
-            Sovereignty in Technology
+            {EVENT_TAGLINE}
           </h2>
           <div className="mt-3 space-y-1.5 text-[13px] font-medium text-white/85">
             <div className="flex items-center gap-2">

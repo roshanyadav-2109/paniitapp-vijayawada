@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { EVENT_ID } from "@/lib/event-config";
 
 const SlotSchema = z.object({ start: z.string(), end: z.string() });
 const Body = z.object({
@@ -55,6 +56,7 @@ export async function POST(req: Request) {
   const { data: availability, error: availErr } = await supabase
     .from("availability_slots")
     .select("slot_start, slot_end, status")
+    .eq("event_id", EVENT_ID)
     .eq("user_id", parsed.data.invitee_id);
   if (availErr) return NextResponse.json({ error: availErr.message }, { status: 500 });
 
@@ -93,6 +95,7 @@ export async function POST(req: Request) {
   const { data: acceptedMeetings, error: acceptedErr } = await supabase
     .from("meetings")
     .select("accepted_slot")
+    .eq("event_id", EVENT_ID)
     .or(
       `requester_id.eq.${user.id},invitee_id.eq.${user.id},requester_id.eq.${parsed.data.invitee_id},invitee_id.eq.${parsed.data.invitee_id}`
     )
@@ -119,6 +122,7 @@ export async function POST(req: Request) {
     proposed_slots: proposed,
     status: "pending",
     proposed_outside_availability: proposedOutsideAvailability,
+    event_id: EVENT_ID,
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

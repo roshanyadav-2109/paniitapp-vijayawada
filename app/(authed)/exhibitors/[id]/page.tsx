@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Store, ExternalLink, MapPin } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { EVENT_ID } from "@/lib/event-config";
 import { ScheduleMeetingButton } from "@/components/features/schedule-meeting-button";
 import { GmailIcon, LinkedInIcon } from "@/components/features/social-icons";
 import { initials } from "@/lib/utils";
@@ -50,6 +51,7 @@ export default async function ExhibitorDetailPage({
         "id, name, tagline, about, logo_url, cover_url, website, booth_number, location_floor, category"
       )
       .eq("id", id)
+      .eq("event_id", EVENT_ID)
       .maybeSingle();
     exhibitor = (data as ExhibitorDetail | null) ?? null;
     if (!exhibitor) notFound();

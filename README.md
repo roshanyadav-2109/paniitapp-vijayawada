@@ -17,22 +17,36 @@ Dr. B. R. Ambedkar Kala Vedika, Buckingham Peta, **Vijayawada**.
 | Item | Status |
 | --- | --- |
 | Event name, theme, date, venue, delegate count | ✅ set from the official brochure |
+| Supabase `event_id` scoping (DB + this app) | ✅ applied — migrations 0013–0015 |
+| **Bangalore app updated to filter by `event_id`** | ⚠️ **not done — blocks seeding AP content** |
 | `EVENT_VIDEO_URL` in `lib/event-config.ts` | ⚠️ still the Bangalore promo video — upload an AP video and swap it |
-| Supabase `event_id` scoping | ⚠️ **not done** — see below |
 | App icons in `public/icons/` | ⚠️ still the Bangalore artwork — re-run `npm run generate-icons` with AP source art |
 | Google OAuth client + redirect URI | ⚠️ must be created for the new domain |
 
-### Shared backend — read this
+### Shared backend
 
-This app points at the **same Supabase project as the Bangalore edition**
-(`fncnndrexzmqqengbkvi`). The schema currently has no per-event scoping, so
-sessions, venues, sponsors, exhibitors and announcements are **global**: this
-app will show Bangalore's rows, and any row seeded here will appear in the
-Bangalore app.
+This app shares one Supabase project with the Bangalore edition
+(`fncnndrexzmqqengbkvi`). Migrations 0013–0015 make the schema multi-event:
 
-Before seeding real AP content, add an `events` table plus an `event_id`
-column on the content tables, backfill existing rows to the Bangalore event,
-and filter every content query by it — in **both** repos.
+| Event | slug | `event_id` |
+| --- | --- | --- |
+| PAN IIT Bangalore Summit 2026 | `blr-2026` | `b1a11111-0000-4000-8000-000000000001` |
+| PanIIT Andhra Pradesh Summit 2026 | `ap-2026` | `a9d40000-0000-4000-8000-000000000002` |
+
+`profiles` stays **global** — one identity per alum across both summits — with
+per-event membership in `event_participants`. Everything else that belongs to
+an event carries `event_id NOT NULL`.
+
+Scoping is enforced in the **app layer**: RLS on content tables is
+`USING (true)`, so every query here filters on `EVENT_ID` and every insert
+sets it. Adding a new query against a scoped table means adding the filter.
+
+**Sequencing — this matters.** The scoped columns default to the Bangalore
+event, purely so the deployed Bangalore app keeps writing valid rows while it
+is still event-unaware. But its *reads* are unfiltered, so the moment real AP
+content is seeded, the Bangalore app will start displaying it. Apply the same
+`event_id` filtering to the Bangalore repo **before** seeding AP data, then
+drop the column defaults.
 
 Built with Next.js 15 (App Router) + TypeScript + Tailwind + shadcn/ui + Supabase, shipped as an installable PWA.
 

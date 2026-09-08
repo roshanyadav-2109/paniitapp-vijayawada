@@ -1,5 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import { EVENT_ID } from "@/lib/event-config";
 
 interface AllowlistRow {
   email: string;
@@ -88,6 +89,20 @@ export async function syncProfileForUser(user: User): Promise<ProfileSyncResult>
     console.warn("[auth] profile sync failed for", email, err);
   }
 
+  // `profiles` is shared across summit editions, so the profile row alone does
+  // not put this person in *this* event's directory — the membership row does.
+  // Kept out of the try above so a membership failure cannot mask a successful
+  // profile sync.
+  try {
+    const { error } = await admin.from("event_participants").upsert(
+      { event_id: EVENT_ID, profile_id: user.id },
+      { onConflict: "event_id,profile_id" }
+    );
+    if (error) throw error;
+  } catch (err) {
+    console.warn("[auth] event membership upsert failed for", email, err);
+  }
+
   return { email, profileIncomplete };
 }
 
@@ -102,6 +117,7 @@ async function getAllowlistRow(
         "email, full_name, role, iit_campus, graduation_year, branch, company, designation, interests"
       )
       .ilike("email", email)
+      .eq("event_id", EVENT_ID)
       .maybeSingle();
     return (data as AllowlistRow | null) ?? null;
   } catch {

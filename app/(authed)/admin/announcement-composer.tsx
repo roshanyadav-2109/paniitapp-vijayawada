@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { EVENT_ID } from "@/lib/event-config";
 import { createClient } from "@/lib/supabase/client";
 
 const PRIORITIES = [
@@ -38,6 +39,7 @@ export function AnnouncementComposer() {
         body: body.trim() || null,
         priority,
         created_by: user.id,
+        event_id: EVENT_ID,
       });
       if (error) {
         toast({ title: "Could not send", description: error.message, variant: "destructive" });

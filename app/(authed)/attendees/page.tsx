@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { rethrowIfRedirect } from "@/lib/redirect";
 import { NetworkingClient, type AttendeeRow } from "./networking-client";
+import { EVENT_ID } from "@/lib/event-config";
 
 export const dynamic = "force-dynamic";
 
@@ -18,14 +19,18 @@ export default async function AttendeesPage() {
     const [{ data: people }, { data: roleRows }] = await Promise.all([
       supabase
         .from("profiles")
+        // profiles is global across summit editions — the inner join to
+        // event_participants is what limits the directory to this summit.
         .select(
-          "id, full_name, designation, company, role, iit_campus, graduation_year, interests, photo_url, linkedin_url, twitter_url, available_for_meetings, office_hours_enabled"
+          "id, full_name, designation, company, role, iit_campus, graduation_year, interests, photo_url, linkedin_url, twitter_url, available_for_meetings, office_hours_enabled, event_participants!inner(event_id)"
         )
+        .eq("event_participants.event_id", EVENT_ID)
         .order("full_name", { ascending: true, nullsFirst: false })
         .range(0, 49),
       supabase
         .from("profiles")
-        .select("role")
+        .select("role, event_participants!inner(event_id)")
+        .eq("event_participants.event_id", EVENT_ID)
         .not("role", "is", null)
         .order("role", { ascending: true }),
     ]);

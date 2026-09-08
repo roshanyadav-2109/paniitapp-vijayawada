@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
+import { EVENT_ID } from "@/lib/event-config";
 
 const Body = z.object({ meeting_id: z.string().uuid() });
 
@@ -50,6 +51,7 @@ export async function POST(req: Request) {
     const { error: availErr } = await admin
       .from("availability_slots")
       .update({ status: "available", meeting_id: null })
+      .eq("event_id", EVENT_ID)
       .eq("user_id", meeting.invitee_id)
       .eq("slot_start", accepted.start)
       .eq("status", "booked");

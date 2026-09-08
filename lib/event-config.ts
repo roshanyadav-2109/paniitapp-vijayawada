@@ -53,3 +53,16 @@ export const EVENT_FOCUS_AREAS =
  */
 export const EVENT_VIDEO_URL =
   "https://fncnndrexzmqqengbkvi.supabase.co/storage/v1/object/sign/Video%20Files/pan%20iit%20bangalore.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9mMjdkNTg1Yy0yZTIxLTQ1ZWUtOTYxNy1hMjIyYjIyZWZiZTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlbyBGaWxlcy9wYW4gaWl0IGJhbmdhbG9yZS5tcDQiLCJpYXQiOjE3Nzg4NjQxMzQsImV4cCI6NDkzMjQ2NDEzNH0.P3WIJiEyZOBiqf0hYJCiyit7i_S_lAT8ZHbl9NuEYVM";
+
+/**
+ * This edition's row in `public.events`.
+ *
+ * The Bangalore and AP summits share one Supabase project, so every query
+ * against an event-scoped table (sessions, venues, sponsors, exhibitors,
+ * announcements, meetings, availability, allowlist) must filter on this, and
+ * every insert must set it. See supabase/migrations/0013_event_scoping.sql.
+ *
+ * Overridable via env so a staging deploy can point at another edition.
+ */
+export const EVENT_ID =
+  process.env.NEXT_PUBLIC_EVENT_ID ?? "a9d40000-0000-4000-8000-000000000002";

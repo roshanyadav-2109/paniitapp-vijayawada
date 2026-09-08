@@ -3,6 +3,7 @@ import { Download, FileText } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { initials } from "@/lib/utils";
+import { EVENT_ID } from "@/lib/event-config";
 
 interface MiniProfile {
   id: string;
@@ -55,6 +56,7 @@ export default async function RecapPage() {
         .from("meetings")
         .select("id", { count: "exact", head: true })
         .eq("status", "accepted")
+        .eq("event_id", EVENT_ID)
         .or(`requester_id.eq.${user.id},invitee_id.eq.${user.id}`),
     ]);
 

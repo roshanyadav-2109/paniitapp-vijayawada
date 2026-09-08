@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/features/empty-state";
 import { initials } from "@/lib/utils";
+import { EVENT_ID } from "@/lib/event-config";
 
 interface Row {
   id: string;
@@ -23,7 +24,10 @@ export default async function OfficeHoursPage() {
     const supabase = await createClient();
     const { data } = await supabase
       .from("profiles")
-      .select("id, full_name, designation, company, photo_url, role, iit_campus")
+      .select(
+        "id, full_name, designation, company, photo_url, role, iit_campus, event_participants!inner(event_id)"
+      )
+      .eq("event_participants.event_id", EVENT_ID)
       .eq("office_hours_enabled", true)
       .in("role", ["vc", "alumni"])
       .order("full_name", { ascending: true, nullsFirst: false });

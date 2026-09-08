@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { EVENT_ID } from "@/lib/event-config";
 
 const Body = z.object({
   meeting_id: z.string().uuid(),
@@ -68,6 +69,7 @@ export async function POST(req: Request) {
   const { data: availability, error: availErr } = await supabase
     .from("availability_slots")
     .select("slot_start, slot_end, status")
+    .eq("event_id", EVENT_ID)
     .eq("user_id", user.id)
     .eq("slot_start", slot.start)
     .eq("status", "available")
@@ -81,6 +83,7 @@ export async function POST(req: Request) {
   const { data: acceptedMeetings, error: acceptedErr } = await supabase
     .from("meetings")
     .select("id, accepted_slot")
+    .eq("event_id", EVENT_ID)
     .or(
       `requester_id.eq.${meeting.requester_id},invitee_id.eq.${meeting.requester_id},requester_id.eq.${meeting.invitee_id},invitee_id.eq.${meeting.invitee_id}`
     )
@@ -163,6 +166,7 @@ async function markAvailabilityBooked(
   await supabase
     .from("availability_slots")
     .update({ status: "booked", meeting_id: meetingId })
+    .eq("event_id", EVENT_ID)
     .eq("user_id", userId)
     .eq("slot_start", slotStart);
 }

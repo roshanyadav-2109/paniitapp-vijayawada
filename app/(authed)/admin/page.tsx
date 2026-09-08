@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Shield } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { AnnouncementComposer } from "./announcement-composer";
+import { EVENT_ID } from "@/lib/event-config";
 
 interface Stat {
   label: string;
@@ -35,18 +36,28 @@ export default async function AdminPage() {
     if (!allowed) return <Forbidden message="Admins only." />;
 
     const [{ count: registered }, { count: checkedIn }, { count: meetingsCount }, { count: acceptedCount }, ts, tq] = await Promise.all([
-      supabase.from("profiles").select("id", { count: "exact", head: true }),
+      // "Registered" counts this summit's participants, not every profile in
+      // the shared project.
+      supabase
+        .from("event_participants")
+        .select("profile_id", { count: "exact", head: true })
+        .eq("event_id", EVENT_ID),
       supabase
         .from("session_checkins")
         .select("user_id", { count: "exact", head: true }),
-      supabase.from("meetings").select("id", { count: "exact", head: true }),
       supabase
         .from("meetings")
         .select("id", { count: "exact", head: true })
+        .eq("event_id", EVENT_ID),
+      supabase
+        .from("meetings")
+        .select("id", { count: "exact", head: true })
+        .eq("event_id", EVENT_ID)
         .eq("status", "accepted"),
       supabase
         .from("sessions")
         .select("id, title, current_checkins")
+        .eq("event_id", EVENT_ID)
         .order("current_checkins", { ascending: false, nullsFirst: false })
         .limit(5),
       supabase

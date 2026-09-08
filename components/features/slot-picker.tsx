@@ -11,6 +11,7 @@ import {
   type SlotConflict,
 } from "@/lib/slots";
 import { cn } from "@/lib/utils";
+import { EVENT_ID } from "@/lib/event-config";
 
 interface ConflictWindow {
   start: string;
@@ -59,11 +60,13 @@ export function SlotPicker({
         supabase
           .from("meetings")
           .select("accepted_slot, status, requester_id, invitee_id")
+          .eq("event_id", EVENT_ID)
           .or(`requester_id.eq.${user.id},invitee_id.eq.${user.id}`)
           .eq("status", "accepted"),
         supabase
           .from("sessions")
           .select("start_at, end_at")
+          .eq("event_id", EVENT_ID)
           .eq("is_featured", true),
       ]);
 
@@ -93,10 +96,12 @@ export function SlotPicker({
         supabase
           .from("availability_slots")
           .select("slot_start, status")
+          .eq("event_id", EVENT_ID)
           .eq("user_id", inviteeId),
         supabase
           .from("meetings")
           .select("accepted_slot")
+          .eq("event_id", EVENT_ID)
           .or(`requester_id.eq.${inviteeId},invitee_id.eq.${inviteeId}`)
           .eq("status", "accepted"),
       ]);

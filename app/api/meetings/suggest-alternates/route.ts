@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { buildDaySlots, classifySlot } from "@/lib/slots";
+import { EVENT_ID } from "@/lib/event-config";
 
 const Body = z.object({ meeting_id: z.string().uuid() });
 
@@ -22,6 +23,11 @@ export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "invalid_input" }, { status: 400 });
 
+  // NOTE (pre-existing): these argument names do not match the SQL function,
+  // whose signature is (p_user_a, p_user_b, p_duration_min, p_event_id). This
+  // call has always errored, so the JS fallback below is what actually runs.
+  // Left as-is deliberately — fixing it changes which code path serves this
+  // route and needs a decision on which counterparty to pass as p_user_b.
   const { data, error } = await supabase.rpc("suggest_alternative_slots", {
     p_user_id: user.id,
     p_count: 3,
@@ -38,6 +44,7 @@ export async function POST(req: Request) {
     supabase
       .from("meetings")
       .select("accepted_slot")
+      .eq("event_id", EVENT_ID)
       .or(`requester_id.eq.${user.id},invitee_id.eq.${user.id}`)
       .eq("status", "accepted"),
   ]);

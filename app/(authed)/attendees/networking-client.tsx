@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search, SlidersHorizontal, Loader2, X } from "lucide-react";
 import { LinkedInIcon, XIcon } from "@/components/features/social-icons";
 import { createClient } from "@/lib/supabase/client";
+import { EVENT_ID } from "@/lib/event-config";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Sheet,
@@ -129,10 +130,13 @@ export function NetworkingClient({
       // been paginated into view.
       let q = supabase
         .from("profiles")
+        // Inner join scopes the directory to this summit's participants;
+        // profiles itself is shared with the other edition.
         .select(
-          "id, full_name, designation, company, role, iit_campus, graduation_year, interests, photo_url, linkedin_url, twitter_url, available_for_meetings, office_hours_enabled",
+          "id, full_name, designation, company, role, iit_campus, graduation_year, interests, photo_url, linkedin_url, twitter_url, available_for_meetings, office_hours_enabled, event_participants!inner(event_id)",
           { count: "exact" }
         )
+        .eq("event_participants.event_id", EVENT_ID)
         .order("full_name", { ascending: true, nullsFirst: false })
         .range(offset, offset + PAGE_SIZE - 1);
 

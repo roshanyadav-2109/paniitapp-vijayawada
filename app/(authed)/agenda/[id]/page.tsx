@@ -4,6 +4,7 @@ import { Clock, MapPin } from "lucide-react";
 import { LinkedInIcon, XIcon } from "@/components/features/social-icons";
 import { createClient } from "@/lib/supabase/server";
 import { rethrowIfRedirect } from "@/lib/redirect";
+import { EVENT_ID } from "@/lib/event-config";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -102,6 +103,7 @@ export default async function SessionDetailPage({
         "id, title, description, track, start_at, end_at, is_featured, capacity, current_checkins, venues(name, floor), interests"
       )
       .eq("id", id)
+      .eq("event_id", EVENT_ID)
       .maybeSingle();
     let raw: unknown = withInterests.data;
     if (withInterests.error) {
@@ -111,6 +113,7 @@ export default async function SessionDetailPage({
           "id, title, description, track, start_at, end_at, is_featured, capacity, current_checkins, venues(name, floor)"
         )
         .eq("id", id)
+        .eq("event_id", EVENT_ID)
         .maybeSingle();
       raw = fallback.data;
     }

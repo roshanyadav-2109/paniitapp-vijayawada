@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { rethrowIfRedirect } from "@/lib/redirect";
+import { EVENT_ID } from "@/lib/event-config";
 import { MeetingsView, type MeetingRow } from "./meetings-tabs";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,7 @@ export default async function MeetingsPage() {
         .select(
           "id, requester_id, invitee_id, message, location, proposed_slots, accepted_slot, status, proposed_outside_availability, created_at, requester:requester_id(id, full_name, photo_url, designation, company), invitee:invitee_id(id, full_name, photo_url, designation, company)"
         )
+        .eq("event_id", EVENT_ID)
         .or(`requester_id.eq.${user.id},invitee_id.eq.${user.id}`)
         .order("created_at", { ascending: false });
       meetings = (rows as unknown as MeetingRow[] | null) ?? [];

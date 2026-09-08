@@ -25,6 +25,7 @@ import {
 } from "@/lib/slots";
 import { createClient } from "@/lib/supabase/client";
 import { cn, initials } from "@/lib/utils";
+import { EVENT_ID } from "@/lib/event-config";
 import { SlotPicker } from "@/components/features/slot-picker";
 
 interface MiniProfile {
@@ -832,6 +833,7 @@ function AvailabilitySheet({
     const { data, error } = await supabase
       .from("availability_slots")
       .select("slot_start, slot_end, status")
+      .eq("event_id", EVENT_ID)
       .eq("user_id", userId);
     if (error) {
       toast({

@@ -3,7 +3,7 @@ import Image from "next/image";
 import { Building } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/features/empty-state";
-import { EVENT_NAME } from "@/lib/event-config";
+import { EVENT_ID, EVENT_NAME } from "@/lib/event-config";
 
 interface SponsorRow {
   id: string;
@@ -52,7 +52,8 @@ export default async function SponsorsPage() {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("sponsors")
-      .select("id, name, tier, description, offer_title, offer_description, booth_number, logo_url");
+      .select("id, name, tier, description, offer_title, offer_description, booth_number, logo_url")
+      .eq("event_id", EVENT_ID);
     if (error) errored = true;
     sponsors = (data as SponsorRow[] | null) ?? [];
   } catch {

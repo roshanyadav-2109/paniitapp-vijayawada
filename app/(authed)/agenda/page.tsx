@@ -15,7 +15,7 @@ import {
 import { AgendaFilters } from "./agenda-filters";
 import { AgendaRealtime } from "@/components/features/agenda-realtime";
 import { SUMMIT_TZ } from "@/lib/constants";
-import { EVENT_DATE_TEXT, EVENT_VENUE } from "@/lib/event-config";
+import { EVENT_DATE_TEXT, EVENT_ID, EVENT_VENUE } from "@/lib/event-config";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -60,6 +60,7 @@ export default async function AgendaPage({
       .select(
         "id, title, description, track, venue_id, start_at, end_at, is_featured, capacity, current_checkins, venues(id, name, floor), interests"
       )
+      .eq("event_id", EVENT_ID)
       .order("start_at", { ascending: true });
     if (withInterests.error) {
       // sessions.interests may not exist if migration 0007 hasn't run yet.
@@ -68,7 +69,8 @@ export default async function AgendaPage({
         .select(
           "id, title, description, track, venue_id, start_at, end_at, is_featured, capacity, current_checkins, venues(id, name, floor)"
         )
-        .order("start_at", { ascending: true });
+        .eq("event_id", EVENT_ID)
+      .order("start_at", { ascending: true });
       if (fallback.error) errored = true;
       sessions = (fallback.data as unknown as SessionCardData[] | null) ?? [];
     } else {

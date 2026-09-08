@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
+import { EVENT_ID } from "@/lib/event-config";
 
 const EmailSchema = z
   .string()
@@ -39,6 +40,7 @@ export async function signIn(_prev: unknown, formData: FormData): Promise<SignIn
     .from("attendee_allowlist")
     .select("email")
     .ilike("email", email)
+    .eq("event_id", EVENT_ID)
     .maybeSingle();
   if (!allowed) return { error: "not_registered" };
 
@@ -69,6 +71,7 @@ export async function signIn(_prev: unknown, formData: FormData): Promise<SignIn
       "email, full_name, role, iit_campus, graduation_year, branch, company, designation, interests"
     )
     .ilike("email", email)
+    .eq("event_id", EVENT_ID)
     .maybeSingle();
   const { data: existing } = await admin
     .from("profiles")
@@ -95,6 +98,13 @@ export async function signIn(_prev: unknown, formData: FormData): Promise<SignIn
       interests: existing?.interests ?? allowRow?.interests ?? null,
     },
     { onConflict: "id" }
+  );
+
+  // profiles is shared across summit editions; membership in this one is what
+  // puts the attendee in this event's directory.
+  await admin.from("event_participants").upsert(
+    { event_id: EVENT_ID, profile_id: verified.user.id },
+    { onConflict: "event_id,profile_id" }
   );
 
   redirect("/home");

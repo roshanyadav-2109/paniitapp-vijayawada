@@ -2,7 +2,7 @@ import { MapPin } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { FloorMap, type VenueRow, type SessionAtVenue } from "./floor-map";
-import { EVENT_VENUE } from "@/lib/event-config";
+import { EVENT_ID, EVENT_VENUE } from "@/lib/event-config";
 
 export const dynamic = "force-dynamic";
 
@@ -17,11 +17,13 @@ export default async function MapPage() {
       supabase
         .from("venues")
         .select("id, name, floor, map_floor, map_x, map_y, capacity")
+        .eq("event_id", EVENT_ID)
         .order("map_floor", { ascending: true, nullsFirst: true })
         .order("name", { ascending: true }),
       supabase
         .from("sessions")
         .select("id, title, start_at, end_at, venue_id, track")
+        .eq("event_id", EVENT_ID)
         .order("start_at", { ascending: true }),
     ]);
     venues = (v.data as VenueRow[] | null) ?? [];
