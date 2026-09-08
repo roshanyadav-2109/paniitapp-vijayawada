@@ -102,18 +102,15 @@ export const EVENT_HERO_SLIDES: {
     alt: "PanIIT Andhra Pradesh Summit 2026 — 3 October 2026, Dr. B. R. Ambedkar Kala Vedika, Vijayawada. Registration open.",
   },
   {
-    // Portrait source, cut to a 16:9 band around the face so it sits in the
-    // banner without letterboxing.
+    // Poster composition: subject cut out with a segmentation model, placed on
+    // the brand ground with the name set beside them. Text is part of the
+    // artwork, so these slides carry no overlay caption.
     src: "https://fncnndrexzmqqengbkvi.supabase.co/storage/v1/object/public/speakers/ap-2026/hero-swadeep.webp",
     alt: "Swadeep Pillarisetti, Co-Chair of the PanIIT Andhra Pradesh Summit 2026",
-    name: "Swadeep Pillarisetti",
-    role: "Co-Chair · Summit",
   },
   {
     src: "https://fncnndrexzmqqengbkvi.supabase.co/storage/v1/object/public/speakers/ap-2026/hero-cm.webp",
     alt: "Sri Nara Chandra Babu Naidu, Hon'ble Chief Minister of Andhra Pradesh",
-    name: "Sri Nara Chandra Babu Naidu",
-    role: "Hon'ble Chief Minister of Andhra Pradesh",
   },
   {
     src: "https://afilemanager.s3.dualstack.ap-southeast-1.amazonaws.com/prod/cid_359/pan_image_1_1_50.png",
