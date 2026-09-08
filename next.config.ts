@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "upload.wikimedia.org" },
       { protocol: "https", hostname: "thumb.wikimedia.org" },
       { protocol: "https", hostname: "www.deccanchronicle.com" },
+      { protocol: "https", hostname: "wsai.iitm.ac.in" },
+      { protocol: "https", hostname: "cee.iittp.ac.in" },
+      { protocol: "https", hostname: "media.assettype.com" },
+      { protocol: "https", hostname: "images.stocklens.co.in" },
     ],
   },
   async headers() {

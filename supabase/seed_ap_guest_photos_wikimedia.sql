@@ -75,3 +75,117 @@ update public.key_participants
    and full_name = 'Sri Nara Lokesh';
 
 commit;
+
+-- ---------------------------------------------------------------------------
+-- Follow-up: Prof. Balaram Ravindran portrait, supplied by the organisers.
+--
+--   https://wsai.iitm.ac.in/~ravi/img/1C2A3688%20Large.jpeg
+--   Source: his own IIT Madras (WSAI) faculty page — authoritative for
+--   identity. A studio portrait on a plain background, 1270x1280, so it lands
+--   in the card's square photo area with essentially no crop.
+--
+-- wsai.iitm.ac.in allowed in next.config.ts. No explicit licence is stated on
+-- the page; it is the subject's own institutional page, which is the usual
+-- source for a speaker headshot, but confirm with him if this ships publicly.
+-- ---------------------------------------------------------------------------
+
+begin;
+
+update public.key_participants
+   set photo_url = 'https://wsai.iitm.ac.in/~ravi/img/1C2A3688%20Large.jpeg'
+ where event_id = 'a9d40000-0000-4000-8000-000000000002'
+   and full_name = 'Prof. Balaram Ravindran';
+
+commit;
+
+-- ---------------------------------------------------------------------------
+-- Follow-up: three more portraits supplied by the organisers.
+--
+-- Two of the three source URLs carry expiring tokens, so those are re-hosted
+-- to the speakers bucket rather than hotlinked. The source is recorded here.
+--
+--   Prof. Balaram Ravindran — HOTLINKED
+--     https://wsai.iitm.ac.in/~ravi/img/1C2A3688%20Large.jpeg
+--     His own IIT Madras (WSAI) faculty page. Clean URL, no token. Studio
+--     portrait, 1270x1280, lands in the square photo area with no crop.
+--
+--   Sri S. Krishnan — RE-HOSTED
+--     from https://www.semiconindia.org/.../Mr.%20S%20Krishnan%20Secretary%20MeitY.jpg.webp?h=...&itok=...
+--     The itok is a Drupal image-derivative token and changes if the site's
+--     hash salt is rotated, which would silently break the card. 285x285
+--     source, so it is slightly soft on high-DPI screens.
+--
+--   Sri Amit Singhee — RE-HOSTED
+--     from https://media.licdn.com/dms/image/v2/D5603AQFRudoa50w7Bg/...?e=1790208000&...
+--     The LinkedIn CDN signs URLs with an expiry: e=1790208000 is
+--     2026-09-24. Hotlinking it would have broken the card 16 days after it
+--     was added, and well before the summit on 3 October.
+--
+-- Rights: none of these three carry an explicit reuse licence. They are
+-- institutional/press/profile photos of the named person, which is the usual
+-- source for a speaker headshot — worth confirming before public launch.
+-- ---------------------------------------------------------------------------
+
+begin;
+
+update public.key_participants
+   set photo_url = 'https://wsai.iitm.ac.in/~ravi/img/1C2A3688%20Large.jpeg'
+ where event_id = 'a9d40000-0000-4000-8000-000000000002'
+   and full_name = 'Prof. Balaram Ravindran';
+
+update public.key_participants
+   set photo_url = 'https://fncnndrexzmqqengbkvi.supabase.co/storage/v1/object/public/speakers/ap-2026/krishnan.webp'
+ where event_id = 'a9d40000-0000-4000-8000-000000000002'
+   and full_name = 'Sri S. Krishnan';
+
+update public.key_participants
+   set photo_url = 'https://fncnndrexzmqqengbkvi.supabase.co/storage/v1/object/public/speakers/ap-2026/singhee.webp'
+ where event_id = 'a9d40000-0000-4000-8000-000000000002'
+   and full_name = 'Sri Amit Singhee';
+
+commit;
+
+-- Dr. Sunil Kumar Barnwal — RE-HOSTED
+--   from https://pbs.twimg.com/profile_images/1988140859318300676/v1DZbdC3_400x400.jpg
+--   Twitter/X profile image. The id in the path changes when the account
+--   updates its photo, so this is re-hosted rather than hotlinked. 400x400
+--   source, so slightly soft at 2x.
+update public.key_participants
+   set photo_url = 'https://fncnndrexzmqqengbkvi.supabase.co/storage/v1/object/public/speakers/ap-2026/barnwal.webp'
+ where event_id = 'a9d40000-0000-4000-8000-000000000002'
+   and full_name = 'Dr. Sunil Kumar Barnwal';
+
+-- Prof. K N Satyamnarayana — HOTLINKED
+--   https://cee.iittp.ac.in/images/civil/faculty/director.jpg
+--   IIT Tirupati's own site, filed under faculty/director — he is the
+--   Director, so the source is authoritative for identity. Clean URL, no
+--   token. 3114x3050, so plenty of resolution; next/image downsizes it.
+update public.key_participants
+   set photo_url = 'https://cee.iittp.ac.in/images/civil/faculty/director.jpg'
+ where event_id = 'a9d40000-0000-4000-8000-000000000002'
+   and full_name = 'Prof. K N Satyamnarayana';
+
+-- Sri C Sridhar — HOTLINKED
+--   https://media.assettype.com/businessindia%2F2026-05-07%2Fs2pyt2dz%2FFocus-2.jpeg
+--   Business India press portrait on the Assettype CDN. Clean URL, no token.
+--   Matches the brochure headshot (same shirt and jacket), which confirms
+--   identity. 1020x1249 portrait; object-top keeps the head in the square.
+update public.key_participants
+   set photo_url = 'https://media.assettype.com/businessindia%2F2026-05-07%2Fs2pyt2dz%2FFocus-2.jpeg'
+ where event_id = 'a9d40000-0000-4000-8000-000000000002'
+   and full_name = 'Sri C Sridhar';
+
+-- Dr. Vidhya Sagar — HOTLINKED
+--   https://images.stocklens.co.in/ceo-images/774_Dr._Abburi_Vidyasagar.jpg
+--   400x400, clean URL, no token. The filename names him outright
+--   (Dr. Abburi Vidyasagar, CMD of Avantel), and the portrait matches the
+--   brochure headshot — same balding pattern, face and light blue shirt.
+--
+--   A ceoinsightsindia.com URL was tried first and applied on request, then
+--   replaced: at 227x227 it was below the card's render size, and side by side
+--   with the brochure and this image it appears to be a DIFFERENT person —
+--   markedly different hair and face shape.
+update public.key_participants
+   set photo_url = 'https://images.stocklens.co.in/ceo-images/774_Dr._Abburi_Vidyasagar.jpg'
+ where event_id = 'a9d40000-0000-4000-8000-000000000002'
+   and full_name = 'Dr. Vidhya Sagar';
