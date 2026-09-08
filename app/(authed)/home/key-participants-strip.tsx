@@ -83,6 +83,7 @@ export function KeyParticipantsStrip({ people }: { people: Person[] }) {
             animate={list.length > 1}
             paused={paused}
           />
+          <PhotoPreloader list={list} idx={idx} />
         </div>
         <button
           type="button"
@@ -108,6 +109,43 @@ export function KeyParticipantsStrip({ people }: { people: Person[] }) {
           />
         ))}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Warms the browser cache for the cards coming next.
+ *
+ * The visible card remounts on every rotation — its key changes so the slide
+ * animation restarts — which tears down the <Image> with it. Without this,
+ * each photo is fetched the first time it rotates in and the card flashes
+ * white while it loads.
+ *
+ * It has to be laid out at the real card width rather than hidden at 1px:
+ * next/image picks a srcset entry from the element's layout width, so a
+ * collapsed preloader would fetch a small variant and warm the wrong URL.
+ * Hence opacity-0 behind the card rather than display:none, which would also
+ * stop the fetch entirely.
+ */
+function PhotoPreloader({ list, idx }: { list: Person[]; idx: number }) {
+  if (list.length < 2) return null;
+  const upcoming = [1, 2]
+    .map((offset) => list[(idx + offset) % list.length])
+    .filter((p): p is Person => !!p?.photo_url);
+
+  return (
+    <div className="pointer-events-none absolute inset-0 -z-10 opacity-0" aria-hidden>
+      {upcoming.map((p) => (
+        <div key={p.id} className="absolute inset-0">
+          <Image
+            src={p.photo_url as string}
+            alt=""
+            fill
+            className="object-cover object-top"
+            sizes="(min-width: 768px) 280px, 70vw"
+          />
+        </div>
+      ))}
     </div>
   );
 }

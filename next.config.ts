@@ -4,6 +4,11 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.resolve(__dirname),
   images: {
+    // Speaker portraits and sponsor logos essentially never change, so let
+    // the shared optimiser cache hold them for a month instead of the
+    // 60s default. Without this every rotation of the guest carousel can
+    // re-hit the optimiser, which is what made cards flash white.
+    minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [
       { protocol: "https", hostname: "fncnndrexzmqqengbkvi.supabase.co" },
       { protocol: "https", hostname: "*.supabase.co" },
