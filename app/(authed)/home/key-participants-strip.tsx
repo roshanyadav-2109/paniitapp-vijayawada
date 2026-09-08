@@ -139,12 +139,14 @@ function ParticipantCard({
           : undefined
       }
     >
-      {/* The arc starts at 75% of a 3/4 card, so the area above it is exactly
-          square (0.75 x 4/3 x width = width). Constraining the photo to that
-          square means the square source images land 1:1 with no crop at all,
-          and no face can end up hidden behind the arc. Filling the whole card
-          instead scaled every photo up by a third and pushed chins under it. */}
-      <div className="absolute inset-x-0 top-0 aspect-square w-full overflow-hidden bg-brand-50/40">
+      {/* The photo runs on behind the arc rather than stopping at its apex.
+          The arc is an ellipse: its top is at 75% in the centre but dips to
+          about 79% at the card edges, so cutting the photo at 75% left white
+          wedges either side of it. 82% covers those and tucks the surplus
+          behind the arc. At 82% of a 3/4 card the photo box is ~0.94:1, so a
+          square source loses only a few percent off the sides — nothing like
+          the third it was being scaled up by when it filled the whole card. */}
+      <div className="absolute inset-x-0 top-0 h-[82%] w-full overflow-hidden bg-brand-50/40">
         {person.photo_url ? (
           <Image
             src={person.photo_url}
