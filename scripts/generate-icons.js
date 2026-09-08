@@ -17,7 +17,12 @@ const path = require("node:path");
 const sharp = require("sharp");
 
 const OUT_DIR = path.join(__dirname, "..", "public", "icons");
+const APP_DIR = path.join(__dirname, "..", "app");
 const MARK = path.join(__dirname, "..", "public", "logo", "paniit-ap-mark.png");
+// Browser tab / home-screen favicon uses the PAN IIT alumni mark. The summit
+// hexagon carries three lines of type and turns to mush at 16-32px, whereas
+// the boxed "iit" reads at any size.
+const FAVICON_MARK = path.join(__dirname, "..", "public", "logo", "paniit-mark.png");
 const BRAND = "#1B1464";
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -75,11 +80,50 @@ async function emit(size, name, maskable = false) {
   console.log(`  wrote ${name}`);
 }
 
+// Next.js file-convention favicons (app/icon.png, app/apple-icon.png). These
+// are what the browser tab actually uses, so they take the PAN IIT mark. The
+// mark already carries its own navy box, so it needs no extra border — just a
+// white tile behind it, and less padding than the summit hexagon.
+async function emitFavicon(size, dir, name) {
+  const inner = Math.round(size * 0.82);
+  const mark = await sharp(FAVICON_MARK)
+    .resize(inner, inner, { fit: "inside", withoutEnlargement: false })
+    .toBuffer();
+
+  const radius = Math.round(size * 0.16);
+  const tile = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+       <rect width="${size}" height="${size}" rx="${radius}" ry="${radius}" fill="#ffffff"/>
+     </svg>`
+  );
+
+  const out = path.join(dir, name);
+  await sharp({
+    create: {
+      width: size,
+      height: size,
+      channels: 4,
+      background: { r: 255, g: 255, b: 255, alpha: 0 },
+    },
+  })
+    .composite([
+      { input: tile },
+      { input: mark, gravity: "center" },
+      { input: tile, blend: "dest-in" },
+    ])
+    .png()
+    .toFile(out);
+  console.log(`  wrote ${path.relative(path.join(__dirname, ".."), out)}`);
+}
+
 (async () => {
   console.log("Generating PWA icons →", OUT_DIR);
   await emit(192, "icon-192.png");
   await emit(512, "icon-512.png");
   await emit(512, "icon-maskable-512.png", true);
+  console.log("Generating favicons →", APP_DIR);
+  await emitFavicon(256, APP_DIR, "icon.png");
+  await emitFavicon(180, APP_DIR, "apple-icon.png");
   console.log("Done.");
 })().catch((err) => {
   console.error(err);

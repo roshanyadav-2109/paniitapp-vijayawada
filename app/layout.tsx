@@ -31,10 +31,11 @@ export const metadata: Metadata = {
     title: EVENT_APP_NAME,
   },
   formatDetection: { telephone: false },
-  icons: {
-    icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
-    apple: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
-  },
+  // No `icons` block on purpose: an explicit one overrides Next's file
+  // convention, and these previously pointed at the PWA tile. app/icon.png and
+  // app/apple-icon.png (the PAN IIT mark) are picked up automatically and are
+  // what the browser tab should show. The summit hexagon stays the installed
+  // app icon via manifest.json.
 };
 
 export const viewport: Viewport = {
