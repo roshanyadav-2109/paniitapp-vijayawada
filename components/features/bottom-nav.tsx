@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Mic, Store, CalendarClock } from "@/components/icons";
+import { Mic, Store, CalendarClock, Reply } from "@/components/icons";
 import { NetworkNodes, PremiumHouse } from "./nav-icons";
 import { cn } from "@/lib/utils";
 
 const TABS = [
   { href: "/home", label: "Home", icon: PremiumHouse },
   { href: "/agenda", label: "Agenda", icon: Mic },
-  { href: "/attendees", label: "Networking", icon: NetworkNodes },
-  { href: "/exhibitors", label: "Exhibitors", icon: Store },
+  { href: "/attendees", label: "Network", icon: NetworkNodes },
+  { href: "/discuss", label: "Discuss", icon: Reply },
+  { href: "/exhibitors", label: "Expo", icon: Store },
   { href: "/meetings", label: "Meetings", icon: CalendarClock },
 ] as const;
 
