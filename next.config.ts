@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "*.supabase.co" },
       { protocol: "https", hostname: "afilemanager.s3.dualstack.ap-southeast-1.amazonaws.com" },
       { protocol: "https", hostname: "res.cloudinary.com" },
+      // Wikimedia Commons — freely licensed portraits for public figures on
+      // the guest list. See supabase/seed_ap_key_participant_photos.sql for
+      // the per-image licence and attribution.
+      { protocol: "https", hostname: "upload.wikimedia.org" },
+      { protocol: "https", hostname: "thumb.wikimedia.org" },
     ],
   },
   async headers() {
