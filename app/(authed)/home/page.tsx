@@ -24,6 +24,7 @@ import {
 import { HeroCarousel } from "./hero-carousel";
 import { SponsorsBoard, type SponsorTier } from "./sponsors-marquee";
 import { QuickActions } from "./quick-actions";
+import { KeyParticipantsStrip } from "./key-participants-strip";
 
 const LOGO_BUCKET = "LOGOS";
 // Folder name in storage = visible tier heading. Order = display order.
@@ -57,10 +58,19 @@ const SOCIALS: { href: string; label: string; icon: React.ReactNode }[] = [
   { href: "https://www.facebook.com/paniitalumni/", label: "Facebook", icon: <FacebookLogo /> },
 ];
 
+interface KeyPerson {
+  id: string;
+  full_name: string;
+  designation: string | null;
+  company: string | null;
+  photo_url: string | null;
+}
+
 export default async function HomePage() {
   let calendar: CalendarItem[] = [];
   let sponsorTiers: SponsorTier[] = [];
   let role: string | null = null;
+  let keyPeople: KeyPerson[] = [];
 
   try {
     const supabase = await createClient();
@@ -76,6 +86,15 @@ export default async function HomePage() {
         .maybeSingle();
       role = (me?.role as string | null) ?? null;
     }
+
+    const { data: kp } = await supabase
+      .from("key_participants")
+      .select("id, full_name, designation, company, photo_url")
+      .eq("event_id", EVENT_ID)
+      .eq("is_published", true)
+      .order("display_order", { ascending: true, nullsFirst: false })
+      .order("full_name", { ascending: true });
+    keyPeople = (kp as KeyPerson[] | null) ?? [];
 
     const sponsorListings = await Promise.all(
       SPONSOR_TIER_FOLDERS.map((folder) =>
@@ -233,6 +252,23 @@ export default async function HomePage() {
           </a>
         </div>
       </section>
+
+      {/* Key guests & speakers */}
+      {keyPeople.length > 0 ? (
+        <section>
+          <div className="px-4 sm:px-6 lg:px-8">
+            <h2 className="text-base font-semibold tracking-tight text-brand-950">
+              Key guests &amp; speakers
+            </h2>
+            <p className="mt-0.5 text-[12px] leading-5 text-brand-900/70">
+              {keyPeople.length} confirmed so far
+            </p>
+          </div>
+          <div className="mt-3">
+            <KeyParticipantsStrip people={keyPeople} />
+          </div>
+        </section>
+      ) : null}
 
       {/* Quick actions — 2 per row, icon + label horizontal, no icon backdrop */}
       <section className="px-4 sm:px-6 lg:px-8">
