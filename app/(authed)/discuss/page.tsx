@@ -10,7 +10,7 @@ const PAGE_SIZE = 50;
 export default async function DiscussPage() {
   let posts: PostRow[] = [];
   let likedIds: string[] = [];
-  let myVotes: Record<string, string> = {};
+  const myVotes: Record<string, string> = {};
   let userId: string | null = null;
   let errored = false;
 

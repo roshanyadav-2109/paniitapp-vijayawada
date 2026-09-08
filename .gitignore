@@ -35,7 +35,8 @@ yarn-error.log*
 !.env.local.example
 
 # vercel
-.vercel
+.vercel/*
+!.vercel/project.json
 
 # typescript
 *.tsbuildinfo
@@ -45,3 +46,4 @@ next-env.d.ts
 .playwright-mcp/
 paniit-nav-inspect*.json
 paniit-org-*.png
+
