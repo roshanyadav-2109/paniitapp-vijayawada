@@ -1,4 +1,9 @@
 import type { Config } from "tailwindcss";
+// Imported rather than require()d: this file is ESM (import/export default),
+// and on Node >=22 it is loaded as ESM, where `require` is not defined. The
+// old `require("tailwindcss-animate")` threw during config load, which left
+// Tailwind with no config and the app with no CSS at all in `next dev`.
+import tailwindcssAnimate from "tailwindcss-animate";
 
 const config: Config = {
   darkMode: ["class"],
@@ -140,7 +145,7 @@ const config: Config = {
   		}
   	}
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 };
 
 export default config;
