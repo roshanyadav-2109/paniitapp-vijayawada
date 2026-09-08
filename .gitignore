@@ -46,4 +46,3 @@ next-env.d.ts
 .playwright-mcp/
 paniit-nav-inspect*.json
 paniit-org-*.png
-
