@@ -156,7 +156,7 @@ function Field({
         defaultValue={defaultValue}
         required={required}
         placeholder={placeholder}
-        className="h-10 w-full rounded-md border border-brand-100 bg-white px-3 text-sm text-brand-950 outline-none placeholder:text-brand-800/45 focus:border-brand-800 focus:ring-2 focus:ring-brand-100"
+        className="h-10 w-full rounded-md border border-rule bg-white px-3 text-sm text-brand-950 outline-none placeholder:text-brand-800/45 focus:border-brand-800 focus:ring-2 focus:ring-rule"
       />
     </label>
   );
@@ -182,7 +182,7 @@ function TextField({
         name={name}
         defaultValue={defaultValue}
         rows={rows}
-        className="w-full rounded-md border border-brand-100 bg-white px-3 py-2 text-sm leading-6 text-brand-950 outline-none placeholder:text-brand-800/45 focus:border-brand-800 focus:ring-2 focus:ring-brand-100"
+        className="w-full rounded-md border border-rule bg-white px-3 py-2 text-sm leading-6 text-brand-950 outline-none placeholder:text-brand-800/45 focus:border-brand-800 focus:ring-2 focus:ring-rule"
       />
       {helper ? <span className="mt-1 block text-[11px] text-brand-800/70">{helper}</span> : null}
     </label>

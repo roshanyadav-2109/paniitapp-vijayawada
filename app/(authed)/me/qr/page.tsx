@@ -28,10 +28,10 @@ export default async function QrPage() {
   return (
     <div className="mx-auto w-full max-w-3xl pt-5 pb-10 lg:pt-8 space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-brand-900">
+        <h1 className="font-display text-2xl font-semibold text-brand-900">
           My QR badge
         </h1>
-        <p className="mt-1 text-sm leading-6 text-slate-600">
+        <p className="mt-1 text-sm leading-6 text-brand-900/70">
           Show this to swap contacts with another attendee, or scan theirs.
         </p>
       </div>
@@ -40,19 +40,19 @@ export default async function QrPage() {
         {token ? (
           <>
             <MyQr token={token} />
-            <p className="text-xs font-medium text-slate-500">
+            <p className="text-xs font-medium text-brand-900/60">
               {fullName ?? "Your badge"}
             </p>
           </>
         ) : (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-brand-900/60">
             Your badge token isn't set yet. Contact the organizers if this persists.
           </p>
         )}
       </div>
 
-      <div className="border-t border-slate-200 pt-6">
-        <h2 className="text-xs font-medium uppercase tracking-wider text-slate-500">
+      <div className="border-t border-rule pt-6">
+        <h2 className="eyebrow text-brand-900/60">
           Scan another badge
         </h2>
         <div className="mt-3">

@@ -170,7 +170,7 @@ export function NotificationsBell() {
           <button
             type="button"
             aria-label={`Notifications${unseenCount > 0 ? ` (${unseenCount} unread)` : ""}`}
-            className="relative inline-grid size-10 place-items-center rounded-full text-brand-800 transition-colors hover:bg-brand-50"
+            className="relative inline-grid size-10 place-items-center rounded-full text-brand-800 transition-colors hover:bg-paper-deep"
           >
             <PremiumBell className="size-[22px]" />
             {unseenCount > 0 ? (
@@ -211,7 +211,7 @@ export function NotificationsBell() {
                         ? "border-iit-300 bg-iit-50"
                         : a.priority === "high"
                         ? "border-amber-200 bg-amber-50"
-                        : "border-slate-200 bg-white"
+                        : "border-rule bg-white"
                     )}
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -220,16 +220,16 @@ export function NotificationsBell() {
                         {a.priority && a.priority !== "normal" ? (
                           <Badge
                             variant={a.priority === "urgent" ? "destructive" : "secondary"}
-                            className="text-[10px] uppercase tracking-wider"
+                            className="eyebrow"
                           >
                             {a.priority}
                           </Badge>
                         ) : null}
-                        <span className="text-[10px] text-slate-400">{timeAgo(a.created_at)}</span>
+                        <span className="text-[10px] text-brand-900/45">{timeAgo(a.created_at)}</span>
                       </div>
                     </div>
                     {a.body ? (
-                      <p className="mt-1 whitespace-pre-line text-xs leading-5 text-slate-600">
+                      <p className="mt-1 whitespace-pre-line text-xs leading-5 text-brand-900/70">
                         {a.body}
                       </p>
                     ) : null}

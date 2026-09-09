@@ -203,21 +203,21 @@ export function SlotPicker({
         type="button"
         onClick={handleSuggest}
         disabled={!suggestionReady}
-        className="flex w-full items-center justify-center rounded-md bg-slate-900 px-3 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex w-full items-center justify-center rounded-md bg-brand-800 px-3 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-brand-900 disabled:cursor-not-allowed disabled:opacity-50"
       >
         Suggest 3 times for me
       </button>
 
-      <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500">
-        <LegendDot color="bg-white border border-slate-300" /> Open
-        <LegendDot color="bg-slate-100 border border-slate-200" /> Taken
+      <div className="flex flex-wrap items-center gap-3 text-[11px] text-brand-900/60">
+        <LegendDot color="bg-white border border-rule-strong" /> Open
+        <LegendDot color="bg-paper-deep border border-rule" /> Taken
         <LegendDot color="bg-brand-800" /> Picked
       </div>
 
       <div className="max-h-[360px] space-y-3 overflow-y-auto pr-1">
         {grouped.map(([hour, items]) => (
           <div key={hour}>
-            <div className="mb-1 text-[10px] font-medium uppercase tracking-wider tabular-nums text-slate-500">
+            <div className="mb-1 eyebrow tabular-nums text-brand-900/60">
               {hour}
             </div>
             <div className="grid grid-cols-4 gap-1.5">
@@ -241,7 +241,7 @@ export function SlotPicker({
                       "flex h-10 flex-col items-center justify-center rounded-md border text-[11px] font-medium leading-tight tabular-nums transition-colors",
                       pickable
                         ? conflictStyles(c, picked)
-                        : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+                        : "cursor-not-allowed border-rule bg-paper-deep text-brand-900/45"
                     )}
                   >
                     <span>{slotLabel(s)}</span>
@@ -253,7 +253,7 @@ export function SlotPicker({
         ))}
       </div>
 
-      <div className="text-xs text-slate-500">
+      <div className="text-xs text-brand-900/60">
         Pick up to {max} times. They pick one to confirm — nothing&apos;s booked until then.
       </div>
     </div>
@@ -268,7 +268,7 @@ function conflictStyles(c: SlotConflict, picked: boolean): string {
   if (picked) return "bg-brand-800 text-white border-brand-800";
   switch (c) {
     case "free":
-      return "bg-white text-slate-700 border-slate-300 hover:bg-slate-50";
+      return "bg-white text-brand-900/80 border-rule-strong hover:bg-paper";
     case "soft":
       return "bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100";
     case "hard":

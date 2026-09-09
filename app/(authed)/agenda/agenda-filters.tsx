@@ -75,7 +75,7 @@ export function AgendaFilters({ venues }: { venues: VenueOption[] }) {
           "inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-md border px-3 text-[13px] font-semibold transition-colors lg:flex-none lg:px-4",
           mineOnly
             ? "border-brand-800 bg-brand-800 text-white"
-            : "border-brand-100 bg-white text-brand-900 hover:bg-brand-50/40"
+            : "border-rule bg-white text-brand-900 hover:bg-paper-deep/40"
         )}
       >
         {mineOnly ? (
@@ -95,7 +95,7 @@ export function AgendaFilters({ venues }: { venues: VenueOption[] }) {
                 ? `Filters (${secondaryCount} active)`
                 : "Filters"
             }
-            className="relative inline-grid size-10 shrink-0 place-items-center rounded-md border border-brand-100 bg-white text-brand-800 transition-colors hover:bg-brand-50/40"
+            className="relative inline-grid size-10 shrink-0 place-items-center rounded-md border border-rule bg-white text-brand-800 transition-colors hover:bg-paper-deep/40"
           >
             <SlidersHorizontal className="size-[18px]" strokeWidth={1.8} />
             {secondaryCount > 0 ? (
@@ -113,7 +113,7 @@ export function AgendaFilters({ venues }: { venues: VenueOption[] }) {
 
           <div className="space-y-5 px-6 pb-6 pt-2">
             <div>
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-800/75">
+              <p className="mb-2 eyebrow text-brand-800/75">
                 Show
               </p>
               <button
@@ -124,7 +124,7 @@ export function AgendaFilters({ venues }: { venues: VenueOption[] }) {
                   "w-full rounded-md border px-3 py-2.5 text-[13px] font-semibold transition-colors",
                   recommendedOnly
                     ? "border-emerald-600 bg-emerald-600 text-white"
-                    : "border-brand-100 bg-white text-brand-900 hover:bg-brand-50/40"
+                    : "border-rule bg-white text-brand-900 hover:bg-paper-deep/40"
                 )}
               >
                 Recommended for me
@@ -132,7 +132,7 @@ export function AgendaFilters({ venues }: { venues: VenueOption[] }) {
             </div>
 
             <div>
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-800/75">
+              <p className="mb-2 eyebrow text-brand-800/75">
                 Venue
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -148,7 +148,7 @@ export function AgendaFilters({ venues }: { venues: VenueOption[] }) {
                         "rounded-md border px-3 py-1.5 text-[12px] font-semibold transition-colors",
                         active
                           ? "border-brand-800 bg-brand-800 text-white"
-                          : "border-brand-100 bg-white text-brand-900 hover:bg-brand-50/40"
+                          : "border-rule bg-white text-brand-900 hover:bg-paper-deep/40"
                       )}
                     >
                       {venue.label}

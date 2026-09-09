@@ -1,14 +1,34 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Noto_Sans_Telugu } from "next/font/google";
+import { Fraunces, Instrument_Sans, Noto_Sans_Telugu } from "next/font/google";
 import { Toaster } from "@/components/ui/toaster";
 import { EVENT_APP_NAME, EVENT_NAME, EVENT_TAGLINE } from "@/lib/event-config";
 import "./globals.css";
 
-const inter = Inter({
+// Display face for titles. Fraunces is a high-contrast variable serif with
+// `SOFT` (terminal rounding) and `WONK` (swashy alternates) axes; we run it
+// with the wonk off and softness low so it reads institutional rather than
+// cute, and let `opsz` do the work — optical sizing is why a 34px page title
+// and a 13px card title look like the same voice instead of the same file
+// scaled. This is the one thing that stops every heading in the app reading
+// as default-Inter-semibold-tracking-tight.
+const fraunces = Fraunces({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-display",
   display: "swap",
-  axes: ["opsz"],
+  axes: ["SOFT", "WONK", "opsz"],
+  preload: true,
+});
+
+// UI/body face. Replaces Inter, which is legible but is also the single most
+// recognisable "generated interface" signal there is. Instrument Sans is a
+// slightly narrow grotesque — holds up at the 10–13px label sizes this app
+// leans on, and has enough of its own character to sit under Fraunces
+// without the pair looking accidental.
+const instrumentSans = Instrument_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+  axes: ["wdth"],
   preload: true,
 });
 
@@ -49,7 +69,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${notoTelugu.variable}`}>
+    <html
+      lang="en"
+      className={`${instrumentSans.variable} ${fraunces.variable} ${notoTelugu.variable}`}
+    >
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         {children}
         <Toaster />

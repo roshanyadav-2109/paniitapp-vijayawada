@@ -74,8 +74,8 @@ export function ConversationsClient({
 
   if (initialThreads.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-brand-100 bg-white p-8 text-center">
-        <p className="text-[15px] font-semibold text-brand-950">
+      <div className="rounded-lg border border-dashed border-rule bg-white p-8 text-center">
+        <p className="font-display text-[17px] font-semibold text-brand-950">
           No conversations yet
         </p>
         <p className="mt-1 text-[12px] leading-5 text-brand-900/70">
@@ -91,16 +91,16 @@ export function ConversationsClient({
         <li key={t.peerId}>
           <Link
             href={`/chat/${t.peerId}`}
-            className="flex items-center gap-3 rounded-lg border border-brand-100 bg-white p-3 transition-colors hover:bg-brand-50/30"
+            className="flex items-center gap-3 rounded-lg border border-rule bg-white p-3 transition-colors hover:bg-paper-deep/30"
           >
-            <Avatar className="size-12 shrink-0 ring-1 ring-brand-100">
+            <Avatar className="size-12 shrink-0 ring-1 ring-rule">
               {t.peer?.photo_url ? (
                 <AvatarImage
                   src={t.peer.photo_url}
                   alt={t.peer?.full_name ?? ""}
                 />
               ) : null}
-              <AvatarFallback className="bg-brand-50 text-[13px] font-semibold text-brand-800">
+              <AvatarFallback className="bg-paper-deep text-[13px] font-semibold text-brand-800">
                 {initials(t.peer?.full_name ?? "?")}
               </AvatarFallback>
             </Avatar>

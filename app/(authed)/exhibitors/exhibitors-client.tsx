@@ -53,7 +53,7 @@ export function ExhibitorsClient({
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search exhibitors, booths, categories..."
           aria-label="Search exhibitors"
-          className="h-11 w-full rounded-lg border border-brand-100 bg-white pl-10 pr-3.5 text-sm font-medium text-brand-950 outline-none placeholder:font-normal placeholder:text-brand-800/45 focus:border-brand-800 focus:ring-2 focus:ring-brand-100"
+          className="h-11 w-full rounded-lg border border-rule bg-white pl-10 pr-3.5 text-sm font-medium text-brand-950 outline-none placeholder:font-normal placeholder:text-brand-800/45 focus:border-brand-800 focus:ring-2 focus:ring-rule"
         />
       </div>
 
@@ -79,9 +79,9 @@ export function ExhibitorsClient({
             <li key={e.id}>
               <Link
                 href={`/exhibitors/${e.id}`}
-                className="group flex items-start gap-3 rounded-lg border border-brand-100 bg-white p-3 transition-colors hover:bg-brand-50/30"
+                className="group flex items-start gap-3 rounded-lg border border-rule bg-white p-3 transition-colors hover:bg-paper-deep/30"
               >
-                <div className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-lg bg-white ring-1 ring-brand-100">
+                <div className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-lg bg-white ring-1 ring-rule">
                   {e.logo_url ? (
                     <Image
                       src={e.logo_url}
@@ -132,7 +132,7 @@ export function ExhibitorsClient({
 
 function MetaTag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-[4px] border border-slate-900/25 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-950">
+    <span className="inline-flex items-center gap-1 rounded-[4px] border border-brand-900/25 bg-white px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-brand-950">
       {children}
     </span>
   );

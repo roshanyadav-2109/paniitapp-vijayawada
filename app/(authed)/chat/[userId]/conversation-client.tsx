@@ -222,21 +222,21 @@ export function ConversationView({
   }
 
   return (
-    <div className="-mx-4 flex h-[calc(100svh-3.5rem-72px)] flex-col bg-white sm:-mx-6 lg:mx-auto lg:h-[calc(100vh-7rem)] lg:max-w-3xl lg:rounded-lg lg:border lg:border-brand-100">
+    <div className="-mx-4 flex h-[calc(100svh-3.5rem-72px)] flex-col bg-white sm:-mx-6 lg:mx-auto lg:h-[calc(100vh-7rem)] lg:max-w-3xl lg:rounded-lg lg:border lg:border-rule">
       {/* Header */}
-      <header className="flex items-center gap-3 border-b border-brand-100 bg-white px-4 py-3 lg:px-5">
+      <header className="flex items-center gap-3 border-b border-rule bg-white px-4 py-3 lg:px-5">
         <Link
           href="/chat"
           aria-label="Back to chats"
-          className="inline-grid size-9 place-items-center rounded-full text-brand-800 hover:bg-brand-50"
+          className="inline-grid size-9 place-items-center rounded-full text-brand-800 hover:bg-paper-deep"
         >
           <ArrowLeft className="size-4" strokeWidth={1.7} />
         </Link>
-        <Avatar className="size-10 shrink-0 ring-1 ring-brand-100">
+        <Avatar className="size-10 shrink-0 ring-1 ring-rule">
           {peer.photo_url ? (
             <AvatarImage src={peer.photo_url} alt={peer.full_name ?? ""} />
           ) : null}
-          <AvatarFallback className="bg-brand-50 text-[12px] font-semibold text-brand-800">
+          <AvatarFallback className="bg-paper-deep text-[12px] font-semibold text-brand-800">
             {initials(peer.full_name ?? "?")}
           </AvatarFallback>
         </Avatar>
@@ -258,7 +258,7 @@ export function ConversationView({
       {/* Message list */}
       <div
         ref={scrollerRef}
-        className="flex-1 overflow-y-auto bg-brand-50/40 px-3 py-3 sm:px-4"
+        className="flex-1 overflow-y-auto bg-paper-deep/40 px-3 py-3 sm:px-4"
       >
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center px-6 text-center">
@@ -274,7 +274,7 @@ export function ConversationView({
             {grouped.map((g, gi) => (
               <li key={`g-${gi}`}>
                 <div className="my-2 flex justify-center">
-                  <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-brand-800/70 ring-1 ring-brand-100">
+                  <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-brand-800/70 ring-1 ring-rule">
                     {g.day}
                   </span>
                 </div>
@@ -292,7 +292,7 @@ export function ConversationView({
                           "max-w-[78%] rounded-2xl px-3 py-2 text-[13px] leading-snug shadow-[0_1px_0_0_rgba(13,9,48,0.04)]",
                           m.sender_id === me
                             ? "rounded-br-md bg-brand-800 text-white"
-                            : "rounded-bl-md bg-white text-brand-950 ring-1 ring-brand-100"
+                            : "rounded-bl-md bg-white text-brand-950 ring-1 ring-rule"
                         )}
                       >
                         <p className="whitespace-pre-line break-words">
@@ -339,7 +339,7 @@ export function ConversationView({
           e.preventDefault();
           submit();
         }}
-        className="safe-bottom flex items-end gap-2 border-t border-brand-100 bg-white px-3 py-2 lg:px-4 lg:py-3"
+        className="safe-bottom flex items-end gap-2 border-t border-rule bg-white px-3 py-2 lg:px-4 lg:py-3"
       >
         <textarea
           ref={inputRef}
@@ -356,7 +356,7 @@ export function ConversationView({
           }}
           rows={1}
           placeholder="Type a message…"
-          className="min-h-[40px] flex-1 resize-none rounded-2xl border border-brand-100 bg-white px-3.5 py-2 text-[14px] leading-snug text-brand-950 outline-none placeholder:text-brand-800/45 focus:border-brand-800 focus:ring-2 focus:ring-brand-100"
+          className="min-h-[40px] flex-1 resize-none rounded-2xl border border-rule bg-white px-3.5 py-2 text-[14px] leading-snug text-brand-950 outline-none placeholder:text-brand-800/45 focus:border-brand-800 focus:ring-2 focus:ring-rule"
         />
         <button
           type="submit"

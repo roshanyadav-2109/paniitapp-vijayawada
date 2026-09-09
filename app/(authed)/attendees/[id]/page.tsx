@@ -106,14 +106,14 @@ export default async function AttendeeProfilePage({
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4 pb-12 pt-5 sm:pt-6 lg:pt-8">
       {/* Identity block */}
-      <section className="rounded-lg border border-brand-100 bg-white px-6 pb-6 pt-8 text-center">
+      <section className="rounded-lg border border-rule bg-white px-6 pb-6 pt-8 text-center">
         <ProfileAvatar
           photoUrl={profile.photo_url}
           name={profile.full_name}
           className="mx-auto size-24"
           ringClassName="ring-4 ring-brand-50"
         />
-        <h1 className="mt-4 text-[22px] font-semibold leading-tight text-brand-950">
+        <h1 className="mt-4 font-display text-[22px] font-semibold leading-tight text-brand-950">
           {profile.full_name ?? "Attendee"}
         </h1>
         {profile.designation || profile.company ? (
@@ -122,7 +122,7 @@ export default async function AttendeeProfilePage({
           </p>
         ) : null}
         {profile.role ? (
-          <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-brand-800/75">
+          <p className="mt-1 eyebrow text-brand-800/75">
             {roleLabel(profile.role)}
           </p>
         ) : null}
@@ -169,7 +169,7 @@ export default async function AttendeeProfilePage({
         <ScheduleMeetingButton inviteeId={profile.id} />
         <Link
           href={`/chat/${profile.id}`}
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-md border border-brand-100 bg-white text-[13px] font-semibold text-brand-900 transition-colors hover:bg-brand-50/30"
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-md border border-rule bg-white text-[13px] font-semibold text-brand-900 transition-colors hover:bg-paper-deep/30"
         >
           <ChatBubbleGlyph className="size-[18px]" strokeWidth={1.6} />
           Chat
@@ -184,8 +184,8 @@ export default async function AttendeeProfilePage({
       profile.asks?.length ||
       profile.offers?.length ||
       eduLine ? (
-        <section className="space-y-5 rounded-lg border border-brand-100 bg-white p-5">
-          <h2 className="text-[15px] font-semibold text-brand-950">About</h2>
+        <section className="space-y-5 border-t border-rule pt-4">
+          <h2 className="font-display text-[17px] font-semibold text-brand-950">About</h2>
 
           {profile.bio ? (
             <p className="whitespace-pre-line text-sm leading-6 text-brand-900">
@@ -195,14 +195,14 @@ export default async function AttendeeProfilePage({
 
           {profile.interests?.length ? (
             <div>
-              <h3 className="text-[12px] font-semibold uppercase tracking-wide text-brand-800/70">
+              <h3 className="eyebrow text-brand-800/70">
                 Areas of interest
               </h3>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {profile.interests.map((i) => (
                   <span
                     key={i}
-                    className="rounded-md border border-brand-100 bg-brand-50/70 px-2.5 py-1 text-[12px] font-medium text-brand-800"
+                    className="rounded-md border border-rule bg-paper-deep/70 px-2.5 py-1 text-[12px] font-medium text-brand-800"
                   >
                     {i}
                   </span>
@@ -213,14 +213,14 @@ export default async function AttendeeProfilePage({
 
           {profile.asks?.length ? (
             <div>
-              <h3 className="text-[12px] font-semibold uppercase tracking-wide text-brand-800/70">
+              <h3 className="eyebrow text-brand-800/70">
                 Looking for
               </h3>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {profile.asks.map((i) => (
                   <span
                     key={i}
-                    className="rounded-md border border-brand-100 bg-brand-50/70 px-2.5 py-1 text-[12px] font-medium text-brand-800"
+                    className="rounded-md border border-rule bg-paper-deep/70 px-2.5 py-1 text-[12px] font-medium text-brand-800"
                   >
                     {i}
                   </span>
@@ -231,14 +231,14 @@ export default async function AttendeeProfilePage({
 
           {profile.offers?.length ? (
             <div>
-              <h3 className="text-[12px] font-semibold uppercase tracking-wide text-brand-800/70">
+              <h3 className="eyebrow text-brand-800/70">
                 Can offer
               </h3>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {profile.offers.map((i) => (
                   <span
                     key={i}
-                    className="rounded-md border border-brand-100 bg-brand-50/70 px-2.5 py-1 text-[12px] font-medium text-brand-800"
+                    className="rounded-md border border-rule bg-paper-deep/70 px-2.5 py-1 text-[12px] font-medium text-brand-800"
                   >
                     {i}
                   </span>
@@ -249,7 +249,7 @@ export default async function AttendeeProfilePage({
 
           {eduLine ? (
             <div>
-              <h3 className="text-[12px] font-semibold uppercase tracking-wide text-brand-800/70">
+              <h3 className="eyebrow text-brand-800/70">
                 Education
               </h3>
               <p className="mt-1.5 text-sm font-medium text-brand-900">
@@ -262,8 +262,8 @@ export default async function AttendeeProfilePage({
 
       {/* Speaking at */}
       {speakingAt.length > 0 ? (
-        <section className="rounded-lg border border-brand-100 bg-white p-5">
-          <h2 className="text-[15px] font-semibold text-brand-950">
+        <section className="border-t border-rule pt-4">
+          <h2 className="font-display text-[17px] font-semibold text-brand-950">
             Speaking at
           </h2>
           <ul className="mt-3 space-y-3">

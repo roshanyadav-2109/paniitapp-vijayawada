@@ -53,14 +53,14 @@ export function AnnouncementComposer() {
   }
 
   return (
-    <div id="announce" className="rounded-lg border border-slate-200 bg-white p-4 scroll-mt-20">
+    <div id="announce" className="rounded-lg border border-rule bg-white p-4 scroll-mt-20">
       <div className="mb-3 flex items-center gap-2">
         <Megaphone className="h-4 w-4 text-brand-800" />
         <h2 className="text-sm font-semibold text-brand-900">Send an announcement</h2>
       </div>
       <div className="space-y-3">
         <div>
-          <Label htmlFor="ann-title" className="text-xs font-medium text-slate-700">
+          <Label htmlFor="ann-title" className="text-xs font-medium text-brand-900/80">
             Title
           </Label>
           <Input
@@ -72,7 +72,7 @@ export function AnnouncementComposer() {
           />
         </div>
         <div>
-          <Label htmlFor="ann-body" className="text-xs font-medium text-slate-700">
+          <Label htmlFor="ann-body" className="text-xs font-medium text-brand-900/80">
             Body
           </Label>
           <Textarea
@@ -85,8 +85,8 @@ export function AnnouncementComposer() {
           />
         </div>
         <div>
-          <Label className="text-xs font-medium text-slate-700">Priority</Label>
-          <div className="mt-1 inline-flex rounded-md border border-slate-300 bg-white p-1">
+          <Label className="text-xs font-medium text-brand-900/80">Priority</Label>
+          <div className="mt-1 inline-flex rounded-md border border-rule-strong bg-white p-1">
             {PRIORITIES.map((p) => (
               <button
                 key={p.value}
@@ -97,7 +97,7 @@ export function AnnouncementComposer() {
                     ? p.value === "urgent"
                       ? "bg-iit-500 text-white"
                       : "bg-brand-800 text-white"
-                    : "text-slate-700 hover:bg-slate-50"
+                    : "text-brand-900/80 hover:bg-paper"
                 }`}
               >
                 {p.label}

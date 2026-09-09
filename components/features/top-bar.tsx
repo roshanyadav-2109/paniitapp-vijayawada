@@ -59,7 +59,7 @@ export async function TopBar() {
       <header className="safe-top sticky top-0 z-40">
         {/* TIER 1 — white action bar (logo left, actions right). Renders as
             the single-row mobile top bar too. */}
-        <div className="border-b border-brand-100 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
+        <div className="border-b border-rule bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
           <div className="mx-auto flex h-14 w-full max-w-screen-2xl items-center gap-3 px-4 sm:px-6 lg:h-[68px] lg:px-8">
             {/* Desktop: PAN IIT lockup as the brand mark */}
             <Link
@@ -80,13 +80,13 @@ export async function TopBar() {
             {/* Mobile: avatar greeting on the left */}
             <Link
               href="/me"
-              className="group flex min-w-0 items-center gap-2.5 rounded-full pr-2 transition-colors hover:bg-brand-50/60 lg:hidden"
+              className="group flex min-w-0 items-center gap-2.5 rounded-full pr-2 transition-colors hover:bg-paper-deep/60 lg:hidden"
             >
-              <Avatar className="size-9 shrink-0 ring-1 ring-brand-100">
+              <Avatar className="size-9 shrink-0 ring-1 ring-rule">
                 {photoUrl ? (
                   <AvatarImage src={photoUrl} alt={name ?? "Profile"} />
                 ) : null}
-                <AvatarFallback className="bg-brand-50 text-[12px] font-semibold text-brand-800">
+                <AvatarFallback className="bg-paper-deep text-[12px] font-semibold text-brand-800">
                   {initials(name)}
                 </AvatarFallback>
               </Avatar>
@@ -109,12 +109,12 @@ export async function TopBar() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="inline-grid size-9 place-items-center rounded-full text-brand-800/70 transition-colors hover:bg-brand-50 hover:text-brand-900"
+                  className="inline-grid size-9 place-items-center rounded-full text-brand-800/70 transition-colors hover:bg-paper-deep hover:text-brand-900"
                 >
                   <Icon className="size-[18px]" />
                 </a>
               ))}
-              <span className="mx-2 h-5 w-px bg-brand-100" aria-hidden />
+              <span className="mx-2 h-5 w-px bg-rule" aria-hidden />
             </div>
 
             <div className="flex shrink-0 items-center gap-1 lg:gap-2">
@@ -133,11 +133,11 @@ export async function TopBar() {
                 aria-label="Profile"
                 className="hidden shrink-0 lg:inline-flex"
               >
-                <Avatar className="size-9 ring-1 ring-brand-100 transition-shadow hover:ring-2 hover:ring-brand-200">
+                <Avatar className="size-9 ring-1 ring-rule transition-shadow hover:ring-2 hover:ring-rule-strong">
                   {photoUrl ? (
                     <AvatarImage src={photoUrl} alt={name ?? "Profile"} />
                   ) : null}
-                  <AvatarFallback className="bg-brand-50 text-[12px] font-semibold text-brand-800">
+                  <AvatarFallback className="bg-paper-deep text-[12px] font-semibold text-brand-800">
                     {initials(name)}
                   </AvatarFallback>
                 </Avatar>

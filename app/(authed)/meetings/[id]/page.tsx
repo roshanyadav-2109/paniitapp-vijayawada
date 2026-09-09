@@ -83,12 +83,12 @@ export default async function MeetingChatPage({
 
   return (
     <div className="flex h-[calc(100vh-8.5rem)] flex-col">
-      <header className="border-b border-slate-200 bg-white px-4 py-3">
+      <header className="border-b border-rule bg-white px-4 py-3">
         <div>
-          <h1 className="text-base font-semibold tracking-tight text-brand-900">
+          <h1 className="font-display text-base font-semibold text-brand-900">
             {other?.full_name ?? "Conversation"}
           </h1>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-brand-900/60">
             {[other?.designation, other?.company].filter(Boolean).join(" · ") || " "}
           </p>
           {meeting.proposed_outside_availability ? (
@@ -105,7 +105,7 @@ export default async function MeetingChatPage({
       {conversationId ? (
         <ChatWindow conversationId={conversationId} userId={user.id} />
       ) : (
-        <div className="flex flex-1 items-center justify-center px-6 text-center text-sm text-slate-500">
+        <div className="flex flex-1 items-center justify-center px-6 text-center text-sm text-brand-900/60">
           Chat opens once the meeting is accepted.
         </div>
       )}

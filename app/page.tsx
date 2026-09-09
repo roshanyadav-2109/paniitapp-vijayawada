@@ -31,7 +31,7 @@ export default async function SignInPage() {
     <main className="flex h-[100svh] flex-col overflow-hidden lg:grid lg:h-screen lg:grid-cols-2 lg:overflow-visible">
       {/* HERO PANEL — fills 60svh on mobile so the white card overlaps it
           starting around the 50svh line (≈ 10% below the logo block). */}
-      <section className="relative isolate flex h-[60svh] shrink-0 flex-col overflow-hidden bg-[radial-gradient(circle_at_top_left,#3b329e_0%,#1B1464_45%,#0d0930_100%)] px-5 pt-[20svh] lg:h-auto lg:p-12 lg:pt-12 xl:p-16">
+      <section className="relative isolate flex h-[60svh] shrink-0 flex-col overflow-hidden bg-brand-800 px-5 pt-[20svh] lg:h-auto lg:p-12 lg:pt-12 xl:p-16">
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.18]"
           style={{
@@ -41,13 +41,10 @@ export default async function SignInPage() {
           }}
           aria-hidden
         />
-        <div
-          className="pointer-events-none absolute left-1/2 top-1/2 -z-10 size-[480px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 blur-3xl"
-          aria-hidden
-        />
+        <div className="absolute inset-x-0 top-0 h-[3px] bg-iit-500" aria-hidden />
 
         <div className="relative z-10 mx-auto flex w-full max-w-sm flex-col items-center lg:max-w-md lg:my-auto">
-          <div className="w-full rounded-2xl border border-white/10 bg-white px-5 py-4 shadow-[0_20px_60px_-10px_rgba(0,0,0,0.45)] ring-1 ring-black/5 lg:px-7 lg:py-5">
+          <div className="w-full rounded-lg bg-paper px-5 py-4 lg:px-7 lg:py-5">
             <Image
               src="/logo/paniit.png"
               alt="PAN IIT Alumni India"
@@ -56,8 +53,8 @@ export default async function SignInPage() {
               priority
               className="mx-auto h-11 w-auto lg:h-12"
             />
-            <div className="mt-3 border-t border-brand-100 pt-2.5 text-center">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-800">
+            <div className="mt-3 border-t border-rule pt-2.5 text-center">
+              <p className="eyebrow text-brand-800">
                 {EVENT_SHORT_NAME}
               </p>
               <p className="mt-0.5 text-[11px] font-medium leading-snug text-brand-900">
@@ -71,7 +68,7 @@ export default async function SignInPage() {
 
           {/* Desktop-only tagline + stats */}
           <div className="hidden text-center lg:mt-10 lg:block">
-            <h1 className="font-semibold leading-tight tracking-tight text-white text-3xl xl:text-[34px]">
+            <h1 className="font-display text-3xl font-semibold leading-[1.15] text-paper xl:text-[36px]">
               India&apos;s deepest network of
               <br className="hidden xl:block" /> builders, investors &amp; policy minds.
             </h1>
@@ -101,8 +98,8 @@ export default async function SignInPage() {
       </section>
 
       {/* FORM PANEL — overlaps the hero by ~10svh from below */}
-      <section className="relative z-10 -mt-[10svh] flex min-h-0 flex-1 flex-col lg:mt-0 lg:min-h-screen lg:bg-white">
-        <div className="mx-auto flex h-full min-h-0 w-full max-w-md flex-col rounded-t-3xl bg-white px-6 pb-3 pt-6 shadow-[0_-20px_50px_-25px_rgba(13,9,48,0.35)] sm:px-8 lg:my-auto lg:h-auto lg:min-h-[32rem] lg:max-w-sm lg:rounded-2xl lg:p-9 lg:shadow-none">
+      <section className="relative z-10 -mt-[10svh] flex min-h-0 flex-1 flex-col lg:mt-0 lg:min-h-screen lg:bg-paper lg:paper-grain">
+        <div className="paper-grain mx-auto flex h-full min-h-0 w-full max-w-md flex-col rounded-t-2xl bg-paper px-6 pb-3 pt-6 shadow-[0_-20px_50px_-25px_rgba(13,9,48,0.35)] sm:px-8 lg:my-auto lg:h-auto lg:min-h-[32rem] lg:max-w-sm lg:rounded-lg lg:p-9 lg:shadow-none">
           {/* Top spacer — smaller so the greeting sits a touch above
               vertical centre and the sign-in stack reads as a single
               grouped block (greeting → button). */}
@@ -132,7 +129,7 @@ export default async function SignInPage() {
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2.5 pt-2 text-center transition-opacity hover:opacity-80"
           >
-            <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-800/70">
+            <span className="eyebrow text-brand-800/70">
               Proudly built by
             </span>
             <Image
@@ -163,7 +160,7 @@ function Stat({
 }) {
   return (
     <div className="px-3 first:pl-0 last:pr-0">
-      <dt className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/55">
+      <dt className="eyebrow text-white/55">
         {label}
       </dt>
       <dd className="mt-2 text-lg font-semibold tracking-tight text-white">

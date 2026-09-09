@@ -58,7 +58,7 @@ export default function GoogleCallbackPage() {
   }, []);
 
   return (
-    <main className="grid min-h-screen place-items-center bg-slate-50 px-4 text-center">
+    <main className="grid min-h-screen place-items-center bg-paper px-4 text-center">
       <p className="text-sm font-medium text-brand-900">{message}</p>
     </main>
   );

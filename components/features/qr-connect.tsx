@@ -55,7 +55,7 @@ export function QrConnect() {
             <button
               type="button"
               aria-label="Connect via QR code"
-              className="inline-grid size-9 place-items-center rounded-md text-slate-600 transition-colors hover:bg-slate-100"
+              className="inline-grid size-9 place-items-center rounded-md text-brand-900/70 transition-colors hover:bg-paper-deep"
             >
               <QrCode className="size-[18px]" />
             </button>
@@ -86,7 +86,7 @@ export function QrConnect() {
                 <div className="flex flex-col items-center gap-3">
                   <MyQr token={token} />
                   {name ? (
-                    <p className="text-xs font-medium text-slate-600">{name}</p>
+                    <p className="text-xs font-medium text-brand-900/70">{name}</p>
                   ) : null}
                 </div>
               ) : (

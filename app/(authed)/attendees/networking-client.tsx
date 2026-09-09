@@ -292,7 +292,7 @@ export function NetworkingClient({
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search name, company, role…"
             aria-label="Search attendees"
-            className="h-11 w-full rounded-lg border border-brand-100 bg-white pl-10 pr-3.5 text-sm font-medium text-brand-950 outline-none placeholder:font-normal placeholder:text-brand-800/45 focus:border-brand-800 focus:ring-2 focus:ring-brand-100"
+            className="h-11 w-full rounded-lg border border-rule bg-white pl-10 pr-3.5 text-sm font-medium text-brand-950 outline-none placeholder:font-normal placeholder:text-brand-800/45 focus:border-brand-800 focus:ring-2 focus:ring-rule"
           />
         </div>
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -301,7 +301,7 @@ export function NetworkingClient({
               type="button"
               aria-label={`Filters${extraCount > 0 ? ` (${extraCount} active)` : ""}`}
               className={cn(
-                "relative inline-grid size-11 shrink-0 place-items-center rounded-lg border border-brand-100 bg-white text-brand-800 transition-colors hover:bg-brand-50",
+                "relative inline-grid size-11 shrink-0 place-items-center rounded-lg border border-rule bg-white text-brand-800 transition-colors hover:bg-paper-deep",
                 extraCount > 0 && "border-brand-800 text-brand-900"
               )}
             >
@@ -458,7 +458,7 @@ function FilterButton({
         "rounded-lg border px-4 py-2.5 text-[13px] font-semibold transition-colors",
         active
           ? "border-brand-800 bg-brand-800 text-white"
-          : "border-brand-100 bg-white text-brand-900 hover:bg-brand-50/40"
+          : "border-rule bg-white text-brand-900 hover:bg-paper-deep/40"
       )}
     >
       {children}
@@ -484,7 +484,7 @@ function RoleChip({
         "shrink-0 whitespace-nowrap rounded-[4px] border px-3.5 py-1.5 text-[12px] font-medium transition-colors",
         active
           ? "border-brand-800 bg-brand-800 text-white"
-          : "border-brand-100 bg-white text-brand-900 hover:border-brand-200 hover:bg-brand-50"
+          : "border-rule bg-white text-brand-900 hover:border-rule-strong hover:bg-paper-deep"
       )}
     >
       {children}
@@ -506,13 +506,13 @@ function AttendeeListItem({
     <li>
       <Link
         href={`/attendees/${p.id}`}
-        className="group flex items-start gap-3 rounded-lg border border-brand-100 bg-white p-3 transition-colors hover:bg-brand-50/30"
+        className="group flex items-start gap-3 rounded-lg border border-rule bg-white p-3 transition-colors hover:bg-paper-deep/30"
       >
-        <Avatar className="size-12 shrink-0 ring-1 ring-brand-100">
+        <Avatar className="size-12 shrink-0 ring-1 ring-rule">
           {p.photo_url ? (
             <AvatarImage src={p.photo_url} alt={p.full_name ?? ""} />
           ) : null}
-          <AvatarFallback className="bg-brand-50 text-[13px] font-semibold text-brand-800">
+          <AvatarFallback className="bg-paper-deep text-[13px] font-semibold text-brand-800">
             {initials(p.full_name)}
           </AvatarFallback>
         </Avatar>
@@ -522,7 +522,7 @@ function AttendeeListItem({
               {p.full_name ?? "—"}
             </div>
             {p.role ? (
-              <span className="shrink-0 rounded-[4px] border border-brand-100 bg-brand-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-brand-800">
+              <span className="shrink-0 rounded-[4px] border border-rule bg-paper-deep px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-brand-800">
                 {roleLabel(p.role)}
               </span>
             ) : null}
@@ -543,7 +543,7 @@ function AttendeeListItem({
               {reasons.map((r) => (
                 <span
                   key={r}
-                  className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-medium text-brand-800 ring-1 ring-brand-100"
+                  className="rounded-full bg-paper-deep px-2 py-0.5 text-[10px] font-medium text-brand-800 ring-1 ring-rule"
                 >
                   {r}
                 </span>
@@ -610,7 +610,7 @@ function FilterFields({
   return (
     <div className="flex flex-col gap-5">
       <FilterGroup label="IIT campus">
-        <div className="max-h-44 overflow-y-auto rounded-md border border-brand-100 p-2">
+        <div className="max-h-44 overflow-y-auto rounded-md border border-rule p-2">
           <ChipGrid>
             {IIT_CAMPUSES.map((c) => (
               <Chip
@@ -652,7 +652,7 @@ function FilterFields({
       </FilterGroup>
 
       <FilterGroup label="Interests">
-        <div className="max-h-44 overflow-y-auto rounded-md border border-brand-100 p-2">
+        <div className="max-h-44 overflow-y-auto rounded-md border border-rule p-2">
           <ChipGrid>
             {INTERESTS.map((i) => (
               <Chip
@@ -667,7 +667,7 @@ function FilterFields({
         </div>
       </FilterGroup>
 
-      <label className="flex cursor-pointer items-center justify-between rounded-md border border-brand-100 px-3 py-2.5">
+      <label className="flex cursor-pointer items-center justify-between rounded-md border border-rule px-3 py-2.5">
         <span className="text-sm font-medium text-brand-900">
           Available for meetings
         </span>
@@ -691,7 +691,7 @@ function FilterGroup({
 }) {
   return (
     <div>
-      <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-brand-800">
+      <div className="mb-2 eyebrow text-brand-800">
         {label}
       </div>
       <div className="flex flex-col gap-1.5">{children}</div>
@@ -721,7 +721,7 @@ function Chip({
         "rounded-[4px] border px-2.5 py-1 text-[11px] font-medium transition-colors",
         active
           ? "border-brand-800 bg-brand-800 text-white"
-          : "border-brand-100 bg-white text-brand-900 hover:bg-brand-50"
+          : "border-rule bg-white text-brand-900 hover:bg-paper-deep"
       )}
     >
       {children}
@@ -744,7 +744,7 @@ function RangeRow({
 }) {
   return (
     <div>
-      <div className="mb-0.5 flex items-center justify-between text-[10px] uppercase tracking-wider text-brand-800/65">
+      <div className="mb-0.5 eyebrow flex items-center justify-between text-brand-800/65">
         <span>{sub}</span>
         <span className="tabular-nums">{value}</span>
       </div>

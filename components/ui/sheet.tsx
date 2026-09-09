@@ -31,10 +31,10 @@ const sheetVariants = cva(
   {
     variants: {
       side: {
-        top: "inset-x-0 top-0 border-b border-slate-200 data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
-        bottom: "inset-x-0 bottom-0 border-t border-slate-200 rounded-t-2xl data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom max-h-[90vh] overflow-y-auto",
-        left: "inset-y-0 left-0 h-full w-3/4 border-r border-slate-200 data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
-        right: "inset-y-0 right-0 h-full w-3/4 border-l border-slate-200 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
+        top: "inset-x-0 top-0 border-b border-rule data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
+        bottom: "inset-x-0 bottom-0 border-t border-rule rounded-t-2xl data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom max-h-[90vh] overflow-y-auto",
+        left: "inset-y-0 left-0 h-full w-3/4 border-r border-rule data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
+        right: "inset-y-0 right-0 h-full w-3/4 border-l border-rule data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
       },
     },
     defaultVariants: { side: "right" },
@@ -75,7 +75,7 @@ const SheetTitle = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof SheetPrimitive.Title>
 >(({ className, ...props }, ref) => (
-  <SheetPrimitive.Title ref={ref} className={cn("text-lg font-semibold text-brand-900", className)} {...props} />
+  <SheetPrimitive.Title ref={ref} className={cn("font-display text-lg font-semibold text-brand-900", className)} {...props} />
 ));
 SheetTitle.displayName = SheetPrimitive.Title.displayName;
 
@@ -83,7 +83,7 @@ const SheetDescription = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof SheetPrimitive.Description>
 >(({ className, ...props }, ref) => (
-  <SheetPrimitive.Description ref={ref} className={cn("text-sm text-slate-500", className)} {...props} />
+  <SheetPrimitive.Description ref={ref} className={cn("text-sm text-brand-900/60", className)} {...props} />
 ));
 SheetDescription.displayName = SheetPrimitive.Description.displayName;
 

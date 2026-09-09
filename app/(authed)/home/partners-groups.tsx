@@ -45,7 +45,7 @@ function PartnerRow({ partners }: { partners: PartnerCard[] }) {
 
 function Tile({ p }: { p: PartnerCard }) {
   const body = (
-    <div className="grid size-24 shrink-0 place-items-center overflow-hidden rounded-md bg-white p-3 ring-1 ring-brand-100">
+    <div className="grid size-24 shrink-0 place-items-center overflow-hidden rounded-md bg-white p-3 ring-1 ring-rule">
       {p.logo_url ? (
         <Image
           src={p.logo_url}

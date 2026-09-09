@@ -38,10 +38,13 @@ export function FiltersCard({
   title?: string;
   children: React.ReactNode;
 }) {
+  // Rule, not a box. A bordered white panel around a short list of checkboxes
+  // is weight the content does not earn, and it was the same rectangle as
+  // every card on the page beside it.
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 lg:p-5">
+    <div className="border-t border-rule pt-4">
       {title ? (
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <h2 className="mb-3 eyebrow text-brand-900/60">
           {title}
         </h2>
       ) : null}

@@ -68,7 +68,7 @@ export default async function OnboardingPage({
   }
 
   return (
-    <main className="min-h-[100svh] bg-slate-50 px-4 py-8 sm:px-6 lg:flex lg:items-center lg:justify-center lg:p-12">
+    <main className="min-h-[100svh] bg-paper px-4 py-8 sm:px-6 lg:flex lg:items-center lg:justify-center lg:p-12">
       <div className="mx-auto w-full max-w-xl space-y-6 lg:w-[70vw] lg:max-w-3xl lg:space-y-0">
         {/* Mobile header — desktop tucks the lockup inside the modal card */}
         <header className="flex items-center gap-3 lg:hidden">
@@ -80,13 +80,13 @@ export default async function OnboardingPage({
             priority
             className="h-8 w-auto"
           />
-          <div className="h-6 w-px bg-brand-100" aria-hidden />
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-brand-800/75">
+          <div className="h-6 w-px bg-rule" aria-hidden />
+          <p className="eyebrow text-brand-800/75">
             {EVENT_SHORT_NAME} · Setup
           </p>
         </header>
 
-        <section className="rounded-lg border border-brand-100 bg-white p-5 lg:rounded-2xl lg:p-10 lg:shadow-[0_30px_80px_-30px_rgba(13,9,48,0.55)] lg:ring-1 lg:ring-black/5">
+        <section className="rounded-lg border border-rule bg-white p-5 lg:p-10">
           <div className="hidden items-center gap-3 lg:flex">
             <Image
               src="/logo/paniit.png"
@@ -96,12 +96,12 @@ export default async function OnboardingPage({
               priority
               className="h-9 w-auto"
             />
-            <div className="h-6 w-px bg-brand-100" aria-hidden />
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-brand-800/75">
+            <div className="h-6 w-px bg-rule" aria-hidden />
+            <p className="eyebrow text-brand-800/75">
               {EVENT_SHORT_NAME} · Setup
             </p>
           </div>
-          <h1 className="mt-0 text-2xl font-semibold tracking-tight text-brand-950 lg:mt-6 lg:text-[28px]">
+          <h1 className="mt-0 font-display text-2xl font-semibold text-brand-950 lg:mt-6 lg:text-[28px]">
             Tell us about you
           </h1>
           <p className="mt-1 text-sm leading-6 text-brand-900/75">

@@ -125,8 +125,8 @@ export function FloorMap({
     <div className="lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8">
       {/* Left column: controls */}
       <aside className="mb-5 flex flex-col gap-3 lg:mb-0 lg:sticky lg:top-[5.5rem] lg:self-start">
-        <div className="rounded-lg border border-slate-200 bg-white p-4 lg:p-5">
-          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <div className="rounded-lg border border-rule bg-white p-4 lg:p-5">
+          <div className="eyebrow text-brand-900/60">
             Floor
           </div>
           <div className="mt-2 flex flex-wrap gap-1.5 lg:flex-col lg:gap-1">
@@ -138,8 +138,8 @@ export function FloorMap({
                 className={cn(
                   "rounded-md px-3 py-2 text-sm font-medium transition-colors lg:text-left",
                   f === floor
-                    ? "bg-brand-800 text-white lg:bg-brand-50 lg:text-brand-800"
-                    : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 lg:border-0"
+                    ? "bg-brand-800 text-white lg:bg-paper-deep lg:text-brand-800"
+                    : "border border-rule-strong bg-white text-brand-900/80 hover:bg-paper lg:border-0"
                 )}
                 aria-current={f === floor ? "page" : undefined}
               >
@@ -149,12 +149,12 @@ export function FloorMap({
           </div>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-4 lg:p-5">
-          <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <div className="rounded-lg border border-rule bg-white p-4 lg:p-5">
+          <div className="mb-2 eyebrow text-brand-900/60">
             Find a hall
           </div>
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-brand-900/45" />
             <Input
               type="search"
               value={search}
@@ -167,8 +167,8 @@ export function FloorMap({
         </div>
 
         {/* Venue list for this floor, on desktop only — mobile shows it below the SVG */}
-        <div className="hidden rounded-lg border border-slate-200 bg-white p-3 lg:block">
-          <div className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <div className="hidden rounded-lg border border-rule bg-white p-3 lg:block">
+          <div className="mb-2 eyebrow px-2 text-brand-900/60">
             All venues on this floor
           </div>
           <ul className="flex flex-col gap-0.5">
@@ -182,16 +182,16 @@ export function FloorMap({
                     className={cn(
                       "flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-sm transition-colors",
                       highlighted
-                        ? "bg-brand-50 text-brand-800"
-                        : "text-slate-700 hover:bg-slate-50"
+                        ? "bg-paper-deep text-brand-800"
+                        : "text-brand-900/80 hover:bg-paper"
                     )}
                   >
                     <span className="inline-flex items-center gap-2 truncate">
-                      <MapPin className="size-3.5 shrink-0 text-slate-400" />
+                      <MapPin className="size-3.5 shrink-0 text-brand-900/45" />
                       <span className="truncate">{v.name}</span>
                     </span>
                     {v.capacity ? (
-                      <span className="shrink-0 text-[10px] tabular-nums text-slate-400">
+                      <span className="shrink-0 text-[10px] tabular-nums text-brand-900/45">
                         {v.capacity}
                       </span>
                     ) : null}
@@ -205,7 +205,7 @@ export function FloorMap({
 
       {/* Right column: floor plan + mobile list */}
       <div className="min-w-0">
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+        <div className="overflow-hidden rounded-lg border border-rule bg-paper">
           <svg
             viewBox={`0 0 ${CANVAS_W} ${CANVAS_H}`}
             className="block w-full"
@@ -268,7 +268,7 @@ export function FloorMap({
 
         {/* Mobile-only venue list (desktop has it in left column) */}
         <div className="mt-4 lg:hidden">
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <h2 className="mb-2 eyebrow text-brand-900/60">
             {floorLabel(floor)} · {floorVenues.length} venue{floorVenues.length === 1 ? "" : "s"}
           </h2>
           <ul className="flex flex-col gap-2">
@@ -282,16 +282,16 @@ export function FloorMap({
                     className={cn(
                       "flex w-full items-center justify-between rounded-lg border p-4 text-left transition-colors",
                       highlighted
-                        ? "border-brand-800 bg-brand-50"
-                        : "border-slate-200 bg-white hover:border-slate-300"
+                        ? "border-brand-800 bg-paper-deep"
+                        : "border-rule bg-white hover:border-rule-strong"
                     )}
                   >
                     <span className="flex items-center gap-3">
-                      <MapPin className="size-4 text-slate-400" />
+                      <MapPin className="size-4 text-brand-900/45" />
                       <span className="text-sm font-medium text-brand-900">{v.name}</span>
                     </span>
                     {v.capacity ? (
-                      <span className="text-xs tabular-nums text-slate-500">
+                      <span className="text-xs tabular-nums text-brand-900/60">
                         Capacity {v.capacity}
                       </span>
                     ) : null}
@@ -316,15 +316,15 @@ export function FloorMap({
               </SheetHeader>
               <div className="px-6 pb-6 pt-2">
                 {venueSessions.length === 0 ? (
-                  <p className="text-sm text-slate-500">No sessions in this venue.</p>
+                  <p className="text-sm text-brand-900/60">No sessions in this venue.</p>
                 ) : (
                   <ul className="flex flex-col gap-2">
                     {venueSessions.map((s) => (
                       <li
                         key={s.id}
-                        className="rounded-md border border-slate-200 bg-white p-3"
+                        className="rounded-md border border-rule bg-white p-3"
                       >
-                        <div className="text-xs font-medium tabular-nums text-slate-900">
+                        <div className="text-xs font-medium tabular-nums text-brand-950">
                           {rangeIST(s.start_at, s.end_at)}
                         </div>
                         <div className="mt-0.5 text-sm font-semibold text-brand-900">

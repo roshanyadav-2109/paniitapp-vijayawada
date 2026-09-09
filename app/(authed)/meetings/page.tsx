@@ -43,7 +43,7 @@ export default async function MeetingsPage() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-5 pb-12 pt-5 lg:max-w-4xl lg:pt-8">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-brand-900 lg:text-3xl">
+        <h1 className="font-display text-2xl font-semibold text-brand-900 lg:text-3xl">
           Meetings
         </h1>
         <p className="mt-1 text-sm leading-6 text-brand-900/70">

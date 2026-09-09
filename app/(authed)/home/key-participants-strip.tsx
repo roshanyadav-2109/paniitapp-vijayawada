@@ -38,7 +38,7 @@ export function KeyParticipantsStrip({ people }: { people: Person[] }) {
 
   if (list.length === 0) {
     return (
-      <div className="mx-4 rounded-lg bg-white p-5 text-center text-sm text-brand-900/75 ring-1 ring-brand-100 sm:mx-6 lg:mx-8">
+      <div className="mx-4 rounded-lg bg-white p-5 text-center text-sm text-brand-900/75 ring-1 ring-rule sm:mx-6 lg:mx-8">
         Featured participants will appear here closer to the event.
       </div>
     );
@@ -72,7 +72,7 @@ export function KeyParticipantsStrip({ people }: { people: Person[] }) {
           type="button"
           onClick={prev}
           aria-label="Previous participant"
-          className="mr-2 hidden size-9 shrink-0 place-items-center rounded-full border border-brand-100 bg-white text-brand-800 transition-colors hover:bg-brand-50 md:inline-grid"
+          className="mr-2 hidden size-9 shrink-0 place-items-center rounded-full border border-rule bg-white text-brand-800 transition-colors hover:bg-paper-deep md:inline-grid"
         >
           <ChevronLeft className="size-4" strokeWidth={1.8} />
         </button>
@@ -89,7 +89,7 @@ export function KeyParticipantsStrip({ people }: { people: Person[] }) {
           type="button"
           onClick={next}
           aria-label="Next participant"
-          className="ml-2 hidden size-9 shrink-0 place-items-center rounded-full border border-brand-100 bg-white text-brand-800 transition-colors hover:bg-brand-50 md:inline-grid"
+          className="ml-2 hidden size-9 shrink-0 place-items-center rounded-full border border-rule bg-white text-brand-800 transition-colors hover:bg-paper-deep md:inline-grid"
         >
           <ChevronRight className="size-4" strokeWidth={1.8} />
         </button>
@@ -165,7 +165,7 @@ function ParticipantCard({
 }) {
   return (
     <article
-      className="relative isolate aspect-[3/4] w-full overflow-hidden rounded-lg bg-white ring-1 ring-brand-100 will-change-transform"
+      className="relative isolate aspect-[3/4] w-full overflow-hidden rounded-lg bg-white ring-1 ring-rule will-change-transform"
       style={
         animate
           ? {
@@ -184,7 +184,7 @@ function ParticipantCard({
           behind the arc. At 82% of a 3/4 card the photo box is ~0.94:1, so a
           square source loses only a few percent off the sides — nothing like
           the third it was being scaled up by when it filled the whole card. */}
-      <div className="absolute inset-x-0 top-0 h-[82%] w-full overflow-hidden bg-brand-50/40">
+      <div className="absolute inset-x-0 top-0 h-[82%] w-full overflow-hidden bg-paper-deep/40">
         {person.photo_url ? (
           <Image
             src={person.photo_url}
@@ -203,7 +203,7 @@ function ParticipantCard({
       {/* The blue arc, unchanged apart from dropping -z-10 so it now sits over
           the photo instead of behind the old white card face. */}
       <div
-        className="pointer-events-none absolute left-1/2 top-[75%] h-[60%] w-[200%] -translate-x-1/2 rounded-[50%] bg-[radial-gradient(circle,#3b329e_0%,#1B1464_70%,#0d0930_100%)]"
+        className="pointer-events-none absolute left-1/2 top-[75%] h-[60%] w-[200%] -translate-x-1/2 rounded-[50%] bg-brand-800"
         aria-hidden
       />
 

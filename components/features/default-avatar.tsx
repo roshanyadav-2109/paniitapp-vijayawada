@@ -44,7 +44,7 @@ export function ProfileAvatar({
       {photoUrl ? (
         <AvatarImage src={photoUrl} alt={name ?? ""} />
       ) : null}
-      <AvatarFallback className="bg-slate-300/80">
+      <AvatarFallback className="bg-rule-strong/80">
         <SilhouetteSvg className="h-[88%] w-[88%] translate-y-[6%]" />
       </AvatarFallback>
     </Avatar>

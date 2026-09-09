@@ -59,8 +59,8 @@ export function BookmarkButton({ sessionId, initial, size = "sm", withLabel }: P
         className={cn(
           "inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors",
           bookmarked
-            ? "border-brand-800 bg-brand-50 text-brand-800"
-            : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+            ? "border-brand-800 bg-paper-deep text-brand-800"
+            : "border-rule-strong bg-white text-brand-900/80 hover:bg-paper"
         )}
       >
         <Icon className={iconSize} />
@@ -79,8 +79,8 @@ export function BookmarkButton({ sessionId, initial, size = "sm", withLabel }: P
       className={cn(
         "inline-grid h-8 w-8 place-items-center rounded-md transition-colors",
         bookmarked
-          ? "text-brand-800 hover:bg-brand-50"
-          : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          ? "text-brand-800 hover:bg-paper-deep"
+          : "text-brand-900/45 hover:bg-paper-deep hover:text-brand-900/80"
       )}
     >
       <Icon className={iconSize} />

@@ -18,12 +18,12 @@ export default function AgendaDetailError({
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-10">
-      <div className="rounded-lg border border-brand-100 bg-white p-6 text-center">
+      <div className="rounded-lg border border-rule bg-white p-6 text-center">
         <AlertTriangle
           className="mx-auto h-8 w-8 text-iit-500"
           strokeWidth={1.6}
         />
-        <h1 className="mt-3 text-base font-semibold text-brand-950">
+        <h1 className="mt-3 font-display text-base font-semibold text-brand-950">
           We couldn&apos;t load this session
         </h1>
         <p className="mt-1.5 text-[13px] leading-6 text-brand-900/70">
@@ -46,7 +46,7 @@ export default function AgendaDetailError({
           </button>
           <Link
             href="/agenda"
-            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-brand-100 bg-white px-3.5 text-sm font-medium text-brand-900 hover:bg-brand-50/60"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-rule bg-white px-3.5 text-sm font-medium text-brand-900 hover:bg-paper-deep/60"
           >
             <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.8} />
             Back to agenda

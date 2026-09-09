@@ -83,16 +83,16 @@ export default async function AdminPage() {
   return (
     <div className="mx-auto w-full max-w-3xl pt-5 pb-10 lg:max-w-4xl lg:pt-8 space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-brand-900">Admin</h1>
-        <p className="mt-1 text-sm leading-6 text-slate-600">
+        <h1 className="font-display text-2xl font-semibold text-brand-900">Admin</h1>
+        <p className="mt-1 text-sm leading-6 text-brand-900/70">
           Live event operations dashboard.
         </p>
       </header>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map((s) => (
-          <div key={s.label} className="rounded-lg border border-slate-200 bg-white p-4">
-            <div className="text-xs font-medium uppercase tracking-wider text-slate-500">
+          <div key={s.label} className="rounded-lg border border-rule bg-white p-4">
+            <div className="eyebrow text-brand-900/60">
               {s.label}
             </div>
             <div className="mt-1 text-2xl font-semibold tabular-nums text-brand-900">
@@ -104,13 +104,13 @@ export default async function AdminPage() {
 
       <AnnouncementComposer />
 
-      <section className="rounded-lg border border-slate-200 bg-white p-4">
-        <h2 className="text-xs font-medium uppercase tracking-wider text-slate-500">
+      <section className="rounded-lg border border-rule bg-white p-4">
+        <h2 className="eyebrow text-brand-900/60">
           Top sessions by check-ins
         </h2>
         <ul className="mt-2 divide-y divide-slate-100">
           {topSessions.length === 0 ? (
-            <li className="py-3 text-sm text-slate-500">No check-ins yet.</li>
+            <li className="py-3 text-sm text-brand-900/60">No check-ins yet.</li>
           ) : (
             topSessions.map((s) => (
               <li key={s.id} className="flex items-center justify-between py-2.5">
@@ -120,7 +120,7 @@ export default async function AdminPage() {
                 >
                   {s.title}
                 </Link>
-                <span className="text-xs tabular-nums text-slate-500">
+                <span className="text-xs tabular-nums text-brand-900/60">
                   {(s.current_checkins ?? 0).toLocaleString()}
                 </span>
               </li>
@@ -129,13 +129,13 @@ export default async function AdminPage() {
         </ul>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-4">
-        <h2 className="text-xs font-medium uppercase tracking-wider text-slate-500">
+      <section className="rounded-lg border border-rule bg-white p-4">
+        <h2 className="eyebrow text-brand-900/60">
           Hot unanswered questions
         </h2>
         <ul className="mt-2 divide-y divide-slate-100">
           {topQuestions.length === 0 ? (
-            <li className="py-3 text-sm text-slate-500">No open questions right now.</li>
+            <li className="py-3 text-sm text-brand-900/60">No open questions right now.</li>
           ) : (
             topQuestions.map((q) => (
               <li key={q.id} className="flex items-start justify-between gap-3 py-2.5">
@@ -145,7 +145,7 @@ export default async function AdminPage() {
                 >
                   {q.question}
                 </Link>
-                <span className="shrink-0 text-xs tabular-nums text-slate-500">
+                <span className="shrink-0 text-xs tabular-nums text-brand-900/60">
                   ▲ {q.upvotes}
                 </span>
               </li>
@@ -160,9 +160,9 @@ export default async function AdminPage() {
 function Forbidden({ message }: { message: string }) {
   return (
     <div className="mx-auto max-w-md px-4 py-16 text-center">
-      <Shield className="mx-auto h-10 w-10 text-slate-300" strokeWidth={1.5} />
-      <h1 className="mt-4 text-lg font-semibold text-brand-900">Restricted</h1>
-      <p className="mt-1 text-sm text-slate-500">{message}</p>
+      <Shield className="mx-auto h-10 w-10 text-rule-strong" strokeWidth={1.5} />
+      <h1 className="mt-4 font-display text-lg font-semibold text-brand-900">Restricted</h1>
+      <p className="mt-1 text-sm text-brand-900/60">{message}</p>
     </div>
   );
 }

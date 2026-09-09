@@ -176,13 +176,13 @@ function Composer() {
   }
 
   return (
-    <div className="rounded-lg border border-brand-100 bg-white p-3">
+    <div className="rounded-lg border border-rule bg-white p-3">
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value.slice(0, MAX_BODY))}
         rows={isPoll ? 2 : 3}
         placeholder="Share something with the room…"
-        className="w-full resize-none rounded-md border border-brand-100 bg-white px-3 py-2 text-[14px] leading-6 text-brand-950 outline-none placeholder:text-brand-900/40 focus:border-brand-300"
+        className="w-full resize-none rounded-md border border-rule bg-white px-3 py-2 text-[14px] leading-6 text-brand-950 outline-none placeholder:text-brand-900/40 focus:border-brand-300"
       />
 
       {isPoll ? (
@@ -197,14 +197,14 @@ function Composer() {
                   setOptions(next);
                 }}
                 placeholder={`Option ${i + 1}`}
-                className="h-9 flex-1 rounded-md border border-brand-100 px-3 text-[13px] text-brand-950 outline-none placeholder:text-brand-900/40 focus:border-brand-300"
+                className="h-9 flex-1 rounded-md border border-rule px-3 text-[13px] text-brand-950 outline-none placeholder:text-brand-900/40 focus:border-brand-300"
               />
               {options.length > 2 ? (
                 <button
                   type="button"
                   aria-label={`Remove option ${i + 1}`}
                   onClick={() => setOptions(options.filter((_, j) => j !== i))}
-                  className="grid size-8 shrink-0 place-items-center rounded-md text-brand-800/60 hover:bg-brand-50"
+                  className="grid size-8 shrink-0 place-items-center rounded-md text-brand-800/60 hover:bg-paper-deep"
                 >
                   <X className="size-4" />
                 </button>
@@ -231,7 +231,7 @@ function Composer() {
             "inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium transition-colors",
             isPoll
               ? "bg-brand-800 text-white"
-              : "text-brand-800 hover:bg-brand-50"
+              : "text-brand-800 hover:bg-paper-deep"
           )}
         >
           <SlidersHorizontal className="size-3.5" strokeWidth={1.8} />
@@ -308,12 +308,12 @@ function PostCard({
   }
 
   return (
-    <li className="rounded-lg border border-brand-100 bg-white p-3.5">
+    <li className="rounded-lg border border-rule bg-white p-3.5">
       <div className="flex items-start gap-2.5">
         <Link href={`/attendees/${post.author_id}`} className="shrink-0">
-          <Avatar className="size-9 ring-1 ring-brand-100">
+          <Avatar className="size-9 ring-1 ring-rule">
             {a?.photo_url ? <AvatarImage src={a.photo_url} alt={a.full_name ?? ""} /> : null}
-            <AvatarFallback className="bg-brand-50 text-[11px] font-semibold text-brand-800">
+            <AvatarFallback className="bg-paper-deep text-[11px] font-semibold text-brand-800">
               {initials(a?.full_name ?? null)}
             </AvatarFallback>
           </Avatar>
@@ -333,7 +333,7 @@ function PostCard({
               · {timeAgo(post.created_at)}
             </span>
             {post.is_pinned ? (
-              <span className="ml-auto shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-semibold text-brand-800">
+              <span className="ml-auto shrink-0 rounded-full bg-paper-deep px-2 py-0.5 text-[10px] font-semibold text-brand-800">
                 Pinned
               </span>
             ) : null}
@@ -350,7 +350,7 @@ function PostCard({
             onClick={onDelete}
             disabled={pending}
             aria-label="Delete post"
-            className="grid size-7 shrink-0 place-items-center rounded-md text-brand-800/45 hover:bg-brand-50 hover:text-iit-500"
+            className="grid size-7 shrink-0 place-items-center rounded-md text-brand-800/45 hover:bg-paper-deep hover:text-iit-500"
           >
             <Trash2 className="size-3.5" strokeWidth={1.7} />
           </button>
@@ -371,7 +371,7 @@ function PostCard({
           onClick={onLike}
           className={cn(
             "inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-[12px] font-medium transition-colors",
-            likeOn ? "text-brand-800" : "text-brand-900/55 hover:bg-brand-50"
+            likeOn ? "text-brand-800" : "text-brand-900/55 hover:bg-paper-deep"
           )}
         >
           <Check className={cn("size-4", likeOn && "text-brand-800")} strokeWidth={1.9} />
@@ -380,7 +380,7 @@ function PostCard({
         <button
           type="button"
           onClick={() => setShowComments((v) => !v)}
-          className="inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-[12px] font-medium text-brand-900/55 transition-colors hover:bg-brand-50"
+          className="inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-[12px] font-medium text-brand-900/55 transition-colors hover:bg-paper-deep"
         >
           <Reply className="size-4" strokeWidth={1.8} />
           {post.comment_count > 0 ? post.comment_count : "Reply"}
@@ -429,8 +429,8 @@ function Poll({ post, myVote }: { post: PostRow; myVote: string | null }) {
             className={cn(
               "relative w-full overflow-hidden rounded-md border px-3 py-2 text-left text-[13px] transition-colors",
               mine
-                ? "border-brand-300 bg-brand-50/40 font-semibold text-brand-900"
-                : "border-brand-100 text-brand-950 hover:bg-brand-50/40"
+                ? "border-brand-300 bg-paper-deep/40 font-semibold text-brand-900"
+                : "border-rule text-brand-950 hover:bg-paper-deep/40"
             )}
           >
             {/* Result bar only appears once the viewer has voted, so early
@@ -438,7 +438,7 @@ function Poll({ post, myVote }: { post: PostRow; myVote: string | null }) {
             {voted ? (
               <span
                 aria-hidden
-                className="absolute inset-y-0 left-0 bg-brand-100/70"
+                className="absolute inset-y-0 left-0 bg-rule/70"
                 style={{ width: `${pct}%` }}
               />
             ) : null}
@@ -509,7 +509,7 @@ function Comments({ postId }: { postId: string }) {
   }
 
   return (
-    <div className="mt-2.5 border-t border-brand-100 pt-2.5">
+    <div className="mt-2.5 border-t border-rule pt-2.5">
       {rows === null ? (
         <div className="flex justify-center py-2">
           <Loader2 className="size-4 animate-spin text-brand-800/40" />
@@ -520,11 +520,11 @@ function Comments({ postId }: { postId: string }) {
             const prof = Array.isArray(c.profiles) ? c.profiles[0] : c.profiles;
             return (
               <li key={c.id} className="flex items-start gap-2">
-                <Avatar className="size-6 shrink-0 ring-1 ring-brand-100">
+                <Avatar className="size-6 shrink-0 ring-1 ring-rule">
                   {prof?.photo_url ? (
                     <AvatarImage src={prof.photo_url} alt={prof.full_name ?? ""} />
                   ) : null}
-                  <AvatarFallback className="bg-brand-50 text-[9px] font-semibold text-brand-800">
+                  <AvatarFallback className="bg-paper-deep text-[9px] font-semibold text-brand-800">
                     {initials(prof?.full_name ?? null)}
                   </AvatarFallback>
                 </Avatar>
@@ -555,7 +555,7 @@ function Comments({ postId }: { postId: string }) {
             }
           }}
           placeholder="Add a reply…"
-          className="h-9 flex-1 rounded-md border border-brand-100 px-3 text-[13px] text-brand-950 outline-none placeholder:text-brand-900/40 focus:border-brand-300"
+          className="h-9 flex-1 rounded-md border border-rule px-3 text-[13px] text-brand-950 outline-none placeholder:text-brand-900/40 focus:border-brand-300"
         />
         <button
           type="button"

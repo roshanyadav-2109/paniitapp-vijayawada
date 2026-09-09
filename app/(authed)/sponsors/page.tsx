@@ -35,12 +35,12 @@ const tierLabel: Record<string, string> = {
 };
 
 const tierCard: Record<string, string> = {
-  title: "border-2 border-brand-800 bg-brand-50",
-  platinum: "border border-slate-300 bg-slate-50",
-  gold: "border border-slate-200 bg-white",
-  silver: "border border-slate-200 bg-white",
-  bronze: "border border-slate-200 bg-white",
-  partner: "border border-slate-100 bg-white",
+  title: "border-2 border-brand-800 bg-paper-deep",
+  platinum: "border border-rule-strong bg-paper",
+  gold: "border border-rule bg-white",
+  silver: "border border-rule bg-white",
+  bronze: "border border-rule bg-white",
+  partner: "border border-rule-faint bg-white",
 };
 
 export const dynamic = "force-dynamic";
@@ -70,8 +70,8 @@ export default async function SponsorsPage() {
   return (
     <div className="mx-auto w-full max-w-3xl pt-5 pb-10 lg:max-w-4xl lg:pt-8 space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-brand-900">Sponsors</h1>
-        <p className="mt-1 text-sm leading-6 text-slate-600">
+        <h1 className="font-display text-2xl font-semibold text-brand-900">Sponsors</h1>
+        <p className="mt-1 text-sm leading-6 text-brand-900/70">
           The partners making the {EVENT_NAME} happen.
         </p>
       </header>
@@ -86,7 +86,7 @@ export default async function SponsorsPage() {
         <div className="space-y-6">
           {Array.from(byTier.entries()).map(([tier, items]) => (
             <section key={tier}>
-              <div className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-500">
+              <div className="mb-2 eyebrow text-brand-900/60">
                 {tierLabel[tier] ?? tier}
               </div>
               <ul className="space-y-2">
@@ -94,7 +94,7 @@ export default async function SponsorsPage() {
                   <li key={s.id}>
                     <Link
                       href={`/sponsors/${s.id}`}
-                      className={`block rounded-lg p-4 transition-colors hover:border-slate-300 ${tierCard[tier] ?? tierCard.partner}`}
+                      className={`block rounded-lg p-4 transition-colors hover:border-rule-strong ${tierCard[tier] ?? tierCard.partner}`}
                     >
                       <div className="flex items-start gap-3">
                         <div className="grid size-14 shrink-0 place-items-center rounded-lg bg-white p-2 ring-1 ring-slate-200">
@@ -107,16 +107,16 @@ export default async function SponsorsPage() {
                               className="size-full object-contain"
                             />
                           ) : (
-                            <Building className="size-5 text-slate-400" strokeWidth={1.5} />
+                            <Building className="size-5 text-brand-900/45" strokeWidth={1.5} />
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="text-base font-semibold text-brand-900">{s.name}</div>
                           {s.description ? (
-                            <p className="mt-1 text-xs leading-5 text-slate-600 line-clamp-2">{s.description}</p>
+                            <p className="mt-1 text-xs leading-5 text-brand-900/70 line-clamp-2">{s.description}</p>
                           ) : null}
                           {s.offer_title ? (
-                            <p className="mt-2 text-xs font-medium text-slate-700">{s.offer_title}</p>
+                            <p className="mt-2 text-xs font-medium text-brand-900/80">{s.offer_title}</p>
                           ) : null}
                         </div>
                         {s.booth_number ? (

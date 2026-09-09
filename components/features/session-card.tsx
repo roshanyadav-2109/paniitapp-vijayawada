@@ -108,30 +108,48 @@ export function SessionCard({
   return (
     <Link
       href={`/agenda/${session.id}`}
-      className="relative block overflow-hidden rounded-lg border border-brand-100 bg-white p-4 transition-colors hover:bg-brand-50/30"
+      className="relative block overflow-hidden rounded-lg border border-rule bg-white py-4 pl-5 pr-4 transition-colors hover:bg-paper-deep/40"
     >
+      {/*
+        Track as a keyline down the left edge rather than a coloured pill in
+        the metadata row. Same information, no extra object competing with the
+        title — and it gives a scanned list of sessions a colour rhythm at the
+        margin, which a row of pills never does.
+      */}
+      <span
+        aria-hidden
+        className="absolute inset-y-0 left-0 w-[3px]"
+        style={{ backgroundColor: trackColor(track) }}
+      />
+
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium tabular-nums text-brand-950">
+          <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+            <span className="text-xs font-medium tabular-nums text-brand-900/70">
               {rangeIST(session.start_at, session.end_at)}
             </span>
+            {/*
+              One badge, not three. The card used to be able to show Featured,
+              Recommended, a track pill and up to three interest pills at once
+              — seven objects around a title, which reads as a dashboard row
+              rather than a thing happening in a room. Featured outranks
+              Recommended because it is editorial, not personalised.
+            */}
             {session.is_featured ? (
-              <span className="rounded-[4px] border border-iit-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-iit-600">
+              <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-iit-600">
                 Featured
               </span>
-            ) : null}
-            {matches.length > 0 ? (
-              <span className="rounded-[4px] border border-emerald-300 bg-white px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+            ) : matches.length > 0 ? (
+              <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-emerald-700">
                 Recommended
               </span>
             ) : null}
           </div>
-          <h3 className="mt-1 text-base font-semibold leading-snug text-brand-950">
+          <h3 className="mt-1.5 font-display text-[17px] font-semibold leading-snug text-brand-950">
             {session.title}
           </h3>
           {session.description ? (
-            <p className="mt-1 text-xs leading-5 text-brand-900/65 line-clamp-2">
+            <p className="mt-1 line-clamp-2 text-[13px] leading-6 text-brand-900/60">
               {session.description}
             </p>
           ) : null}
@@ -139,40 +157,43 @@ export function SessionCard({
         <BookmarkButton sessionId={session.id} initial={bookmarked} />
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-brand-900/75">
-        {venueName ? (
-          <span className="inline-flex items-center gap-1">
-            <MapPin className="h-3 w-3 text-brand-800/65" />
-            {venueName}
-            {venueFloor ? <span className="text-brand-900/55">({venueFloor})</span> : null}
-          </span>
-        ) : null}
-        <span className="rounded-[4px] border border-brand-100 bg-brand-50 px-2 py-0.5 text-[11px] font-medium text-brand-800">
+      {/* Metadata as one plain line of text, separated by middots — the
+          information density of the pill row without seven bordered boxes. */}
+      <p className="mt-2.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[12.5px] text-brand-900/60">
+        <span className="font-medium text-brand-900/75">
           {TRACK_LABELS[track] ?? track}
         </span>
-        {matches.length > 0 ? (
-          <span className="flex flex-wrap gap-1">
-            {matches.slice(0, 3).map((m) => (
-              <span
-                key={m}
-                className="rounded-[4px] bg-brand-800/10 px-1.5 py-0.5 text-[10px] font-medium text-brand-800"
-              >
-                {m}
-              </span>
-            ))}
-          </span>
+        {venueName ? (
+          <>
+            <span aria-hidden className="text-brand-900/30">
+              &middot;
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <MapPin className="h-3 w-3 text-brand-900/40" />
+              {venueName}
+              {venueFloor ? <span className="text-brand-900/45">({venueFloor})</span> : null}
+            </span>
+          </>
         ) : null}
-      </div>
+        {matches.length > 0 ? (
+          <>
+            <span aria-hidden className="text-brand-900/30">
+              &middot;
+            </span>
+            <span className="text-brand-900/55">{matches.slice(0, 2).join(", ")}</span>
+          </>
+        ) : null}
+      </p>
 
       {showCapacity && cap ? (
         <div className="mt-3">
-          <div className="h-1 overflow-hidden rounded-full bg-brand-100">
+          <div className="h-[3px] overflow-hidden rounded-full bg-rule">
             <div
               className={`h-full ${cap.fill} transition-all`}
               style={{ width: `${pct}%` }}
             />
           </div>
-          <div className="mt-1 flex items-center justify-between text-[10px] tabular-nums text-brand-800/70">
+          <div className="mt-1.5 flex items-center justify-between text-[11px] tabular-nums text-brand-900/55">
             <span>{cap.label}</span>
             <span>
               {used.toLocaleString()} / {capacity.toLocaleString()}

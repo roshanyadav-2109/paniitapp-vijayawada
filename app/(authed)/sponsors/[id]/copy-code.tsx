@@ -13,7 +13,7 @@ export function CopyOfferCode({ code }: { code: string }) {
     });
   }
   return (
-    <div className="mt-3 flex items-center gap-2 rounded-md border border-slate-200 bg-white p-3">
+    <div className="mt-3 flex items-center gap-2 rounded-md border border-rule bg-white p-3">
       <code className="flex-1 select-all text-sm font-medium tabular-nums text-brand-900">
         {code}
       </code>

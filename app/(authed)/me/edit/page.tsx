@@ -79,7 +79,7 @@ export default async function MeEditPage() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-5 pb-10 pt-5 lg:max-w-4xl lg:pt-8">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-brand-900">
+        <h1 className="font-display text-2xl font-semibold text-brand-900">
           Edit profile
         </h1>
         <p className="mt-1 text-sm leading-6 text-brand-900/70">
@@ -87,8 +87,8 @@ export default async function MeEditPage() {
         </p>
       </header>
 
-      <section className="rounded-lg border border-brand-100 bg-white p-5">
-        <h2 className="text-[13px] font-semibold tracking-tight text-brand-950">
+      <section className="border-t border-rule pt-4">
+        <h2 className="font-display text-[15px] font-semibold text-brand-950">
           Profile photo
         </h2>
         {userId ? (

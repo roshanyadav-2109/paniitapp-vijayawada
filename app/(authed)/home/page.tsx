@@ -215,41 +215,54 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="-mx-4 space-y-5 pt-4 sm:-mx-6 lg:mx-auto lg:w-[85vw] lg:max-w-6xl lg:space-y-8 lg:px-0 lg:pt-8">
+    <div className="-mx-4 space-y-9 pb-4 pt-4 sm:-mx-6 lg:mx-auto lg:w-[85vw] lg:max-w-6xl lg:space-y-14 lg:px-0 lg:pt-8">
       {/* Carousel breaks out of the 85vw column on desktop so it spans
           almost full screen with a slim margin on each side. */}
       <div className="px-4 sm:px-6 lg:-mx-[5vw] lg:px-0 xl:-mx-[7vw]">
         <HeroCarousel />
       </div>
 
-      {/* Event card */}
+      {/*
+        Masthead. This was a radial purple-to-navy gradient card — the single
+        most generic thing on the page. It is now a flat navy block with a red
+        rule across the top and hairlines between the meta rows: a printed
+        programme cover, not a hero gradient. Flat also means the Fraunces
+        tagline sits on one solid value instead of drifting across three.
+      */}
       <section className="px-4 sm:px-6 lg:px-8">
-        <div className="rounded-lg border border-brand-900/30 bg-[radial-gradient(circle_at_top_left,#3b329e_0%,#1B1464_55%,#0d0930_100%)] p-5 text-white">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/65">
-            PAN IIT 2026 · {EVENT_SHORT_NAME}
-          </p>
-          <h2 className="mt-1 text-[19px] font-semibold leading-tight tracking-tight">
-            {EVENT_TAGLINE}
-          </h2>
-          <div className="mt-3 space-y-1.5 text-[13px] font-medium text-white/85">
-            <div className="flex items-center gap-2">
-              <CalendarDays className="size-4 text-white/70" strokeWidth={1.6} />
-              {SUMMIT_DATE_LABEL}
-            </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="size-4 text-white/70" strokeWidth={1.6} />
-              {SUMMIT_VENUE}
-            </div>
+        <div className="overflow-hidden rounded-lg bg-brand-800">
+          <div className="h-[3px] w-full bg-iit-500" aria-hidden />
+          <div className="p-5 sm:p-6">
+            <p className="eyebrow text-paper/60">
+              PAN IIT 2026 · {EVENT_SHORT_NAME}
+            </p>
+            <h2 className="mt-2 max-w-[22ch] font-display text-[26px] font-semibold leading-[1.15] text-paper sm:text-[30px]">
+              {EVENT_TAGLINE}
+            </h2>
+
+            <dl className="mt-5 border-t border-paper/15">
+              <div className="flex items-start gap-3 border-b border-paper/15 py-2.5">
+                <dt className="sr-only">Date</dt>
+                <CalendarDays className="mt-[3px] size-4 shrink-0 text-iit-400" strokeWidth={1.6} />
+                <dd className="text-[13px] leading-snug text-paper/85">{SUMMIT_DATE_LABEL}</dd>
+              </div>
+              <div className="flex items-start gap-3 border-b border-paper/15 py-2.5">
+                <dt className="sr-only">Venue</dt>
+                <MapPin className="mt-[3px] size-4 shrink-0 text-iit-400" strokeWidth={1.6} />
+                <dd className="text-[13px] leading-snug text-paper/85">{SUMMIT_VENUE}</dd>
+              </div>
+            </dl>
+
+            <a
+              href={SUMMIT_MAPS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-5 inline-flex h-9 items-center gap-2 rounded-sm border border-paper/35 px-3.5 text-[13px] font-medium text-paper transition-colors hover:border-paper hover:bg-paper hover:text-brand-900"
+            >
+              <Compass className="size-4" strokeWidth={1.6} />
+              View directions
+            </a>
           </div>
-          <a
-            href={SUMMIT_MAPS_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-4 inline-flex h-9 items-center gap-2 rounded-md bg-white px-3.5 text-[13px] font-semibold text-brand-900 transition-colors hover:bg-brand-50"
-          >
-            <Compass className="size-4" strokeWidth={1.6} />
-            View directions
-          </a>
         </div>
       </section>
 
@@ -257,92 +270,91 @@ export default async function HomePage() {
       {keyPeople.length > 0 ? (
         <section>
           <div className="px-4 sm:px-6 lg:px-8">
-            <h2 className="text-base font-semibold tracking-tight text-brand-950">
-              Key guests &amp; speakers
-            </h2>
+            <SectionHead title="Key guests & speakers" />
           </div>
-          <div className="mt-3">
+          <div className="mt-4">
             <KeyParticipantsStrip people={keyPeople} />
           </div>
         </section>
       ) : null}
 
-      {/* Quick actions — 2 per row, icon + label horizontal, no icon backdrop */}
+      {/* Quick actions */}
       <section className="px-4 sm:px-6 lg:px-8">
         <QuickActions role={role} />
       </section>
 
-      {/* Today's calendar */}
+      {/*
+        Today's calendar. Was a white card containing a stack of smaller white
+        cards — a box inside a box, with the border doing the work twice. Now
+        the section rule separates it from what is above and hairlines separate
+        the rows, so the timetable reads as a timetable.
+      */}
       <section className="px-4 sm:px-6 lg:px-8">
-        <div className="rounded-lg border border-brand-100 bg-white p-5">
-          <h2 className="text-base font-semibold tracking-tight text-brand-950">
-            Today&apos;s calendar
-          </h2>
-          {calendar.length === 0 ? (
-            <p className="mt-3 text-[13px] text-brand-900/75">
-              Your day is open. Bookmark sessions in Agenda and accept meeting
-              requests to fill this in.
-            </p>
-          ) : (
-            <ul className="mt-3 flex flex-col gap-1.5">
-              {calendar.map((e, i) => (
-                <li key={`${i}-${e.start}`}>
-                  <Link
-                    href={e.href}
-                    className="flex items-start gap-3 rounded-lg border border-brand-100 bg-white p-3 transition-colors hover:bg-brand-50/30"
-                  >
-                    <div className="w-14 shrink-0 pt-[2px] text-[12px] font-semibold tabular-nums text-brand-800/85">
-                      {formatInTimeZone(new Date(e.start), SUMMIT_TZ, "h:mm a")}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold leading-tight text-brand-950">
-                        {e.title}
-                      </p>
-                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-brand-800/65">
-                          {e.kind}
-                        </span>
-                        {e.presenter ? (
-                          <span className="rounded-[4px] bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-900">
-                            {e.presenter}
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-                    <ChevronRight className="mt-1 size-4 shrink-0 text-brand-800/65" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <SectionHead
+          title="Today’s calendar"
+          meta={
+            calendar.length > 0
+              ? `${calendar.length} item${calendar.length === 1 ? "" : "s"}`
+              : undefined
+          }
+        />
+        {calendar.length === 0 ? (
+          <p className="mt-4 max-w-prose text-[14px] leading-7 text-brand-900/70">
+            Your day is open. Bookmark sessions in Agenda and accept meeting
+            requests to fill this in.
+          </p>
+        ) : (
+          <ul className="list-ruled mt-1">
+            {calendar.map((e, i) => (
+              <li key={`${i}-${e.start}`}>
+                <Link
+                  href={e.href}
+                  className="group flex items-baseline gap-4 py-3.5 transition-colors hover:bg-paper-deep/50"
+                >
+                  <span className="w-[62px] shrink-0 text-[12px] font-medium tabular-nums text-brand-900/60">
+                    {formatInTimeZone(new Date(e.start), SUMMIT_TZ, "h:mm a")}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-display text-[15px] font-semibold leading-snug text-brand-950">
+                      {e.title}
+                    </span>
+                    <span className="mt-0.5 block text-[12.5px] text-brand-900/60">
+                      {e.kind === "meeting" ? "1:1 meeting" : "Session"}
+                      {e.presenter ? <> &middot; {e.presenter}</> : null}
+                    </span>
+                  </span>
+                  <ChevronRight className="size-4 shrink-0 self-center text-brand-900/35 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {/* About */}
       <section className="px-4 sm:px-6 lg:px-8">
-        <div className="rounded-lg border border-brand-100 bg-white p-5">
-          <h2 className="text-base font-semibold tracking-tight text-brand-950">
-            About the summit
-          </h2>
-          <p className="mt-2 text-[13px] leading-6 text-brand-900">
-            The {EVENT_NAME} brings together {EVENT_ATTENDEE_COUNT} delegates —
-            alumni, founders, investors, and policy makers across 23 IIT
-            campuses — for one day on building Andhra Pradesh&apos;s deep-tech
-            decade.
-          </p>
-          <Link
-            href="/home/about"
-            className="mt-3 inline-flex items-center gap-1.5 text-[13px] font-semibold text-brand-800 hover:text-brand-900"
-          >
-            Know more
-            <ArrowUpRight className="size-4" strokeWidth={1.6} />
-          </Link>
-        </div>
+        <SectionHead title="About the summit" />
+        <p className="mt-4 max-w-[62ch] text-[15px] leading-[1.75] text-brand-900/85">
+          The {EVENT_NAME} brings together {EVENT_ATTENDEE_COUNT} delegates —
+          alumni, founders, investors, and policy makers across 23 IIT campuses
+          — for one day on building Andhra Pradesh&rsquo;s deep-tech decade.
+        </p>
+        <Link
+          href="/home/about"
+          className="group mt-4 inline-flex items-center gap-1.5 border-b border-brand-800/30 pb-0.5 text-[13px] font-medium text-brand-800 transition-colors hover:border-brand-800"
+        >
+          Know more
+          <ArrowUpRight
+            className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+            strokeWidth={1.6}
+          />
+        </Link>
       </section>
 
-      {/* Live Stream */}
+      {/* Live stream */}
       <section className="px-4 sm:px-6 lg:px-8">
-        <div className="overflow-hidden rounded-lg border border-brand-100 bg-black">
+        <SectionHead title="Live stream" />
+        <div className="mt-4 overflow-hidden rounded-lg bg-black">
           <div className="relative aspect-video w-full">
             <iframe
               src="https://www.youtube.com/embed/6CdwG2RUTJ4?autoplay=1&mute=1&playsinline=1&rel=0&si=Nu9IZOYr7ksqYe-L"
@@ -364,32 +376,49 @@ export default async function HomePage() {
         </section>
       ) : null}
 
-      {/* Connect with us */}
+      {/* Connect — left-aligned. Centred icon rows are a template default and
+          fight the left-aligned rhythm of every other section. */}
       <section className="px-4 sm:px-6 lg:px-8">
-        <div className="rounded-lg border border-brand-100 bg-white p-5">
-          <h2 className="text-base font-semibold tracking-tight text-brand-950">
-            Connect with us
-          </h2>
-          <div className="mt-3 flex flex-wrap justify-center gap-2">
-            {SOCIALS.map((s) => (
-              <a
-                key={s.label}
-                href={s.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={s.label}
-                title={s.label}
-                className="inline-grid size-10 place-items-center rounded-md transition-transform hover:-translate-y-0.5"
-              >
-                {s.icon}
-              </a>
-            ))}
-          </div>
-          <p className="mt-2 text-center text-[11px] font-medium text-brand-900/65">
-            paniit.org · summit@paniit.org
-          </p>
+        <SectionHead title="Connect with us" />
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {SOCIALS.map((s) => (
+            <a
+              key={s.label}
+              href={s.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={s.label}
+              title={s.label}
+              className="inline-grid size-10 place-items-center rounded-sm transition-transform hover:-translate-y-0.5"
+            >
+              {s.icon}
+            </a>
+          ))}
         </div>
+        <p className="mt-4 text-[13px] text-brand-900/60">
+          paniit.org &middot; summit@paniit.org
+        </p>
       </section>
+    </div>
+  );
+}
+
+
+/**
+ * Editorial section head: Fraunces title sitting on a full-width hairline,
+ * with optional right-aligned meta. This is what replaced the white card
+ * wrapper around each home section — the rule separates, so the box does not
+ * have to, and eight identical rectangles become a page with a rhythm.
+ */
+function SectionHead({ title, meta }: { title: string; meta?: string }) {
+  return (
+    <div className="section-head flex items-baseline justify-between gap-4">
+      <h2 className="font-display text-[19px] font-semibold leading-none text-brand-950">
+        {title}
+      </h2>
+      {meta ? (
+        <span className="eyebrow shrink-0 text-brand-900/50">{meta}</span>
+      ) : null}
     </div>
   );
 }

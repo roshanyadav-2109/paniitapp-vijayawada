@@ -84,7 +84,7 @@ export function GatePassDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm gap-0 overflow-hidden p-0 [&>button]:text-brand-900 [&>button]:opacity-100">
-        <DialogHeader className="space-y-0 border-b border-brand-100 bg-white px-5 py-4">
+        <DialogHeader className="space-y-0 border-b border-rule bg-white px-5 py-4">
           {/* Title/description are required by Radix for screen-reader labels
               but visually we want the logo + "GATE PASS" on a single row. */}
           <DialogTitle className="sr-only">
@@ -102,7 +102,7 @@ export function GatePassDialog({
               priority
               className="h-8 w-auto"
             />
-            <span className="shrink-0 text-[13px] font-semibold uppercase tracking-[0.18em] text-brand-950">
+            <span className="shrink-0 eyebrow text-brand-950">
               Gate Pass
             </span>
           </div>
@@ -142,13 +142,13 @@ export function GatePassDialog({
               </div>
             </div>
 
-            <div className="rounded-md border border-dashed border-brand-200 bg-white p-3">
+            <div className="rounded-md border border-dashed border-rule-strong bg-white p-3">
               <GatePassQr token={p.qr_token} />
             </div>
 
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-800/60">
+                <p className="eyebrow text-brand-800/60">
                   Pass No.
                 </p>
                 <p className="font-mono text-[14px] font-semibold tracking-wide text-brand-950">

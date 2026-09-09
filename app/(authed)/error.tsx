@@ -20,10 +20,10 @@ export default function AuthedError({
     <div className="px-4 py-12">
       <div className="mx-auto max-w-md rounded-lg border border-iit-200 bg-iit-50 p-6 text-center">
         <AlertTriangle className="mx-auto h-8 w-8 text-iit-500" strokeWidth={1.5} />
-        <h1 className="mt-3 text-base font-semibold text-brand-900">Something broke on this page</h1>
-        <p className="mt-2 text-xs text-slate-600">{error.message || "Unknown client error."}</p>
+        <h1 className="mt-3 font-display text-base font-semibold text-brand-900">Something broke on this page</h1>
+        <p className="mt-2 text-xs text-brand-900/70">{error.message || "Unknown client error."}</p>
         {error.digest ? (
-          <p className="mt-1 text-[10px] text-slate-400">digest: {error.digest}</p>
+          <p className="mt-1 text-[10px] text-brand-900/45">digest: {error.digest}</p>
         ) : null}
         <div className="mt-4 flex items-center justify-center">
           <button

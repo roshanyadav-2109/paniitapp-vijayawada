@@ -105,7 +105,7 @@ export function ChatWindow({
     <div className="flex flex-1 flex-col">
       <div className="flex-1 space-y-2 overflow-y-auto px-4 py-4">
         {messages.length === 0 ? (
-          <div className="py-12 text-center text-sm text-slate-500">No messages yet. Say hi.</div>
+          <div className="py-12 text-center text-sm text-brand-900/60">No messages yet. Say hi.</div>
         ) : null}
         {messages.map((m) => {
           const mine = m.sender_id === userId;
@@ -114,7 +114,7 @@ export function ChatWindow({
               <div
                 className={cn(
                   "max-w-[80%] rounded-lg px-3 py-2 text-sm leading-6",
-                  mine ? "bg-brand-800 text-white" : "bg-slate-100 text-slate-900"
+                  mine ? "bg-brand-800 text-white" : "bg-paper-deep text-brand-950"
                 )}
               >
                 <div className="whitespace-pre-line">{m.body}</div>
@@ -128,7 +128,7 @@ export function ChatWindow({
         <div ref={endRef} />
       </div>
 
-      <div className="border-t border-slate-200 bg-white px-3 py-2">
+      <div className="border-t border-rule bg-white px-3 py-2">
         <div className="flex items-end gap-2">
           <textarea
             value={body}
@@ -141,7 +141,7 @@ export function ChatWindow({
             }}
             placeholder="Type a message..."
             rows={1}
-            className="max-h-32 min-h-[40px] flex-1 resize-none rounded-md border border-slate-300 bg-white px-3 py-2 text-sm leading-6 outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-100"
+            className="max-h-32 min-h-[40px] flex-1 resize-none rounded-md border border-rule-strong bg-white px-3 py-2 text-sm leading-6 outline-none focus:border-brand-800 focus:ring-2 focus:ring-rule"
           />
           <button
             type="button"

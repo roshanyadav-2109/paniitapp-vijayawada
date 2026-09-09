@@ -76,7 +76,7 @@ export function MyQr({ token }: { token: string }) {
 
   return (
     <div className="flex flex-col items-center">
-      <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+      <div className="rounded-lg border border-rule bg-white p-3 shadow-sm">
         <canvas ref={ref} className="block" aria-label="Your badge QR" />
       </div>
       {err ? <p className="mt-3 text-xs text-iit-500">{err}</p> : null}

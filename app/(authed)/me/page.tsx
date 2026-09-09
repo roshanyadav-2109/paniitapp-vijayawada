@@ -83,7 +83,7 @@ export default async function MePage() {
   return (
     <div className="mx-auto w-full max-w-2xl space-y-2.5 pb-12 pt-6 sm:pt-7 lg:pt-9">
       {/* Photo + name + card */}
-      <section className="rounded-lg border border-brand-100 bg-white px-5 pb-5 pt-6">
+      <section className="rounded-lg border border-rule bg-white px-5 pb-5 pt-6">
         <div className="flex flex-col items-center text-center">
           <div className="relative">
             <ProfileAvatar
@@ -100,11 +100,11 @@ export default async function MePage() {
               <Camera className="size-3.5" strokeWidth={1.6} />
             </Link>
           </div>
-          <h1 className="mt-3 text-[20px] font-semibold tracking-tight text-brand-950">
+          <h1 className="mt-3 font-display text-[20px] font-semibold text-brand-950">
             {profile?.full_name ?? "Your profile"}
           </h1>
           {profile?.role ? (
-            <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-800/75">
+            <p className="mt-0.5 eyebrow text-brand-800/75">
               {roleLabel(profile.role)}
             </p>
           ) : null}
@@ -130,7 +130,7 @@ export default async function MePage() {
                 {profile.interests.map((i) => (
                   <span
                     key={i}
-                    className="rounded-md bg-brand-50 px-2.5 py-1 text-[12px] font-medium text-brand-900"
+                    className="rounded-md bg-paper-deep px-2.5 py-1 text-[12px] font-medium text-brand-900"
                   >
                     {i}
                   </span>
@@ -174,7 +174,7 @@ export default async function MePage() {
       />
 
       {showOfficeHours ? (
-        <section className="rounded-lg border border-brand-100 bg-white p-4">
+        <section className="rounded-lg border border-rule bg-white p-4">
           <h2 className="text-[14px] font-bold tracking-tight text-brand-950">
             Availability
           </h2>
@@ -187,7 +187,7 @@ export default async function MePage() {
       <form action="/api/auth/signout" method="post">
         <button
           type="submit"
-          className="flex w-full items-center justify-between rounded-lg border border-brand-100 bg-white px-4 py-3.5 transition-colors hover:bg-brand-50/30"
+          className="flex w-full items-center justify-between rounded-lg border border-rule bg-white px-4 py-3.5 transition-colors hover:bg-paper-deep/30"
         >
           <span className="flex items-center gap-3 text-[13px] font-semibold text-brand-950">
             <LogOut className="size-[18px] text-brand-800" strokeWidth={1.5} />
@@ -229,7 +229,7 @@ function ChipBlock({ label, items }: { label: string; items: string[] }) {
         {items.map((i) => (
           <span
             key={i}
-            className="rounded-md bg-brand-50 px-2.5 py-1 text-[12px] font-medium text-brand-900"
+            className="rounded-md bg-paper-deep px-2.5 py-1 text-[12px] font-medium text-brand-900"
           >
             {i}
           </span>
@@ -253,7 +253,7 @@ function Row({
   return (
     <Link
       href={href}
-      className="flex items-center justify-between rounded-lg border border-brand-100 bg-white px-4 py-3.5 transition-colors hover:bg-brand-50/30"
+      className="flex items-center justify-between rounded-lg border border-rule bg-white px-4 py-3.5 transition-colors hover:bg-paper-deep/30"
     >
       <span className="flex items-center gap-3 text-[13px] font-semibold text-brand-950">
         <span className="text-brand-800">{icon}</span>
@@ -261,7 +261,7 @@ function Row({
       </span>
       <span className="flex items-center gap-2">
         {meta ? (
-          <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-800">
+          <span className="rounded-full bg-paper-deep px-2 py-0.5 text-[11px] font-semibold text-brand-800">
             {meta}
           </span>
         ) : null}

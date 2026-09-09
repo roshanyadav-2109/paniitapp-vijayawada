@@ -52,7 +52,7 @@ export function ChipMultiSelect({
                 "inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-[12px] font-medium transition-colors",
                 active
                   ? "border-brand-800 bg-brand-800 text-white"
-                  : "border-brand-100 bg-white text-brand-900 hover:bg-brand-50/40"
+                  : "border-rule bg-white text-brand-900 hover:bg-paper-deep/40"
               )}
             >
               {active ? <Check className="size-3" strokeWidth={2} /> : null}

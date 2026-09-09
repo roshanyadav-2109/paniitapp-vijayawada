@@ -36,7 +36,7 @@ export function GreetingRotator() {
         key={greeting}
         className="animate-login-greeting"
       >
-        <h2 className="text-[34px] font-semibold leading-none tracking-tight text-brand-900 sm:text-[42px]">
+        <h2 className="font-display text-[34px] font-semibold leading-none text-brand-900 sm:text-[42px]">
           {greeting}
         </h2>
       </div>

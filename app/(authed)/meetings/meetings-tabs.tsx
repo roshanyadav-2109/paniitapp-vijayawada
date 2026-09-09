@@ -246,7 +246,7 @@ export function MeetingsView({
       <button
         type="button"
         onClick={() => setAvailOpen(true)}
-        className="flex w-full items-center justify-between rounded-lg border border-brand-100 bg-white px-4 py-3.5 text-left transition-colors hover:bg-brand-50/30"
+        className="flex w-full items-center justify-between rounded-lg border border-rule bg-white px-4 py-3.5 text-left transition-colors hover:bg-paper-deep/30"
       >
         <span className="flex items-center gap-3">
           <Clock4 className="size-[18px] text-brand-800" strokeWidth={1.5} />
@@ -259,7 +259,7 @@ export function MeetingsView({
             </span>
           </span>
         </span>
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-brand-800/75">
+        <span className="eyebrow text-brand-800/75">
           Open
         </span>
       </button>
@@ -411,7 +411,7 @@ function FilterButton({
         "flex flex-col items-start gap-1 rounded-lg border px-4 py-3 text-left transition-colors",
         active
           ? "border-brand-800 bg-brand-800 text-white"
-          : "border-brand-100 bg-white text-brand-900 hover:bg-brand-50/40"
+          : "border-rule bg-white text-brand-900 hover:bg-paper-deep/40"
       )}
     >
       <span className="text-[13px] font-semibold leading-tight">{label}</span>
@@ -448,10 +448,10 @@ function MeetingsGraph({ meetings }: { meetings: MeetingRow[] }) {
       : `Peak ${formatHourLabel(HOURS[peakHour])}`;
 
   return (
-    <div className="rounded-lg border border-brand-100 bg-white px-4 pb-4 pt-4">
+    <div className="rounded-lg border border-rule bg-white px-4 pb-4 pt-4">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <h2 className="text-[13px] font-semibold tracking-tight text-brand-950">
+          <h2 className="font-display text-[15px] font-semibold text-brand-950">
             Day at a glance
           </h2>
           <p className="mt-0.5 text-[11px] text-brand-900/65">{peakLabel}</p>
@@ -460,7 +460,7 @@ function MeetingsGraph({ meetings }: { meetings: MeetingRow[] }) {
           <p className="text-[20px] font-semibold leading-none tabular-nums text-brand-950">
             {total}
           </p>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-brand-800/65">
+          <p className="mt-0.5 eyebrow text-brand-800/65">
             confirmed
           </p>
         </div>
@@ -479,7 +479,7 @@ function MeetingsGraph({ meetings }: { meetings: MeetingRow[] }) {
               <div
                 className={cn(
                   "w-full rounded-sm transition-all",
-                  c > 0 ? "bg-brand-800" : "bg-brand-50"
+                  c > 0 ? "bg-brand-800" : "bg-paper-deep"
                 )}
                 style={{ height: `${Math.max(c > 0 ? 12 : 6, heightPct)}%` }}
                 aria-hidden
@@ -530,13 +530,13 @@ function InboxRow({
   onReschedule: (m: MeetingRow) => void;
 }) {
   return (
-    <li className="rounded-lg border border-brand-100 bg-white p-4">
+    <li className="rounded-lg border border-rule bg-white p-4">
       <div className="flex items-start gap-3">
-        <Avatar className="size-10 shrink-0 ring-1 ring-brand-100">
+        <Avatar className="size-10 shrink-0 ring-1 ring-rule">
           {m.requester?.photo_url ? (
             <AvatarImage src={m.requester.photo_url} alt="" />
           ) : null}
-          <AvatarFallback className="bg-brand-50 text-brand-800">
+          <AvatarFallback className="bg-paper-deep text-brand-800">
             {initials(m.requester?.full_name ?? "?")}
           </AvatarFallback>
         </Avatar>
@@ -573,7 +573,7 @@ function InboxRow({
               return (
                 <div
                   key={s.start}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-brand-100 bg-white px-3 py-2"
+                  className="flex items-center justify-between gap-2 rounded-lg border border-rule bg-white px-3 py-2"
                 >
                   <div className="flex items-center gap-2">
                     <SlotState state={c} />
@@ -652,13 +652,13 @@ function SentRow({
 }) {
   const s = asSlot(m.accepted_slot);
   return (
-    <li className="rounded-lg border border-brand-100 bg-white p-4">
+    <li className="rounded-lg border border-rule bg-white p-4">
       <div className="flex items-start gap-3">
-        <Avatar className="size-10 shrink-0 ring-1 ring-brand-100">
+        <Avatar className="size-10 shrink-0 ring-1 ring-rule">
           {m.invitee?.photo_url ? (
             <AvatarImage src={m.invitee.photo_url} alt="" />
           ) : null}
-          <AvatarFallback className="bg-brand-50 text-brand-800">
+          <AvatarFallback className="bg-paper-deep text-brand-800">
             {initials(m.invitee?.full_name ?? "?")}
           </AvatarFallback>
         </Avatar>
@@ -752,7 +752,7 @@ function MeetingActions({
 
 function EmptyMsg({ title, body }: { title: string; body: string }) {
   return (
-    <div className="rounded-lg border border-dashed border-brand-100 bg-white p-8 text-center">
+    <div className="rounded-lg border border-dashed border-rule bg-white p-8 text-center">
       <h3 className="text-sm font-semibold text-brand-900">{title}</h3>
       <p className="mt-1 text-xs text-brand-900/70">{body}</p>
     </div>
@@ -779,13 +779,13 @@ function StatusPill({ status }: { status: MeetingRow["status"] }) {
     pending: "bg-amber-50 text-amber-700",
     accepted: "bg-emerald-50 text-emerald-700",
     declined: "bg-iit-50 text-iit-700",
-    rescheduled: "bg-brand-50 text-brand-800",
-    cancelled: "bg-brand-50 text-brand-800/70",
+    rescheduled: "bg-paper-deep text-brand-800",
+    cancelled: "bg-paper-deep text-brand-800/70",
   };
   return (
     <span
       className={cn(
-        "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
+        "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em]",
         style[status]
       )}
     >
@@ -936,7 +936,7 @@ function AvailabilitySheet({
           </SheetDescription>
         </SheetHeader>
         <div className="px-6 pb-6 pt-3">
-          <div className="mb-3 flex items-center justify-between rounded-lg border border-brand-100 bg-brand-50/50 px-3 py-2 text-[12px] font-semibold text-brand-900">
+          <div className="mb-3 flex items-center justify-between rounded-lg border border-rule bg-paper-deep/50 px-3 py-2 text-[12px] font-semibold text-brand-900">
             <span className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-brand-800" aria-hidden />
               Available slots
@@ -955,7 +955,7 @@ function AvailabilitySheet({
             <div className="space-y-5">
               {sections.map((sec) => (
                 <div key={sec.label}>
-                  <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-800/75">
+                  <h3 className="mb-2 eyebrow text-brand-800/75">
                     {sec.label}
                   </h3>
                   <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
@@ -982,13 +982,13 @@ function AvailabilitySheet({
                             st === "booked" &&
                               "cursor-not-allowed border-emerald-300 bg-emerald-50 text-emerald-700",
                             notAvailable &&
-                              "border-slate-200 bg-slate-100 text-slate-500 hover:border-brand-300 hover:bg-brand-50/50",
+                              "border-rule bg-paper-deep text-brand-900/60 hover:border-brand-300 hover:bg-paper-deep/50",
                             isPending && "opacity-60"
                           )}
                         >
                           <span>{formatInTimeZone(new Date(s.start), SUMMIT_TZ, "h:mm a")}</span>
                           {st === "booked" ? (
-                            <span className="text-[9px] font-semibold uppercase tracking-wide">
+                            <span className="eyebrow">
                               Occupied
                             </span>
                           ) : null}
@@ -1010,7 +1010,7 @@ function Legend() {
   return (
     <div className="mb-4 flex flex-wrap gap-3 text-[11px] font-medium text-brand-900/75">
       <Swatch className="bg-brand-800" label="Available" />
-      <Swatch className="border border-slate-200 bg-slate-100" label="Not available" />
+      <Swatch className="border border-rule bg-paper-deep" label="Not available" />
       <Swatch className="border border-emerald-300 bg-emerald-50" label="Occupied" />
     </div>
   );

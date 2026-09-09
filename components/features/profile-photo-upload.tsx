@@ -121,7 +121,7 @@ export function ProfilePhotoUpload({
       <div className="relative">
         <Avatar className="size-20 ring-2 ring-brand-50">
           {photoUrl ? <AvatarImage src={photoUrl} alt="" /> : null}
-          <AvatarFallback className="bg-brand-50 text-base font-semibold text-brand-800">
+          <AvatarFallback className="bg-paper-deep text-base font-semibold text-brand-800">
             {initials(fallbackName ?? "?")}
           </AvatarFallback>
         </Avatar>
@@ -158,7 +158,7 @@ export function ProfilePhotoUpload({
               type="button"
               onClick={removePhoto}
               disabled={busy}
-              className="inline-flex h-10 items-center gap-1.5 rounded-md border border-brand-100 bg-white px-3 text-[12px] font-semibold text-brand-900 transition-colors hover:bg-brand-50 disabled:opacity-60"
+              className="inline-flex h-10 items-center gap-1.5 rounded-md border border-rule bg-white px-3 text-[12px] font-semibold text-brand-900 transition-colors hover:bg-paper-deep disabled:opacity-60"
             >
               <Trash2 className="size-3.5" strokeWidth={1.7} />
               Remove

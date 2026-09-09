@@ -184,7 +184,7 @@ export function QrScanner() {
 
   return (
     <div className="space-y-2">
-      <div className="relative aspect-square overflow-hidden rounded-lg border border-brand-100 bg-black shadow-sm">
+      <div className="relative aspect-square overflow-hidden rounded-lg border border-rule bg-black shadow-sm">
         <div
           id={elId}
           className="absolute inset-0 [&_img]:hidden [&_video]:!h-full [&_video]:!w-full [&_video]:!object-cover"

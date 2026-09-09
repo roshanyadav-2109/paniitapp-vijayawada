@@ -67,10 +67,10 @@ export default async function SponsorDetailPage({
             />
           </div>
         ) : null}
-        <div className="text-xs font-medium uppercase tracking-wider text-slate-500">
+        <div className="eyebrow text-brand-900/60">
           {tierLabel[sponsor.tier] ?? sponsor.tier}
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight text-brand-900">
+        <h1 className="font-display text-2xl font-semibold text-brand-900">
           {sponsor.name}
         </h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -95,21 +95,21 @@ export default async function SponsorDetailPage({
       </header>
 
       {sponsor.description ? (
-        <p className="text-sm leading-7 text-slate-700 whitespace-pre-line">
+        <p className="text-sm leading-7 text-brand-900/80 whitespace-pre-line">
           {sponsor.description}
         </p>
       ) : null}
 
       {sponsor.offer_title || sponsor.offer_description ? (
-        <section className="rounded-lg border border-slate-200 bg-white p-4">
-          <h2 className="text-xs font-medium uppercase tracking-wider text-slate-500">
+        <section className="rounded-lg border border-rule bg-white p-4">
+          <h2 className="eyebrow text-brand-900/60">
             Offer for summit attendees
           </h2>
           {sponsor.offer_title ? (
             <p className="mt-2 text-base font-medium text-brand-900">{sponsor.offer_title}</p>
           ) : null}
           {sponsor.offer_description ? (
-            <p className="mt-1 text-sm leading-6 text-slate-700 whitespace-pre-line">
+            <p className="mt-1 text-sm leading-6 text-brand-900/80 whitespace-pre-line">
               {sponsor.offer_description}
             </p>
           ) : null}
@@ -120,7 +120,7 @@ export default async function SponsorDetailPage({
       {sponsor.booth_number ? (
         <Link
           href="/map"
-          className="inline-flex h-10 items-center gap-1.5 rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="inline-flex h-10 items-center gap-1.5 rounded-md border border-rule-strong bg-white px-4 text-sm font-medium text-brand-900/80 hover:bg-paper"
         >
           <MapPin className="h-4 w-4" />
           Find on map

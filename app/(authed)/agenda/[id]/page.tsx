@@ -204,12 +204,12 @@ export default async function SessionDetailPage({
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-2.5 pb-10 pt-4 sm:px-4 lg:max-w-4xl lg:px-0 lg:pt-7">
-      <Card className="border-brand-100">
+      <Card className="border-rule">
         <CardContent className="flex flex-col gap-3 p-3.5">
           <div className="flex flex-wrap items-center gap-1.5">
             <Badge
               variant="outline"
-              className="gap-1.5 rounded-[4px] border-brand-100 bg-brand-50 text-brand-800"
+              className="gap-1.5 rounded-[4px] border-rule bg-paper-deep text-brand-800"
             >
               <span
                 className="inline-block size-1.5 rounded-full"
@@ -236,7 +236,7 @@ export default async function SessionDetailPage({
             ) : null}
           </div>
 
-          <h1 className="text-[22px] font-bold leading-tight tracking-tight text-brand-950">
+          <h1 className="font-display text-[22px] font-bold leading-tight text-brand-950">
             {session.title}
           </h1>
 
@@ -299,7 +299,7 @@ export default async function SessionDetailPage({
                   <Badge
                     key={i}
                     variant="outline"
-                    className="rounded-[3px] border-brand-100 bg-white text-brand-800"
+                    className="rounded-[3px] border-rule bg-white text-brand-800"
                   >
                     {i}
                   </Badge>
@@ -311,7 +311,7 @@ export default async function SessionDetailPage({
       </Card>
 
       {session.description ? (
-        <Card className="border-brand-100">
+        <Card className="border-rule">
           <CardHeader className="px-3.5 pb-1.5 pt-3.5">
             <CardTitle className="text-[16px] font-bold text-brand-950">
               About this session
@@ -326,7 +326,7 @@ export default async function SessionDetailPage({
       ) : null}
 
       {speakers.length > 0 ? (
-        <Card className="border-brand-100">
+        <Card className="border-rule">
           <CardHeader className="px-3.5 pb-2.5 pt-3.5">
             <CardTitle className="text-[16px] font-bold text-brand-950">
               Speakers
@@ -351,7 +351,7 @@ export default async function SessionDetailPage({
         </Card>
       ) : null}
 
-      <Card className="border-brand-100">
+      <Card className="border-rule">
         <CardHeader className="px-3.5 pb-2 pt-3.5">
           <CardTitle className="text-[16px] font-bold text-brand-950">
             Q&amp;A discussion
@@ -376,13 +376,13 @@ function SpeakerCard({
   // on the agenda detail by request, even if the profile has one.
   const hasSocial = !!(p.linkedin_url || p.twitter_url);
   return (
-    <li className="min-w-0 overflow-hidden rounded-lg border border-brand-100 bg-white p-3 transition-colors hover:bg-brand-50/30">
+    <li className="min-w-0 overflow-hidden rounded-lg border border-rule bg-white p-3 transition-colors hover:bg-paper-deep/30">
       <div className="flex min-w-0 items-start gap-3">
-        <Avatar className="size-11 shrink-0 ring-1 ring-brand-100">
+        <Avatar className="size-11 shrink-0 ring-1 ring-rule">
           {p.photo_url ? (
             <AvatarImage src={p.photo_url} alt={p.full_name ?? ""} />
           ) : null}
-          <AvatarFallback className="bg-brand-50 text-[13px] font-semibold text-brand-800">
+          <AvatarFallback className="bg-paper-deep text-[13px] font-semibold text-brand-800">
             {initials(p.full_name ?? "?")}
           </AvatarFallback>
         </Avatar>
@@ -403,7 +403,7 @@ function SpeakerCard({
             </Link>
             <Badge
               variant="outline"
-              className="shrink-0 rounded-[4px] border-brand-100 bg-brand-50 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-brand-800"
+              className="shrink-0 rounded-[4px] border-rule bg-paper-deep px-1.5 py-0.5 text-[9px] uppercase tracking-[0.06em] text-brand-800"
             >
               {speakerRoleLabel(role)}
             </Badge>

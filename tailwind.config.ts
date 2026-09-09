@@ -55,6 +55,24 @@ const config: Config = {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'
   			},
+  			// Paper ground. The app used to sit on `slate-50` (#F8FAFC), which is
+  			// a cold blue-grey; against navy ink it made everything read
+  			// screenshot-of-a-dashboard. These are warm off-whites, so the
+  			// navy reads as ink on stock and the IIT red has something to
+  			// push against.
+  			paper: {
+  				DEFAULT: '#F4F1EA',
+  				deep: '#EBE5D8',
+  				raised: '#FFFFFF'
+  			},
+  			// Hairline rules. Replaces `brand-100` (#d4d2ed, a periwinkle) as
+  			// the border everywhere — that lilac cast on 150 borders was most
+  			// of why the app looked purple-tinted.
+  			rule: {
+  				DEFAULT: '#E3DCCC',
+  				strong: '#CFC5AE',
+  				faint: '#EEE9DD'
+  			},
   			brand: {
   				'50': '#eeedf7',
   				'100': '#d4d2ed',
@@ -105,13 +123,22 @@ const config: Config = {
   		},
   		fontFamily: {
   			sans: [
-  				'var(--font-inter)',
+  				'var(--font-sans)',
   				'system-ui',
   				'sans-serif'
   			],
+  			// `font-display` — titles only. Deliberately not applied to h1/h2
+  			// globally: several `h2`/`h3` in this app are small uppercase
+  			// field labels, and a serif is wrong for those. Opt in per title.
+  			display: [
+  				'var(--font-display)',
+  				'Georgia',
+  				'ui-serif',
+  				'serif'
+  			],
   			telugu: [
   				'var(--font-telugu)',
-  				'var(--font-inter)',
+  				'var(--font-sans)',
   				'system-ui',
   				'sans-serif'
   			]

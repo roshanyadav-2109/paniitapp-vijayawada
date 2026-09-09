@@ -138,7 +138,7 @@ export function ScheduleMeetingButton({ inviteeId }: { inviteeId: string }) {
           <div>
             <Label
               htmlFor="meeting-message"
-              className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-800/75"
+              className="eyebrow text-brand-800/75"
             >
               What&apos;s the agenda?
               {openProposeMode ? (
@@ -157,7 +157,7 @@ export function ScheduleMeetingButton({ inviteeId }: { inviteeId: string }) {
                   : "A quick intro, what you'd like to talk about, why now…"
               }
               rows={3}
-              className="mt-1.5 rounded-md border-brand-100"
+              className="mt-1.5 rounded-md border-rule"
             />
             <div className="mt-1 flex items-center justify-between text-[11px] tabular-nums text-brand-800/55">
               <span className={agendaRequiredButMissing ? "font-medium text-black" : undefined}>
@@ -169,7 +169,7 @@ export function ScheduleMeetingButton({ inviteeId }: { inviteeId: string }) {
 
           {/* Times */}
           <div>
-            <Label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-800/75">
+            <Label className="eyebrow text-brand-800/75">
               Pick times
             </Label>
             <div className="mt-1.5">
@@ -187,7 +187,7 @@ export function ScheduleMeetingButton({ inviteeId }: { inviteeId: string }) {
           <div>
             <Label
               htmlFor="meeting-location"
-              className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-800/75"
+              className="eyebrow text-brand-800/75"
             >
               Where?
             </Label>
@@ -195,7 +195,7 @@ export function ScheduleMeetingButton({ inviteeId }: { inviteeId: string }) {
               id="meeting-location"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="mt-1.5 h-10 w-full rounded-md border border-brand-100 bg-white px-3 text-sm text-brand-950 outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-100"
+              className="mt-1.5 h-10 w-full rounded-md border border-rule bg-white px-3 text-sm text-brand-950 outline-none focus:border-brand-800 focus:ring-2 focus:ring-rule"
             >
               {LOCATIONS.map((l) => (
                 <option key={l} value={l}>
@@ -209,7 +209,7 @@ export function ScheduleMeetingButton({ inviteeId }: { inviteeId: string }) {
                 value={customLocation}
                 onChange={(e) => setCustomLocation(e.target.value.slice(0, 200))}
                 placeholder="e.g. Coffee cart by registration"
-                className="mt-2 rounded-md border-brand-100"
+                className="mt-2 rounded-md border-rule"
                 autoFocus
               />
             ) : null}

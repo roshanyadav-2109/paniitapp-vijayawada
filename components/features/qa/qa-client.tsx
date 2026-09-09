@@ -209,7 +209,7 @@ export function QaClient({
               "shrink-0 rounded-md border px-3 py-1.5 text-[12px] font-semibold transition-colors",
               sort === s.id
                 ? "border-brand-800 bg-brand-800 text-white"
-                : "border-brand-100 bg-white text-brand-900 hover:bg-brand-50/40"
+                : "border-rule bg-white text-brand-900 hover:bg-paper-deep/40"
             )}
           >
             {s.label}
@@ -420,11 +420,11 @@ function QuestionCard({
   const showAvatar = !q.is_anonymous && q.profiles?.photo_url;
 
   return (
-    <li className="rounded-lg border border-brand-100 bg-white p-4">
+    <li className="rounded-lg border border-rule bg-white p-4">
       <div className="flex items-start gap-3">
         <Avatar className="h-9 w-9 shrink-0">
           {showAvatar ? <AvatarImage src={q.profiles!.photo_url!} alt={author} /> : null}
-          <AvatarFallback className="bg-brand-50 text-brand-800">
+          <AvatarFallback className="bg-paper-deep text-brand-800">
             {q.is_anonymous ? "??" : initials(author)}
           </AvatarFallback>
         </Avatar>
@@ -445,7 +445,7 @@ function QuestionCard({
               </span>
             ) : null}
             {mine ? (
-              <span className="rounded-[3px] bg-brand-50 px-1.5 py-0.5 text-[10px] font-semibold text-brand-800">
+              <span className="rounded-[3px] bg-paper-deep px-1.5 py-0.5 text-[10px] font-semibold text-brand-800">
                 You
               </span>
             ) : null}
@@ -462,7 +462,7 @@ function QuestionCard({
                 "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold transition-colors",
                 upvoted
                   ? "border-brand-800 bg-brand-800 text-white"
-                  : "border-brand-100 bg-white text-brand-900 hover:bg-brand-50/40"
+                  : "border-rule bg-white text-brand-900 hover:bg-paper-deep/40"
               )}
               aria-pressed={upvoted}
             >
@@ -472,7 +472,7 @@ function QuestionCard({
             <button
               type="button"
               onClick={onToggleExpand}
-              className="inline-flex items-center gap-1 rounded-md border border-brand-100 bg-white px-2 py-1 text-[11px] font-semibold text-brand-900 transition-colors hover:bg-brand-50/40"
+              className="inline-flex items-center gap-1 rounded-md border border-rule bg-white px-2 py-1 text-[11px] font-semibold text-brand-900 transition-colors hover:bg-paper-deep/40"
             >
               <Reply className="h-3.5 w-3.5" strokeWidth={1.8} />
               {replies.length} {replies.length === 1 ? "reply" : "replies"}
@@ -482,7 +482,7 @@ function QuestionCard({
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="ml-auto inline-grid h-7 w-7 place-items-center rounded-md text-brand-800/65 hover:bg-brand-50"
+                    className="ml-auto inline-grid h-7 w-7 place-items-center rounded-md text-brand-800/65 hover:bg-paper-deep"
                     aria-label="Moderator menu"
                   >
                     <MoreHorizontal className="h-4 w-4" />
@@ -516,7 +516,7 @@ function QuestionCard({
       </div>
 
       {expanded ? (
-        <div className="mt-3 border-l-2 border-brand-100 pl-4">
+        <div className="mt-3 border-l-2 border-rule pl-4">
           <ul className="space-y-3">
             {replies.map((r) => (
               <li key={r.id} className="flex items-start gap-2.5">
@@ -524,7 +524,7 @@ function QuestionCard({
                   {r.profiles?.photo_url ? (
                     <AvatarImage src={r.profiles.photo_url} alt={r.profiles.full_name ?? ""} />
                   ) : null}
-                  <AvatarFallback className="bg-brand-50 text-brand-800 text-[10px]">
+                  <AvatarFallback className="bg-paper-deep text-brand-800 text-[10px]">
                     {initials(r.profiles?.full_name ?? "?")}
                   </AvatarFallback>
                 </Avatar>
@@ -547,8 +547,8 @@ function QuestionCard({
                     className={cn(
                       "mt-1 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-semibold transition-colors",
                       myRVotes.has(r.id)
-                        ? "bg-brand-50 text-brand-800"
-                        : "text-brand-800/65 hover:bg-brand-50"
+                        ? "bg-paper-deep text-brand-800"
+                        : "text-brand-800/65 hover:bg-paper-deep"
                     )}
                   >
                     <ChevronUp className="h-3 w-3" />
@@ -592,7 +592,7 @@ function ReplyForm({ questionId }: { questionId: string }) {
         onChange={(e) => setBody(e.target.value.slice(0, 500))}
         placeholder="Reply..."
         rows={2}
-        className="rounded-md border-brand-100 text-sm"
+        className="rounded-md border-rule text-sm"
       />
       <div className="mt-1.5 flex items-center justify-between text-[11px] text-brand-800/55">
         <span className="tabular-nums">{body.length} / 500</span>
@@ -665,18 +665,18 @@ function AskBar({
           onClick={() => setOpen(false)}
         >
           <div
-            className="w-full max-w-2xl rounded-t-lg border-x border-t border-brand-100 bg-white p-5"
+            className="w-full max-w-2xl rounded-t-lg border-x border-t border-rule bg-white p-5"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-base font-semibold tracking-tight text-brand-950">
+              <h3 className="font-display text-base font-semibold text-brand-950">
                 Ask a question
               </h3>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Close"
-                className="inline-grid h-8 w-8 place-items-center rounded-md text-brand-800/65 hover:bg-brand-50"
+                className="inline-grid h-8 w-8 place-items-center rounded-md text-brand-800/65 hover:bg-paper-deep"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -687,7 +687,7 @@ function AskBar({
               placeholder="Type your question — speakers reply during the session."
               rows={4}
               autoFocus
-              className="rounded-md border-brand-100"
+              className="rounded-md border-rule"
             />
             <div className="mt-2 flex items-center justify-between text-xs">
               <label className="inline-flex items-center gap-1.5 text-brand-900">

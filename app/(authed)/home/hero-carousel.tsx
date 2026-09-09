@@ -82,7 +82,7 @@ export function HeroCarousel() {
         {rendered.map((s, i) => (
           <article
             key={i}
-            className="relative snap-center shrink-0 basis-full overflow-hidden rounded-lg border border-brand-100 bg-white lg:aspect-video"
+            className="relative snap-center shrink-0 basis-full overflow-hidden rounded-lg border border-rule bg-white lg:aspect-video"
           >
             {/* Mobile keeps the image at its natural aspect so framing matches
                 the source. Desktop forces 16:9 with object-cover so the

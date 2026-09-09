@@ -26,7 +26,7 @@ export function SignInForm() {
         type="button"
         onClick={handleGoogle}
         disabled={googlePending}
-        className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-md border border-brand-100 bg-white px-5 text-sm font-semibold text-brand-950 shadow-sm transition-colors hover:bg-brand-50 disabled:opacity-60"
+        className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-md border border-rule bg-white px-5 text-sm font-semibold text-brand-950 shadow-sm transition-colors hover:bg-paper-deep disabled:opacity-60"
       >
         {googlePending ? (
           <Loader2 className="size-4 animate-spin text-brand-800" />

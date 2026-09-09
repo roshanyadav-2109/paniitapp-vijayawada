@@ -26,7 +26,7 @@ export default async function RecapPage() {
     } = await supabase.auth.getUser();
     if (!user) {
       return (
-        <div className="px-4 py-16 text-center text-sm text-slate-500">
+        <div className="px-4 py-16 text-center text-sm text-brand-900/60">
           Sign in to see your recap.
         </div>
       );
@@ -83,8 +83,8 @@ export default async function RecapPage() {
   return (
     <div className="mx-auto w-full max-w-3xl pt-5 pb-10 lg:max-w-4xl lg:pt-8 space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-brand-900">Your recap</h1>
-        <p className="mt-1 text-sm leading-6 text-slate-600">
+        <h1 className="font-display text-2xl font-semibold text-brand-900">Your recap</h1>
+        <p className="mt-1 text-sm leading-6 text-brand-900/70">
           People you met, sessions you attended, questions you asked.
         </p>
       </header>
@@ -98,21 +98,21 @@ export default async function RecapPage() {
 
       <section>
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-medium uppercase tracking-wider text-slate-500">
+          <h2 className="eyebrow text-brand-900/60">
             Export contacts
           </h2>
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <a
             href="/recap/export?format=vcf"
-            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-rule-strong bg-white px-3 text-sm font-medium text-brand-900/80 hover:bg-paper"
           >
             <Download className="h-3.5 w-3.5" />
             Download .vcf
           </a>
           <a
             href="/recap/export?format=csv"
-            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-rule-strong bg-white px-3 text-sm font-medium text-brand-900/80 hover:bg-paper"
           >
             <FileText className="h-3.5 w-3.5" />
             Download .csv
@@ -121,22 +121,22 @@ export default async function RecapPage() {
       </section>
 
       <section>
-        <h2 className="text-xs font-medium uppercase tracking-wider text-slate-500">
+        <h2 className="eyebrow text-brand-900/60">
           People you met
         </h2>
         {people.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500">Nobody yet. Scan badges or accept meetings.</p>
+          <p className="mt-2 text-sm text-brand-900/60">Nobody yet. Scan badges or accept meetings.</p>
         ) : (
           <ul className="mt-2 grid grid-cols-3 gap-3 sm:grid-cols-4">
             {people.map((p) => (
               <li key={p.id}>
                 <Link
                   href={`/attendees/${p.id}`}
-                  className="flex flex-col items-center rounded-lg border border-slate-200 bg-white p-3 text-center transition-colors hover:border-slate-300"
+                  className="flex flex-col items-center rounded-lg border border-rule bg-white p-3 text-center transition-colors hover:border-rule-strong"
                 >
                   <Avatar className="h-12 w-12">
                     {p.photo_url ? <AvatarImage src={p.photo_url} alt="" /> : null}
-                    <AvatarFallback className="bg-brand-50 text-brand-800">
+                    <AvatarFallback className="bg-paper-deep text-brand-800">
                       {initials(p.full_name ?? "?")}
                     </AvatarFallback>
                   </Avatar>
@@ -155,8 +155,8 @@ export default async function RecapPage() {
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <div className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</div>
+    <div className="rounded-lg border border-rule bg-white p-4">
+      <div className="eyebrow text-brand-900/60">{label}</div>
       <div className="mt-1 text-2xl font-semibold tabular-nums text-brand-900">
         {value.toLocaleString()}
       </div>

@@ -35,10 +35,10 @@ export default async function MapPage() {
   return (
     <div className="pt-5 lg:pt-8">
       <header className="mb-5 lg:mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-brand-900 lg:text-3xl">
+        <h1 className="font-display text-2xl font-semibold text-brand-900 lg:text-3xl">
           Venue map
         </h1>
-        <p className="mt-1 text-sm leading-6 text-slate-600">
+        <p className="mt-1 text-sm leading-6 text-brand-900/70">
           {EVENT_VENUE} · interactive floor plan
         </p>
       </header>

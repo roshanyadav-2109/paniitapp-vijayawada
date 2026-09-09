@@ -26,10 +26,10 @@ export function OfficeHoursToggle({ initial }: { initial: boolean }) {
   }
 
   return (
-    <div className="flex items-center justify-between rounded-md border border-slate-200 bg-white p-3">
+    <div className="flex items-center justify-between rounded-md border border-rule bg-white p-3">
       <div>
         <div className="text-sm font-medium text-brand-900">Open for meetings</div>
-        <div className="text-xs text-slate-500">
+        <div className="text-xs text-brand-900/60">
           Show up in the office-hours directory so founders can book a 15-min slot.
         </div>
       </div>
@@ -41,7 +41,7 @@ export function OfficeHoursToggle({ initial }: { initial: boolean }) {
         disabled={pending}
         className={cn(
           "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
-          on ? "bg-brand-800" : "bg-slate-300"
+          on ? "bg-brand-800" : "bg-rule-strong"
         )}
       >
         <span

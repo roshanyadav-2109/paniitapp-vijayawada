@@ -90,7 +90,7 @@ export function OnboardingForm({
         <select
           name="iit_campus"
           defaultValue={initial.iit_campus}
-          className="h-11 w-full rounded-md border border-brand-100 bg-white px-3 text-sm text-brand-950 outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-100"
+          className="h-11 w-full rounded-md border border-rule bg-white px-3 text-sm text-brand-950 outline-none focus:border-brand-800 focus:ring-2 focus:ring-rule"
         >
           <option value="">Skip for now</option>
           {IIT_CAMPUSES.map((c) => (
@@ -126,7 +126,7 @@ export function OnboardingForm({
           rows={4}
           defaultValue={initial.bio}
           placeholder="A couple of sentences on what you're building or working on."
-          className="w-full rounded-md border border-brand-100 bg-white px-3 py-2 text-sm leading-6 text-brand-950 outline-none placeholder:text-brand-800/45 focus:border-brand-800 focus:ring-2 focus:ring-brand-100"
+          className="w-full rounded-md border border-rule bg-white px-3 py-2 text-sm leading-6 text-brand-950 outline-none placeholder:text-brand-800/45 focus:border-brand-800 focus:ring-2 focus:ring-rule"
         />
       </div>
 
@@ -203,7 +203,7 @@ function Field({
         defaultValue={defaultValue}
         required={required}
         placeholder={placeholder}
-        className="h-11 w-full rounded-md border border-brand-100 bg-white px-3 text-sm text-brand-950 outline-none placeholder:text-brand-800/45 focus:border-brand-800 focus:ring-2 focus:ring-brand-100"
+        className="h-11 w-full rounded-md border border-rule bg-white px-3 text-sm text-brand-950 outline-none placeholder:text-brand-800/45 focus:border-brand-800 focus:ring-2 focus:ring-rule"
       />
     </label>
   );

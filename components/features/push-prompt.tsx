@@ -42,14 +42,14 @@ export function PushPrompt({ vapidPublicKey }: Props) {
 
   if (!supported) {
     return (
-      <div className="rounded-md border border-slate-200 bg-white p-3 text-xs text-slate-500">
+      <div className="rounded-md border border-rule bg-white p-3 text-xs text-brand-900/60">
         Notifications aren't supported in this browser.
       </div>
     );
   }
   if (!vapidPublicKey) {
     return (
-      <div className="rounded-md border border-slate-200 bg-white p-3 text-xs text-slate-500">
+      <div className="rounded-md border border-rule bg-white p-3 text-xs text-brand-900/60">
         Notifications aren't configured yet. Check back later.
       </div>
     );
@@ -96,11 +96,11 @@ export function PushPrompt({ vapidPublicKey }: Props) {
   }
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-3">
+    <div className="rounded-md border border-rule bg-white p-3">
       <div className="flex items-center justify-between gap-3">
         <div>
           <div className="text-sm font-medium text-brand-900">Event notifications</div>
-          <div className="text-xs text-slate-500">
+          <div className="text-xs text-brand-900/60">
             Session reminders, meeting requests, urgent updates.
           </div>
         </div>

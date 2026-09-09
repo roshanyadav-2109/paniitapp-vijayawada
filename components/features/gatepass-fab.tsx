@@ -54,7 +54,7 @@ export function GatePassFab() {
       >
         {/* Label shows until the user opens the dialog once, then never again. */}
         {seenBefore === false ? (
-          <span className="rounded-md bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-black shadow-[0_4px_14px_-4px_rgba(13,9,48,0.25)] ring-1 ring-brand-100">
+          <span className="rounded-md bg-white px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.06em] text-black shadow-[0_4px_14px_-4px_rgba(13,9,48,0.25)] ring-1 ring-rule">
             Gate pass QR
           </span>
         ) : null}
@@ -62,7 +62,7 @@ export function GatePassFab() {
           type="button"
           onClick={handleOpen}
           aria-label="Show my gate pass"
-          className="inline-grid size-12 place-items-center rounded-full border border-brand-100 bg-white text-brand-900 shadow-[0_14px_32px_-12px_rgba(13,9,48,0.45)] transition-all hover:scale-[1.03] hover:bg-brand-50"
+          className="inline-grid size-12 place-items-center rounded-full border border-rule bg-white text-brand-900 shadow-[0_14px_32px_-12px_rgba(13,9,48,0.45)] transition-all hover:scale-[1.03] hover:bg-paper-deep"
         >
           <QrCode className="size-[22px]" strokeWidth={1.6} />
         </button>

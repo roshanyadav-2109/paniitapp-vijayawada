@@ -135,10 +135,10 @@ export default async function AgendaPage({
     <PageWithFilters
       header={
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-brand-900 lg:text-3xl">
+          <h1 className="font-display text-2xl font-semibold text-brand-900 lg:text-3xl">
             Agenda
           </h1>
-          <p className="mt-1 text-sm leading-6 text-slate-600">
+          <p className="mt-1 text-sm leading-6 text-brand-900/70">
             {EVENT_DATE_TEXT} · {EVENT_VENUE} · all times IST
           </p>
         </div>
@@ -146,7 +146,7 @@ export default async function AgendaPage({
       filters={<AgendaFilters venues={venueOptions} />}
     >
       {userInterests.length === 0 ? (
-        <div className="mb-4 rounded-lg border border-brand-100 bg-brand-50/40 p-3">
+        <div className="mb-4 rounded-lg border border-rule bg-paper-deep/40 p-3">
           <p className="text-[12px] leading-5 text-brand-900">
             Pick your areas of interest in{" "}
             <Link
@@ -190,7 +190,7 @@ export default async function AgendaPage({
         <div className="flex flex-col gap-6">
           {hourKeys.map((k) => (
             <section key={k} id={`h-${k.replace(":", "")}`}>
-              <div className="mb-2 text-[11px] font-medium uppercase tracking-wider tabular-nums text-slate-500">
+              <div className="mb-2 eyebrow tabular-nums text-brand-900/60">
                 {hourLabel(k)}
               </div>
               <ul className="flex flex-col gap-3">

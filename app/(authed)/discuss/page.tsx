@@ -60,7 +60,7 @@ export default async function DiscussPage() {
   return (
     <div className="mx-auto w-full max-w-2xl pt-5 pb-10 lg:pt-8">
       <header className="mb-4">
-        <h1 className="text-2xl font-semibold tracking-tight text-brand-900 lg:text-3xl">
+        <h1 className="font-display text-2xl font-semibold text-brand-900 lg:text-3xl">
           Discussion
         </h1>
         <p className="mt-1 text-sm leading-6 text-brand-900/70">

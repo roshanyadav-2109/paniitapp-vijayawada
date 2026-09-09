@@ -72,9 +72,9 @@ export default async function ExhibitorDetailPage({
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4 pb-12">
       {/* Cover + logo */}
-      <section className="overflow-hidden rounded-lg border border-brand-100 bg-white">
+      <section className="overflow-hidden rounded-lg border border-rule bg-white">
         {exhibitor.cover_url ? (
-          <div className="relative h-32 w-full bg-brand-50">
+          <div className="relative h-32 w-full bg-paper-deep">
             <Image
               src={exhibitor.cover_url}
               alt=""
@@ -83,10 +83,16 @@ export default async function ExhibitorDetailPage({
             />
           </div>
         ) : (
-          <div className="h-20 w-full bg-[radial-gradient(circle_at_top_left,#3b329e_0%,#1B1464_100%)]" />
+          // Flat navy with the red keyline, matching the home masthead. The
+          // radial gradient it replaced was the same purple-to-navy sweep
+          // used in three other places — one gradient recipe reused as
+          // decoration everywhere is exactly what reads as generated.
+          <div className="h-20 w-full bg-brand-800">
+            <div className="h-[3px] w-full bg-iit-500" aria-hidden />
+          </div>
         )}
         <div className="-mt-10 px-5 pb-5">
-          <div className="inline-grid size-20 place-items-center overflow-hidden rounded-lg bg-white ring-1 ring-brand-100 shadow-sm">
+          <div className="inline-grid size-20 place-items-center overflow-hidden rounded-lg bg-white ring-1 ring-rule shadow-sm">
             {exhibitor.logo_url ? (
               <Image
                 src={exhibitor.logo_url}
@@ -99,7 +105,7 @@ export default async function ExhibitorDetailPage({
               <Store className="size-7 text-brand-800/65" />
             )}
           </div>
-          <h1 className="mt-3 text-[22px] font-semibold leading-tight tracking-tight text-brand-950">
+          <h1 className="mt-3 font-display text-[22px] font-semibold leading-tight text-brand-950">
             {exhibitor.name}
           </h1>
           {exhibitor.tagline ? (
@@ -109,12 +115,12 @@ export default async function ExhibitorDetailPage({
           ) : null}
           <div className="mt-3 flex flex-wrap items-center gap-1.5">
             {exhibitor.category ? (
-              <span className="inline-flex items-center rounded-[4px] border border-slate-900/25 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-950">
+              <span className="inline-flex items-center rounded-[4px] border border-brand-900/25 bg-white px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-brand-950">
                 {exhibitor.category}
               </span>
             ) : null}
             {exhibitor.booth_number || exhibitor.location_floor ? (
-              <span className="inline-flex items-center gap-1 rounded-[4px] border border-slate-900/25 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-950">
+              <span className="inline-flex items-center gap-1 rounded-[4px] border border-brand-900/25 bg-white px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-brand-950">
                 <MapPin className="size-3" strokeWidth={1.8} />
                 {[exhibitor.booth_number, exhibitor.location_floor]
                   .filter(Boolean)
@@ -126,7 +132,7 @@ export default async function ExhibitorDetailPage({
                 href={exhibitor.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 rounded-[4px] border border-slate-900/25 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-950 hover:bg-slate-50"
+                className="inline-flex items-center gap-1 rounded-[4px] border border-brand-900/25 bg-white px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-brand-950 hover:bg-paper"
               >
                 <ExternalLink className="size-3" strokeWidth={1.8} />
                 Website
@@ -138,8 +144,8 @@ export default async function ExhibitorDetailPage({
 
       {/* About */}
       {exhibitor.about ? (
-        <section className="rounded-lg border border-brand-100 bg-white p-5">
-          <h2 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-800/75">
+        <section className="border-t border-rule pt-4">
+          <h2 className="eyebrow text-brand-800/75">
             About
           </h2>
           <p className="mt-2 whitespace-pre-line text-sm leading-6 text-brand-900">
@@ -149,8 +155,8 @@ export default async function ExhibitorDetailPage({
       ) : null}
 
       {/* Team */}
-      <section className="rounded-lg border border-brand-100 bg-white p-5">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-800/75">
+      <section className="border-t border-rule pt-4">
+        <h2 className="eyebrow text-brand-800/75">
           Team on ground
         </h2>
         {team.length === 0 ? (
@@ -174,9 +180,9 @@ export default async function ExhibitorDetailPage({
 function TeamRow({ t }: { t: TeamRow }) {
   const identity = (
     <>
-      <Avatar className="size-12 shrink-0 ring-1 ring-brand-100">
+      <Avatar className="size-12 shrink-0 ring-1 ring-rule">
         {t.photo_url ? <AvatarImage src={t.photo_url} alt={t.full_name} /> : null}
-        <AvatarFallback className="bg-brand-50 text-[13px] font-semibold text-brand-800">
+        <AvatarFallback className="bg-paper-deep text-[13px] font-semibold text-brand-800">
           {initials(t.full_name)}
         </AvatarFallback>
       </Avatar>
@@ -223,7 +229,7 @@ function TeamRow({ t }: { t: TeamRow }) {
   // <a> in <a> (and server-component onClick handlers aren't needed to stop
   // propagation — they'd break the RSC render anyway).
   return t.profile_id ? (
-    <div className="flex items-center gap-3 rounded-xl border border-brand-100 bg-white p-3">
+    <div className="flex items-center gap-3 rounded-xl border border-rule bg-white p-3">
       <Link
         href={`/attendees/${t.profile_id}`}
         className="flex min-w-0 flex-1 items-center gap-3 hover:opacity-90"
@@ -236,7 +242,7 @@ function TeamRow({ t }: { t: TeamRow }) {
       </div>
     </div>
   ) : (
-    <div className="flex items-center gap-3 rounded-xl border border-brand-100 bg-white p-3">
+    <div className="flex items-center gap-3 rounded-xl border border-rule bg-white p-3">
       {identity}
       {socials}
     </div>

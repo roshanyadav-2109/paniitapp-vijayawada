@@ -25,7 +25,7 @@ export default async function ExhibitorsPage() {
   return (
     <div className="mx-auto w-full max-w-3xl pt-5 lg:pt-8">
       <header className="mb-4">
-        <h1 className="text-2xl font-semibold tracking-tight text-brand-900 lg:text-3xl">
+        <h1 className="font-display text-2xl font-semibold text-brand-900 lg:text-3xl">
           Exhibitors
         </h1>
         <p className="mt-1 text-sm leading-6 text-brand-900/70">

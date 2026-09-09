@@ -42,7 +42,7 @@ const STAKEHOLDERS = [
 export default function AboutSummitPage() {
   return (
     <div className="mx-auto w-full max-w-2xl space-y-5 pb-12 pt-4">
-      <section className="overflow-hidden rounded-lg border border-brand-100 bg-white">
+      <section className="overflow-hidden rounded-lg border border-rule bg-white">
         <div className="relative aspect-video w-full bg-brand-950">
           <video
             src={SUMMIT_VIDEO_URL}
@@ -55,8 +55,8 @@ export default function AboutSummitPage() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-brand-100 bg-white p-5">
-        <h1 className="text-2xl font-semibold tracking-tight text-brand-950">
+      <section className="border-t border-rule pt-4">
+        <h1 className="font-display text-2xl font-semibold text-brand-950">
           About the summit
         </h1>
         <p className="mt-3 text-sm leading-7 text-brand-900">
@@ -77,15 +77,15 @@ export default function AboutSummitPage() {
         </a>
       </section>
 
-      <section className="rounded-lg border border-brand-100 bg-white p-5">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-800/75">
+      <section className="border-t border-rule pt-4">
+        <h2 className="eyebrow text-brand-800/75">
           Who&apos;s participating
         </h2>
         <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
           {STAKEHOLDERS.map((s) => (
             <li
               key={s.name}
-              className="rounded-md border border-brand-100 bg-brand-50/60 p-4"
+              className="rounded-md border border-rule bg-paper-deep/60 p-4"
             >
               <p className="text-[13px] font-semibold text-brand-950">{s.name}</p>
               <p className="mt-1 text-[12px] leading-5 text-brand-900/80">
