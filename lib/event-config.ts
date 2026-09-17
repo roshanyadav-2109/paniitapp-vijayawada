@@ -16,7 +16,8 @@ export const EVENT_SHORT_NAME = "Andhra Pradesh Summit";
 export const EVENT_APP_NAME = "PanIIT AP 2026";
 
 /** Summit theme, from the brochure cover. */
-export const EVENT_TAGLINE = "Andhra's Deeptech Decade: Anchored by PanIIT";
+export const EVENT_TAGLINE =
+  "Andhra's Resilient Deeptech Decade: Anchored by PanIIT";
 export const EVENT_SUBTAGLINE = "Swarna Andhra to Viksit Bharat 2047";
 
 /**
@@ -42,7 +43,8 @@ export const EVENT_ATTENDEE_COUNT = "800+";
 
 /** Focus areas from the brochure cover, used in About copy. */
 export const EVENT_FOCUS_AREAS =
-  "AI, quantum computing, green energy, deep tech, and startups";
+  "AI, quantum computing, semiconductors, defence and space, green energy, " +
+  "biotech, and agri-tech";
 
 /**
  * TODO — still the Bangalore edition's promo video.
@@ -128,4 +130,161 @@ export const EVENT_HERO_SLIDES: {
     src: "https://afilemanager.s3.dualstack.ap-southeast-1.amazonaws.com/prod/cid_2567/PANIITpanel2.png",
     alt: "PanIIT Andhra Pradesh Summit 2026 — guest panel 2",
   },
+];
+
+
+/**
+ * Session themes — the summit's eight sector tracks.
+ *
+ * Source: "SESSION THEMES" (p.14) of the 11/09/26 brochure, cross-referenced
+ * with the programme schedule (p.9) so each sector names the block it
+ * actually runs in rather than sitting on the page as decoration.
+ *
+ * `image` files are cropped from that brochure page and converted to WebP;
+ * see public/sectors/. They are photographic and wildly different in palette
+ * (violet AI, gold quantum, green fields), which is why the UI renders them
+ * duotone at rest — see SectorGrid.
+ */
+export interface EventSector {
+  slug: string;
+  label: string;
+  /** The programme block this sector runs in, from the schedule. */
+  slot: string;
+  /** One line on what the sector covers, for the detail row. */
+  blurb: string;
+  image: string;
+}
+
+export const EVENT_SECTORS: EventSector[] = [
+  {
+    slug: "ai-governance",
+    label: "AI in Governance",
+    slot: "3:00 PM · Address & talks",
+    blurb: "Putting AI to work inside the machinery of the state.",
+    image: "/sectors/ai-governance.webp",
+  },
+  {
+    slug: "quantum",
+    label: "Quantum Computing",
+    slot: "Panel 2 · 10:45 AM",
+    blurb:
+      "Deep tech in all walks of life — quantum, semiconductors and AI.",
+    image: "/sectors/quantum.webp",
+  },
+  {
+    slug: "semiconductors",
+    label: "Semiconductors",
+    slot: "Panel 2 · 10:45 AM",
+    blurb: "Fabs, packaging and the Made-in-India silicon supply chain.",
+    image: "/sectors/semiconductors.webp",
+  },
+  {
+    slug: "defence-space",
+    label: "Defence & SpaceTech",
+    slot: "Panel 3 · 11:30 AM",
+    blurb: "Space and defence manufacturing, built for product perfection.",
+    image: "/sectors/defence-space.webp",
+  },
+  {
+    slug: "biovalley",
+    label: "BioValley",
+    slot: "Panel 4 · 12:15 PM",
+    blurb: "Health access and screening at scale — towards zero poverty.",
+    image: "/sectors/biovalley.webp",
+  },
+  {
+    slug: "green-energy",
+    label: "Green Energy",
+    slot: "Panel 1 · 10:00 AM",
+    blurb: "Energy and fuel cost optimisation for a Swachh Andhra.",
+    image: "/sectors/green-energy.webp",
+  },
+  {
+    slug: "agritech",
+    label: "AgriTech",
+    slot: "Panel 5 · 2:00 PM",
+    blurb: "Farmers and water security, instrumented.",
+    image: "/sectors/agritech.webp",
+  },
+  {
+    slug: "skilling",
+    label: "Skilling & Entrepreneurship",
+    slot: "2:45 PM · IIT Madras Pravartak",
+    blurb: "Turning Andhra's youth into a globally competitive talent pool.",
+    image: "/sectors/skilling.webp",
+  },
+];
+
+/**
+ * "Event in numbers" (brochure p.2). Shown on the About screen.
+ */
+export const EVENT_NUMBERS: { value: string; label: string }[] = [
+  { value: "800+", label: "Delegates" },
+  { value: "50+", label: "Corporate CEOs & senior CXOs" },
+  { value: "100+", label: "Unicorn founders & startup leaders" },
+  { value: "50+", label: "Investors, VCs & family offices" },
+];
+
+/**
+ * Who the summit is for (brochure p.1, "Who will attend?").
+ */
+export const EVENT_AUDIENCE: { name: string; body: string }[] = [
+  {
+    name: "Corporate CEOs & CXOs",
+    body: "Operators from large Indian and global enterprises with deep-tech roots.",
+  },
+  {
+    name: "Investors & VCs",
+    body: "Angels, VC partners, family offices and growth funds with an India focus.",
+  },
+  {
+    name: "IIT directors & global alumni",
+    body: "Directors, faculty and working alumni across all 23 IIT campuses.",
+  },
+  {
+    name: "Policy makers",
+    body: "Government, regulators and industry bodies shaping technology policy.",
+  },
+  {
+    name: "Startup founders",
+    body: "Early- to growth-stage builders in deep tech, AI, climate and consumer.",
+  },
+];
+
+/**
+ * Summit vision (brochure p.6). Used on the About screen.
+ */
+export const EVENT_VISION: string[] = [
+  "Showcasing Andhra Pradesh as a hub of skilled talent, innovation, global collaboration and strategic investment.",
+  "Aligning with Swarna Andhra 2047 and Viksit Bharat 2047 to build a globally competitive, future-ready innovation ecosystem.",
+  "Catalysing AI, quantum computing, green energy, deep-tech innovation, startups and entrepreneurship.",
+  "Transforming Andhra Pradesh's youth into a globally competitive talent pool for emerging industries.",
+  "Connecting global IIT alumni, industry leaders, policymakers and academia to drive innovation-led growth.",
+];
+
+/**
+ * Summit organising contacts (brochure p.28).
+ */
+export const EVENT_CONTACTS: {
+  name: string;
+  role?: string;
+  phone: string;
+  email?: string;
+}[] = [
+  {
+    name: "Padmini Padhy",
+    role: "PanIIT Secretariat",
+    phone: "+919711195445",
+    email: "secretariat@paniit.org",
+  },
+  {
+    name: "Sanskreeti Raj",
+    role: "PanIIT Secretariat",
+    phone: "+919835419705",
+    email: "sanskreeti.raj@paniit.org",
+  },
+  { name: "Sai Teja Duggempudi", phone: "+918418944154" },
+  { name: "Gadi Akhil Sai Ram", phone: "+919491080512" },
+  { name: "Thejaswini Kalasamudram", phone: "+917893796502" },
+  { name: "Kshitij Tiwari", phone: "+918840075327" },
 ];

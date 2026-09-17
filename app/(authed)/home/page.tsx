@@ -25,6 +25,7 @@ import { HeroCarousel } from "./hero-carousel";
 import { SponsorsBoard, type SponsorTier } from "./sponsors-marquee";
 import { QuickActions } from "./quick-actions";
 import { KeyParticipantsStrip } from "./key-participants-strip";
+import { SectorGrid } from "./sector-grid";
 
 const LOGO_BUCKET = "LOGOS";
 // Folder name in storage = visible tier heading. Order = display order.
@@ -281,6 +282,14 @@ export default async function HomePage() {
       {/* Quick actions */}
       <section className="px-4 sm:px-6 lg:px-8">
         <QuickActions role={role} />
+      </section>
+
+      {/* Session themes — the eight sectors the summit is organised around. */}
+      <section className="px-4 sm:px-6 lg:px-8">
+        <SectionHead title="Session themes" meta="8 sectors" />
+        <div className="mt-4">
+          <SectorGrid />
+        </div>
       </section>
 
       {/*

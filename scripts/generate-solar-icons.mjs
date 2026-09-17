@@ -58,6 +58,7 @@ const MAP = {
   LogIn: "login",
   LogOut: "logout",
   Mail: "letter",
+  Phone: "phone-rounded",
   MapPin: "map-point",
   Megaphone: null,
   Mic: "microphone",

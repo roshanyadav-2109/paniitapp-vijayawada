@@ -1,1 +1,16 @@
-{"projectId":"prj_7dwCk40UMc0Iux7xFltu2qWWuuw1","orgId":"team_MAcM6xLrNuW8GfIu4bblRRa6","projectName":"paniitapp-ap-2026"}
+{
+  "projectId": "prj_7dwCk40UMc0Iux7xFltu2qWWuuw1",
+  "orgId": "team_MAcM6xLrNuW8GfIu4bblRRa6",
+  "projectName": "paniitapp-vijayawada",
+  "settings": {
+    "createdAt": 1788899585441,
+    "framework": null,
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}
