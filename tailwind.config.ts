@@ -55,23 +55,24 @@ const config: Config = {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'
   			},
-  			// Paper ground. The app used to sit on `slate-50` (#F8FAFC), which is
-  			// a cold blue-grey; against navy ink it made everything read
-  			// screenshot-of-a-dashboard. These are warm off-whites, so the
-  			// navy reads as ink on stock and the IIT red has something to
-  			// push against.
+  			// The app ground. Plain white — it was briefly a warm cream
+  			// (#F4F1EA), which read as light yellow rather than as paper, so
+  			// it is white again. `deep` is the inset/hover step and is a
+  			// NEUTRAL grey on purpose: the original `slate-50` was a cold
+  			// blue-grey that made navy ink look like a dashboard screenshot,
+  			// and a warm tan brings the yellow back, so neither extreme.
   			paper: {
-  				DEFAULT: '#F4F1EA',
-  				deep: '#EBE5D8',
+  				DEFAULT: '#FFFFFF',
+  				deep: '#F4F4F5',
   				raised: '#FFFFFF'
   			},
   			// Hairline rules. Replaces `brand-100` (#d4d2ed, a periwinkle) as
   			// the border everywhere — that lilac cast on 150 borders was most
-  			// of why the app looked purple-tinted.
+  			// of why the app looked purple-tinted. Neutral, matching `paper`.
   			rule: {
-  				DEFAULT: '#E3DCCC',
-  				strong: '#CFC5AE',
-  				faint: '#EEE9DD'
+  				DEFAULT: '#E4E4E7',
+  				strong: '#C4C4C8',
+  				faint: '#EFEFF1'
   			},
   			brand: {
   				'50': '#eeedf7',

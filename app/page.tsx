@@ -98,8 +98,8 @@ export default async function SignInPage() {
       </section>
 
       {/* FORM PANEL — overlaps the hero by ~10svh from below */}
-      <section className="relative z-10 -mt-[10svh] flex min-h-0 flex-1 flex-col lg:mt-0 lg:min-h-screen lg:bg-paper lg:paper-grain">
-        <div className="paper-grain mx-auto flex h-full min-h-0 w-full max-w-md flex-col rounded-t-2xl bg-paper px-6 pb-3 pt-6 shadow-[0_-20px_50px_-25px_rgba(13,9,48,0.35)] sm:px-8 lg:my-auto lg:h-auto lg:min-h-[32rem] lg:max-w-sm lg:rounded-lg lg:p-9 lg:shadow-none">
+      <section className="relative z-10 -mt-[10svh] flex min-h-0 flex-1 flex-col lg:mt-0 lg:min-h-screen lg:bg-paper">
+        <div className="mx-auto flex h-full min-h-0 w-full max-w-md flex-col rounded-t-2xl bg-paper px-6 pb-3 pt-6 shadow-[0_-20px_50px_-25px_rgba(13,9,48,0.35)] sm:px-8 lg:my-auto lg:h-auto lg:min-h-[32rem] lg:max-w-sm lg:rounded-lg lg:p-9 lg:shadow-none">
           {/* Top spacer — smaller so the greeting sits a touch above
               vertical centre and the sign-in stack reads as a single
               grouped block (greeting → button). */}
