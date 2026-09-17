@@ -4,7 +4,7 @@
   "projectName": "paniitapp-vijayawada",
   "settings": {
     "createdAt": 1788899585441,
-    "framework": null,
+    "framework": "nextjs",
     "devCommand": null,
     "installCommand": null,
     "buildCommand": null,

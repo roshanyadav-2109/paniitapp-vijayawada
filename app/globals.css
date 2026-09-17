@@ -95,8 +95,16 @@
    *     jams the serifs into each other.
    */
   .font-display {
-    font-variation-settings: "SOFT" 8, "WONK" 0;
-    font-optical-sizing: auto;
+    /* `font-variation-settings` for SOFT/WONK used to live here. Those axes
+       are no longer in the loaded font — see the note in app/layout.tsx on
+       why next/font cannot request them — so setting them did nothing.
+       Fraunces' default instance is already WONK 0 / SOFT 0, which is the
+       masthead cut we wanted; the bakery-ish flared `g` and curled `r` only
+       appear at high WONK, so nothing is lost visually.
+
+       Letter-spacing back to ~0 matters though: `tracking-tight` corrects
+       Inter's loose fit, and on a high-contrast serif it welds the serifs
+       into each other. */
     letter-spacing: -0.005em;
     font-feature-settings: "liga" 1, "calt" 1;
   }
