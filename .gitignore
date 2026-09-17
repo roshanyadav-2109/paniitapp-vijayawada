@@ -47,3 +47,9 @@ next-env.d.ts
 paniit-nav-inspect*.json
 paniit-org-*.png
 
+
+# Local screenshots from browser checks.
+*.png
+!public/**/*.png
+!app/*.png
+!logos/*.png
