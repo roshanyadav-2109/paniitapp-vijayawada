@@ -1,0 +1,17 @@
+# Local-only files that must never reach a Vercel build.
+#
+# `.env.local` is the important one: Next loads it during the build and it
+# takes precedence over the environment Vercel injects, so uploading it points
+# a production build at whatever is in a developer's local file.
+.env.local
+.env.*.local
+
+# Build caches — regenerated on Vercel, and a half-written .vercel/output can
+# be misread as a prebuilt deployment.
+.next
+.vercel/output
+tsconfig.tsbuildinfo
+
+# Local tooling noise.
+.playwright-mcp
+*.png.bak
