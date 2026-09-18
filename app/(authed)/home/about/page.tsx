@@ -117,15 +117,6 @@ export default function AboutSummitPage() {
         </ol>
       </section>
 
-      {/* What happens on the day. Ordered as the day runs, which is what
-          makes the tile numbering meaningful rather than ornamental. */}
-      <section>
-        <Head title="On the day" meta={`${EVENT_HIGHLIGHTS.length} highlights`} />
-        <div className="mt-4">
-          <TileGrid numbered items={EVENT_HIGHLIGHTS} />
-        </div>
-      </section>
-
       {/* The eight sectors in full — the home grid shows the tiles, this is
           where each one gets its line of explanation. */}
       <section>
@@ -224,6 +215,14 @@ export default function AboutSummitPage() {
             </li>
           ))}
         </ul>
+      </section>
+      {/* What happens on the day. Ordered as the day runs, which is what
+          makes the tile numbering meaningful rather than ornamental. */}
+      <section>
+        <Head title="On the day" meta={`${EVENT_HIGHLIGHTS.length} highlights`} />
+        <div className="mt-4">
+          <TileGrid numbered items={EVENT_HIGHLIGHTS} />
+        </div>
       </section>
     </div>
   );

@@ -155,16 +155,13 @@ export interface EventSector {
   image: string;
 }
 
-// Ordered by when each one runs on 3 October, because the home grid
-// numbers these tiles 01-08 — in any other order that number would be
-// decoration pretending to be information.
 export const EVENT_SECTORS: EventSector[] = [
   {
-    slug: "green-energy",
-    label: "Green Energy",
-    slot: "Panel 1 · 10:00 AM",
-    blurb: "Energy and fuel cost optimisation for a Swachh Andhra.",
-    image: "/sectors/green-energy.webp",
+    slug: "ai-governance",
+    label: "AI in Governance",
+    slot: "3:00 PM · Address & talks",
+    blurb: "Putting AI to work inside the machinery of the state.",
+    image: "/sectors/ai-governance.webp",
   },
   {
     slug: "quantum",
@@ -196,6 +193,13 @@ export const EVENT_SECTORS: EventSector[] = [
     image: "/sectors/biovalley.webp",
   },
   {
+    slug: "green-energy",
+    label: "Green Energy",
+    slot: "Panel 1 · 10:00 AM",
+    blurb: "Energy and fuel cost optimisation for a Swachh Andhra.",
+    image: "/sectors/green-energy.webp",
+  },
+  {
     slug: "agritech",
     label: "AgriTech",
     slot: "Panel 5 · 2:00 PM",
@@ -208,13 +212,6 @@ export const EVENT_SECTORS: EventSector[] = [
     slot: "2:45 PM · IIT Madras Pravartak",
     blurb: "Turning Andhra's youth into a globally competitive talent pool.",
     image: "/sectors/skilling.webp",
-  },
-  {
-    slug: "ai-governance",
-    label: "AI in Governance",
-    slot: "3:00 PM · Address & talks",
-    blurb: "Putting AI to work inside the machinery of the state.",
-    image: "/sectors/ai-governance.webp",
   },
 ];
 
