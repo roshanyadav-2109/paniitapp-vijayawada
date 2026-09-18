@@ -16,7 +16,10 @@ import {
   EVENT_MAPS_URL,
   EVENT_NAME,
   EVENT_ID,
+  EVENT_SECTORS,
   EVENT_SHORT_NAME,
+  EVENT_SOCIALS,
+  type EventSocial,
   EVENT_STORAGE_PREFIX,
   EVENT_TAGLINE,
   EVENT_VENUE,
@@ -25,7 +28,7 @@ import { HeroCarousel } from "./hero-carousel";
 import { SponsorsBoard, type SponsorTier } from "./sponsors-marquee";
 import { QuickActions } from "./quick-actions";
 import { KeyParticipantsStrip } from "./key-participants-strip";
-import { SectorGrid } from "./sector-grid";
+import { TileGrid } from "@/components/features/tile-grid";
 
 const LOGO_BUCKET = "LOGOS";
 // Folder name in storage = visible tier heading. Order = display order.
@@ -51,13 +54,16 @@ const SUMMIT_VENUE = EVENT_VENUE;
 const SUMMIT_DATE_LABEL = EVENT_DATE_LABEL;
 const SUMMIT_MAPS_URL = EVENT_MAPS_URL;
 
-const SOCIALS: { href: string; label: string; icon: React.ReactNode }[] = [
-  { href: "https://www.linkedin.com/company/paniit-alumni-india", label: "LinkedIn", icon: <LinkedInLogo /> },
-  { href: "https://www.instagram.com/paniit_alumni_india/", label: "Instagram", icon: <InstagramLogo /> },
-  { href: "https://x.com/paniit_india", label: "X (Twitter)", icon: <XLogo /> },
-  { href: "https://www.youtube.com/@paniitalumniindia", label: "YouTube", icon: <YouTubeLogo /> },
-  { href: "https://www.facebook.com/paniitalumni/", label: "Facebook", icon: <FacebookLogo /> },
-];
+// Artwork only — the hrefs come from EVENT_SOCIALS so there is one list of
+// accounts in the app rather than one per screen. Two of the URLs this row
+// used to hard-code were dead; see the note on EVENT_SOCIALS.
+const SOCIAL_LOGOS: Record<EventSocial["key"], React.ReactNode> = {
+  linkedin: <LinkedInLogo />,
+  instagram: <InstagramLogo />,
+  x: <XLogo />,
+  youtube: <YouTubeLogo />,
+  facebook: <FacebookLogo />,
+};
 
 interface KeyPerson {
   id: string;
@@ -288,7 +294,17 @@ export default async function HomePage() {
       <section className="px-4 sm:px-6 lg:px-8">
         <SectionHead title="Session themes" meta="8 sectors" />
         <div className="mt-4">
-          <SectorGrid />
+          <TileGrid
+            numbered
+            href="/agenda"
+            items={EVENT_SECTORS.map((x) => ({
+              slug: x.slug,
+              label: x.label,
+              image: x.image,
+              caption: x.slot,
+              detail: x.blurb,
+            }))}
+          />
         </div>
       </section>
 
@@ -390,9 +406,9 @@ export default async function HomePage() {
       <section className="px-4 sm:px-6 lg:px-8">
         <SectionHead title="Connect with us" />
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          {SOCIALS.map((s) => (
+          {EVENT_SOCIALS.map((s) => (
             <a
-              key={s.label}
+              key={s.key}
               href={s.href}
               target="_blank"
               rel="noopener noreferrer"
@@ -400,7 +416,7 @@ export default async function HomePage() {
               title={s.label}
               className="inline-grid size-10 place-items-center rounded-sm transition-transform hover:-translate-y-0.5"
             >
-              {s.icon}
+              {SOCIAL_LOGOS[s.key]}
             </a>
           ))}
         </div>

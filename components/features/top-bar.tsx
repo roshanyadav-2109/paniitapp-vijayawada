@@ -5,28 +5,26 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/server";
 import { rethrowIfRedirect } from "@/lib/redirect";
 import { initials } from "@/lib/utils";
+import {
+  EVENT_SOCIALS,
+  EVENT_WHATSAPP_URL,
+  type EventSocial,
+} from "@/lib/event-config";
 import { NotificationsBell } from "./notifications-bell";
 import { DesktopNavTabs } from "./desktop-nav-tabs";
 
-const SUMMIT_WHATSAPP_URL = "https://chat.whatsapp.com/DFwlo56dAu83SW6fKX4I7H";
+// Monochrome marks for the desktop bar. Which accounts, and their URLs, come
+// from EVENT_SOCIALS — this row and the home screen used to keep separate
+// lists that disagreed on every shared platform.
+const SOCIAL_MARKS: Partial<
+  Record<EventSocial["key"], (p: { className?: string }) => React.ReactElement>
+> = {
+  x: XMark,
+  instagram: InstagramMark,
+  linkedin: LinkedInMark,
+};
 
-const SOCIAL_LINKS = [
-  {
-    href: "https://x.com/paniitindia",
-    label: "PAN IIT on X",
-    Icon: XMark,
-  },
-  {
-    href: "https://instagram.com/paniitindia",
-    label: "PAN IIT on Instagram",
-    Icon: InstagramMark,
-  },
-  {
-    href: "https://linkedin.com/company/paniitalumni",
-    label: "PAN IIT on LinkedIn",
-    Icon: LinkedInMark,
-  },
-] as const;
+const BAR_SOCIALS = EVENT_SOCIALS.filter((s) => s.key in SOCIAL_MARKS);
 
 function firstName(full: string | null | undefined): string {
   if (!full) return "there";
@@ -102,9 +100,11 @@ export async function TopBar() {
 
             {/* Social icons — desktop only, mirroring paniit.org */}
             <div className="hidden items-center gap-0.5 pr-1 lg:flex">
-              {SOCIAL_LINKS.map(({ href, label, Icon }) => (
+              {BAR_SOCIALS.map(({ key, href, label }) => {
+                const Icon = SOCIAL_MARKS[key]!;
+                return (
                 <a
-                  key={label}
+                  key={key}
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -113,13 +113,14 @@ export async function TopBar() {
                 >
                   <Icon className="size-[18px]" />
                 </a>
-              ))}
+                );
+              })}
               <span className="mx-2 h-5 w-px bg-rule" aria-hidden />
             </div>
 
             <div className="flex shrink-0 items-center gap-1 lg:gap-2">
               <a
-                href={SUMMIT_WHATSAPP_URL}
+                href={EVENT_WHATSAPP_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Summit help on WhatsApp"

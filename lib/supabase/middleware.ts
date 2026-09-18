@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { devAuthBypass } from "@/lib/dev-auth";
 
 const PUBLIC_PATHS = new Set(["/"]);
 const PUBLIC_PREFIXES = ["/api/", "/_next", "/icons/", "/auth/"];
@@ -13,6 +14,10 @@ function isPublicPath(pathname: string) {
 }
 
 export async function updateSession(request: NextRequest) {
+  // Local review only — see lib/dev-auth.ts. Returns early so neither the
+  // signed-in redirect off "/" nor the signed-out redirect onto it fires.
+  if (devAuthBypass()) return NextResponse.next({ request });
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 

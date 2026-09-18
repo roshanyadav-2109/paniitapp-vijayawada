@@ -155,13 +155,16 @@ export interface EventSector {
   image: string;
 }
 
+// Ordered by when each one runs on 3 October, because the home grid
+// numbers these tiles 01-08 — in any other order that number would be
+// decoration pretending to be information.
 export const EVENT_SECTORS: EventSector[] = [
   {
-    slug: "ai-governance",
-    label: "AI in Governance",
-    slot: "3:00 PM · Address & talks",
-    blurb: "Putting AI to work inside the machinery of the state.",
-    image: "/sectors/ai-governance.webp",
+    slug: "green-energy",
+    label: "Green Energy",
+    slot: "Panel 1 · 10:00 AM",
+    blurb: "Energy and fuel cost optimisation for a Swachh Andhra.",
+    image: "/sectors/green-energy.webp",
   },
   {
     slug: "quantum",
@@ -193,13 +196,6 @@ export const EVENT_SECTORS: EventSector[] = [
     image: "/sectors/biovalley.webp",
   },
   {
-    slug: "green-energy",
-    label: "Green Energy",
-    slot: "Panel 1 · 10:00 AM",
-    blurb: "Energy and fuel cost optimisation for a Swachh Andhra.",
-    image: "/sectors/green-energy.webp",
-  },
-  {
     slug: "agritech",
     label: "AgriTech",
     slot: "Panel 5 · 2:00 PM",
@@ -212,6 +208,13 @@ export const EVENT_SECTORS: EventSector[] = [
     slot: "2:45 PM · IIT Madras Pravartak",
     blurb: "Turning Andhra's youth into a globally competitive talent pool.",
     image: "/sectors/skilling.webp",
+  },
+  {
+    slug: "ai-governance",
+    label: "AI in Governance",
+    slot: "3:00 PM · Address & talks",
+    blurb: "Putting AI to work inside the machinery of the state.",
+    image: "/sectors/ai-governance.webp",
   },
 ];
 
@@ -228,25 +231,35 @@ export const EVENT_NUMBERS: { value: string; label: string }[] = [
 /**
  * Who the summit is for (brochure p.1, "Who will attend?").
  */
-export const EVENT_AUDIENCE: { name: string; body: string }[] = [
+export const EVENT_AUDIENCE: {
+  name: string;
+  body: string;
+  /** Red mark from the brochure's "Who will attend?" row (p.1). */
+  icon: string;
+}[] = [
   {
     name: "Corporate CEOs & CXOs",
+    icon: "/audience/ceos.webp",
     body: "Operators from large Indian and global enterprises with deep-tech roots.",
   },
   {
     name: "Investors & VCs",
+    icon: "/audience/investors.webp",
     body: "Angels, VC partners, family offices and growth funds with an India focus.",
   },
   {
     name: "IIT directors & global alumni",
+    icon: "/audience/directors.webp",
     body: "Directors, faculty and working alumni across all 23 IIT campuses.",
   },
   {
     name: "Policy makers",
+    icon: "/audience/policy.webp",
     body: "Government, regulators and industry bodies shaping technology policy.",
   },
   {
     name: "Startup founders",
+    icon: "/audience/founders.webp",
     body: "Early- to growth-stage builders in deep tech, AI, climate and consumer.",
   },
 ];
@@ -287,4 +300,79 @@ export const EVENT_CONTACTS: {
   { name: "Gadi Akhil Sai Ram", phone: "+919491080512" },
   { name: "Thejaswini Kalasamudram", phone: "+917893796502" },
   { name: "Kshitij Tiwari", phone: "+918840075327" },
+];
+
+/**
+ * PAN IIT's social accounts — the single source of truth for these links.
+ *
+ * Previously the home screen and the top bar each carried their own list, and
+ * they disagreed on all three shared platforms. Checked against the footer of
+ * paniit.org, which is authoritative, and then each URL was opened:
+ *
+ *   instagram.com/paniit_alumni_india  -> "Profile isn't available" (dead)
+ *   x.com/paniit_india                 -> HTTP 404 (dead)
+ *   linkedin.com/company/paniitalumni  -> reCAPTCHA wall, unverifiable
+ *   youtube.com/@paniitalumniindia     -> a real but DIFFERENT channel,
+ *                                         "PanIITAlumniIndia", not the one
+ *                                         paniit.org links to
+ *
+ * The values below are the ones paniit.org itself links to, each confirmed:
+ * LinkedIn resolves to "PanIIT Alumni India", Instagram to "PAN IIT Alumni
+ * India (@paniitindia)", YouTube to "PAN IIT ALUMNI INDIA". Facebook answers
+ * 400 to automated requests, as it does for everything, so it is trusted on
+ * paniit.org's say-so rather than independently confirmed.
+ */
+export interface EventSocial {
+  key: "linkedin" | "instagram" | "x" | "youtube" | "facebook";
+  label: string;
+  href: string;
+}
+
+export const EVENT_SOCIALS: EventSocial[] = [
+  {
+    key: "linkedin",
+    label: "PAN IIT on LinkedIn",
+    href: "https://www.linkedin.com/company/paniit",
+  },
+  {
+    key: "instagram",
+    label: "PAN IIT on Instagram",
+    href: "https://www.instagram.com/paniitindia",
+  },
+  { key: "x", label: "PAN IIT on X", href: "https://x.com/paniitindia" },
+  {
+    key: "youtube",
+    label: "PAN IIT on YouTube",
+    href: "https://www.youtube.com/@PANIITIndia",
+  },
+  {
+    key: "facebook",
+    label: "PAN IIT on Facebook",
+    href: "https://www.facebook.com/paniitindia",
+  },
+];
+
+/** Summit help group. Event-specific, not a PAN IIT account. */
+export const EVENT_WHATSAPP_URL =
+  "https://chat.whatsapp.com/DFwlo56dAu83SW6fKX4I7H";
+
+/**
+ * Summit highlights — the nine things that happen on the day.
+ *
+ * Source: "SUMMIT HIGHLIGHTS" (p.13) of the 11/09/26 brochure, which
+ * represents each one with a photo tile exactly as p.14 does for the session
+ * themes. Tiles cropped from that page and converted to WebP; see
+ * public/highlights/. Rendered through the same duotone grid as the sectors,
+ * so the two sets read as one system rather than two stock-photo walls.
+ */
+export const EVENT_HIGHLIGHTS: { slug: string; label: string; image: string }[] = [
+  { slug: "grand-opening", label: "Grand opening ceremony", image: "/highlights/grand-opening.webp" },
+  { slug: "keynotes", label: "Visionary keynotes", image: "/highlights/keynotes.webp" },
+  { slug: "policy-papers", label: "Policy & vision papers", image: "/highlights/policy-papers.webp" },
+  { slug: "leadership", label: "Leadership panels", image: "/highlights/leadership.webp" },
+  { slug: "roundtables", label: "Strategic roundtables", image: "/highlights/roundtables.webp" },
+  { slug: "startup-expo", label: "Innovation & startup expo", image: "/highlights/startup-expo.webp" },
+  { slug: "networking", label: "Global networking", image: "/highlights/networking.webp" },
+  { slug: "executive-lunch", label: "Executive lunch", image: "/highlights/executive-lunch.webp" },
+  { slug: "valedictory", label: "Valedictory address by the Hon'ble Chief Minister", image: "/highlights/valedictory.webp" },
 ];

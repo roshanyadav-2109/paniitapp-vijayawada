@@ -1,11 +1,13 @@
 import Image from "next/image";
 import { ExternalLink, Mail, Phone } from "@/components/icons";
+import { TileGrid } from "@/components/features/tile-grid";
 import {
   EVENT_AUDIENCE,
   EVENT_CITY,
   EVENT_CONTACTS,
   EVENT_DATE_TEXT,
   EVENT_FOCUS_AREAS,
+  EVENT_HIGHLIGHTS,
   EVENT_NAME,
   EVENT_NUMBERS,
   EVENT_SECTORS,
@@ -115,6 +117,15 @@ export default function AboutSummitPage() {
         </ol>
       </section>
 
+      {/* What happens on the day. Ordered as the day runs, which is what
+          makes the tile numbering meaningful rather than ornamental. */}
+      <section>
+        <Head title="On the day" meta={`${EVENT_HIGHLIGHTS.length} highlights`} />
+        <div className="mt-4">
+          <TileGrid numbered items={EVENT_HIGHLIGHTS} />
+        </div>
+      </section>
+
       {/* The eight sectors in full — the home grid shows the tiles, this is
           where each one gets its line of explanation. */}
       <section>
@@ -153,13 +164,22 @@ export default function AboutSummitPage() {
         <Head title="Who attends" />
         <ul className="list-ruled mt-1">
           {EVENT_AUDIENCE.map((a) => (
-            <li key={a.name} className="py-3.5">
-              <p className="font-display text-[15px] font-semibold text-brand-950">
-                {a.name}
-              </p>
-              <p className="mt-0.5 text-[13px] leading-6 text-brand-900/65">
-                {a.body}
-              </p>
+            <li key={a.name} className="flex items-start gap-3.5 py-3.5">
+              <Image
+                src={a.icon}
+                alt=""
+                width={34}
+                height={34}
+                className="mt-0.5 size-[34px] shrink-0 object-contain"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block font-display text-[15px] font-semibold text-brand-950">
+                  {a.name}
+                </span>
+                <span className="mt-0.5 block text-[13px] leading-6 text-brand-900/65">
+                  {a.body}
+                </span>
+              </span>
             </li>
           ))}
         </ul>
