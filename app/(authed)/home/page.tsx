@@ -233,8 +233,8 @@ export default async function HomePage() {
         Masthead. This was a radial purple-to-navy gradient card — the single
         most generic thing on the page. It is now a flat navy block with a red
         rule across the top and hairlines between the meta rows: a printed
-        programme cover, not a hero gradient. Flat also means the Fraunces
-        tagline sits on one solid value instead of drifting across three.
+        programme cover, not a hero gradient. Flat also means the tagline
+        sits on one solid value instead of drifting across three.
       */}
       <section className="px-4 sm:px-6 lg:px-8">
         <div className="overflow-hidden rounded-lg bg-brand-800">
@@ -430,7 +430,7 @@ export default async function HomePage() {
 
 
 /**
- * Editorial section head: Fraunces title sitting on a full-width hairline,
+ * Editorial section head: a title sitting on a full-width hairline,
  * with optional right-aligned meta. This is what replaced the white card
  * wrapper around each home section — the rule separates, so the box does not
  * have to, and eight identical rectangles become a page with a rhythm.

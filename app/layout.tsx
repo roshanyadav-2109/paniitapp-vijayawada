@@ -1,34 +1,31 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Instrument_Sans, Noto_Sans_Telugu } from "next/font/google";
+import { Poppins, Noto_Sans_Telugu } from "next/font/google";
 import { Toaster } from "@/components/ui/toaster";
 import { EVENT_APP_NAME, EVENT_NAME, EVENT_TAGLINE } from "@/lib/event-config";
 import "./globals.css";
 
-// Display face for titles. Fraunces is a high-contrast variable serif with
-// `SOFT` (terminal rounding) and `WONK` (swashy alternates) axes; we run it
-// with the wonk off and softness low so it reads institutional rather than
-// cute, and let `opsz` do the work — optical sizing is why a 30px page title
-// and a 13px card title look like the same voice instead of the same file
-// scaled. This is the one thing that stops every heading in the app reading
-// as default-Inter-semibold-tracking-tight.
-const fraunces = Fraunces({
+/**
+ * Poppins, used for both titles and body.
+ *
+ * It is a static family rather than variable, so the weights have to be
+ * listed — 400/500/600/700 is everything the app actually sets. Asking for
+ * more would ship more files for nothing.
+ *
+ * Latin only. The greeting on the sign-in screen rotates through Devanagari,
+ * Telugu, Tamil and Kannada; Poppins covers only the first of those, so
+ * pulling in its Devanagari subset would style one greeting differently from
+ * its siblings. Noto Sans Telugu is loaded separately for Telugu, and the
+ * rest fall back to the system's Indic faces, which keeps them consistent
+ * with each other.
+ *
+ * Bound to both --font-sans and --font-display so the `font-display` utility
+ * and every existing heading keep working untouched.
+ */
+const poppins = Poppins({
   subsets: ["latin"],
-  variable: "--font-display",
-  display: "swap",
-  axes: ["SOFT", "WONK", "opsz"],
-  preload: true,
-});
-
-// UI/body face. Replaces Inter, which is legible but is also the single most
-// recognisable "generated interface" signal there is. Instrument Sans is a
-// slightly narrow grotesque — holds up at the 10–13px label sizes this app
-// leans on, and has enough of its own character to sit under Fraunces
-// without the pair looking accidental.
-const instrumentSans = Instrument_Sans({
-  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-sans",
   display: "swap",
-  axes: ["wdth"],
   preload: true,
 });
 
@@ -71,7 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${instrumentSans.variable} ${fraunces.variable} ${notoTelugu.variable}`}
+      className={`${poppins.variable} ${notoTelugu.variable}`}
     >
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         {children}

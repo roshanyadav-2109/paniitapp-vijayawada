@@ -128,14 +128,14 @@ const config: Config = {
   				'system-ui',
   				'sans-serif'
   			],
-  			// `font-display` — titles only. Deliberately not applied to h1/h2
-  			// globally: several `h2`/`h3` in this app are small uppercase
-  			// field labels, and a serif is wrong for those. Opt in per title.
+  			// `font-display` — titles. Same family as the body text now, so this
+  			// exists to carry the title *treatment* (weight and fit) rather
+  			// than a second typeface; keeping the utility means every heading
+  			// in the app stays a one-line change away from a display face.
   			display: [
-  				'var(--font-display)',
-  				'Georgia',
-  				'ui-serif',
-  				'serif'
+  				'var(--font-sans)',
+  				'system-ui',
+  				'sans-serif'
   			],
   			telugu: [
   				'var(--font-telugu)',
