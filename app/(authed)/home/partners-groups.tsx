@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { Building2 } from "@/components/icons";
+import { useDriftScroll } from "@/hooks/use-drift-scroll";
 
 interface PartnerCard {
   id: string;
@@ -30,11 +31,15 @@ export function PartnersGroups({
 }
 
 function PartnerRow({ partners }: { partners: PartnerCard[] }) {
-  // Duplicate so the marquee can loop seamlessly via -50% translate.
+  // Duplicated so the loop can wrap at half the width with no seam.
   const stream = [...partners, ...partners];
+  const ref = useDriftScroll<HTMLDivElement>(28);
   return (
-    <div className="overflow-hidden">
-      <div className="flex w-max animate-marquee-rtl gap-3">
+    <div
+      ref={ref}
+      className="no-scrollbar overflow-x-auto overscroll-x-contain [scroll-behavior:auto]"
+    >
+      <div className="flex w-max gap-3">
         {stream.map((p, i) => (
           <Tile key={`${p.id}-${i}`} p={p} />
         ))}

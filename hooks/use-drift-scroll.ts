@@ -38,6 +38,10 @@ export function useDriftScroll<T extends HTMLElement>(
     let held = false; // finger or button down
     let hovered = false;
     let waking = false; // a scroll this code caused, not the visitor
+    // A row further down the page used to have drifted half its length
+    // before it was ever looked at, so the first thing seen was the middle
+    // of it. It starts when it comes into view, and stops when it leaves.
+    let onscreen = false;
 
     const half = () => el.scrollWidth / 2;
 
@@ -64,7 +68,7 @@ export function useDriftScroll<T extends HTMLElement>(
       raf = requestAnimationFrame(step);
       const dt = last ? Math.min((t - last) / 1000, 0.05) : 0;
       last = t;
-      if (reduced.matches || held || hovered || idleTimer) return;
+      if (reduced.matches || !onscreen || held || hovered || idleTimer) return;
       waking = true;
       el.scrollLeft += pxPerSecond * dt;
       wrap();
@@ -95,6 +99,17 @@ export function useDriftScroll<T extends HTMLElement>(
       hovered = false;
     };
 
+    // 10% of the row visible is enough to count as "you are looking at it",
+    // and the drift stops again the moment it leaves — a row scrolled past
+    // should not keep moving off-screen for the rest of the visit.
+    const seen = new IntersectionObserver(
+      ([entry]) => {
+        onscreen = entry.isIntersecting;
+      },
+      { threshold: 0.1 }
+    );
+    seen.observe(el);
+
     el.addEventListener("scroll", onScroll, { passive: true });
     el.addEventListener("pointerdown", down, { passive: true });
     el.addEventListener("pointerup", up, { passive: true });
@@ -110,6 +125,7 @@ export function useDriftScroll<T extends HTMLElement>(
     raf = requestAnimationFrame(step);
     return () => {
       cancelAnimationFrame(raf);
+      seen.disconnect();
       if (idleTimer) clearTimeout(idleTimer);
       el.removeEventListener("scroll", onScroll);
       el.removeEventListener("pointerdown", down);
