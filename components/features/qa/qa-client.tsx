@@ -682,7 +682,7 @@ function AskBar({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="flex h-12 w-full items-center justify-center rounded-md bg-brand-800 text-[13px] font-semibold tracking-tight text-white shadow-[0_8px_24px_-12px_rgba(13,9,48,0.5)] transition-colors hover:bg-brand-900"
+          className="flex h-12 w-full items-center justify-center rounded-md bg-brand-800 text-[14px] font-normal tracking-tight text-white shadow-[0_8px_24px_-12px_rgba(13,9,48,0.5)] transition-colors hover:bg-brand-900"
         >
           Ask a question
         </button>
