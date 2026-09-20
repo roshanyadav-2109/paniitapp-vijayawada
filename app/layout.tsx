@@ -59,9 +59,14 @@ export const viewport: Viewport = {
   themeColor: "#1B1464",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // maximumScale/userScalable are gone. iOS has ignored them since 10, and
+  // on Android they took pinch-zoom away from anyone who needs it — which
+  // also meant a phone that landed zoomed in had no way back out.
   viewportFit: "cover",
+  // The on-screen keyboard resizes the page instead of being laid over it,
+  // so a composer pinned to the bottom of the screen stays above the keys
+  // rather than behind them.
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

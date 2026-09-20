@@ -52,10 +52,10 @@ function agoShort(iso: string): string {
   if (mins < 60) return `${mins}m ago`;
   const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours}h ago`;
-  return new Date(iso).toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-  });
+  // Past a day it is just "Seen". A date there would be read as when the
+  // message was sent, and the send time is already the other half of the
+  // line — "Seen 16 May | 10:24" says two different days about one message.
+  return "";
 }
 
 function dayLabel(iso: string): string {
@@ -107,6 +107,31 @@ export function ConversationView({
   // mismatch. The relative part appears once, on the client.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // iOS does not resize the page for its keyboard; it lays the keyboard over
+  // it, so a bottom-pinned composer ends up underneath. The visual viewport
+  // reports what is actually visible, keyboard and toolbars included, so the
+  // shell is sized from that and the composer stays on screen.
+  const shellRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    const el = shellRef.current;
+    if (!vv || !el) return;
+    const apply = () => {
+      el.style.height = `${vv.height}px`;
+      // Safari scrolls the page behind the keyboard rather than resizing it;
+      // offsetTop is how far it has moved, and matching it keeps the thread
+      // aligned with what the visitor can see.
+      el.style.transform = `translateY(${vv.offsetTop}px)`;
+    };
+    apply();
+    vv.addEventListener("resize", apply);
+    vv.addEventListener("scroll", apply);
+    return () => {
+      vv.removeEventListener("resize", apply);
+      vv.removeEventListener("scroll", apply);
+    };
+  }, []);
 
   const scrollToBottom = useCallback(() => {
     const el = scrollerRef.current;
@@ -255,7 +280,15 @@ export function ConversationView({
     // the composer below the fold — you had to scroll the page to reach the
     // box you were trying to type in. Fixed to the viewport, the list is the
     // only thing that scrolls and the composer is always where you left it.
-    <div className="fixed inset-0 z-50 flex flex-col bg-white">
+    //
+    // Height comes from the visual viewport (see the effect above), with dvh
+    // as the fallback: inset-0 measures the layout viewport, which on a
+    // phone includes the strip the browser's own toolbar sits over, so the
+    // composer was drawn underneath it and cut in half.
+    <div
+      ref={shellRef}
+      className="fixed inset-x-0 top-0 z-50 flex h-[100dvh] flex-col overflow-hidden bg-white"
+    >
       {/* Header */}
       <header className="flex shrink-0 items-center gap-3 border-b border-rule bg-white px-4 py-3 lg:px-5">
         <Link
@@ -356,12 +389,14 @@ export function ConversationView({
                             <span className="text-[11px] tabular-nums text-brand-900/55">
                               {!mine
                                 ? timeShort(m.created_at)
-                                : m.read_at
-                                  ? `Seen ${mounted ? agoShort(m.read_at) : ""} | ${timeShort(m.created_at)}`.replace(
-                                      "  ",
-                                      " "
-                                    )
-                                  : `Sent | ${timeShort(m.created_at)}`}
+                                : [
+                                    m.read_at
+                                      ? ["Seen", mounted ? agoShort(m.read_at) : ""]
+                                          .filter(Boolean)
+                                          .join(" ")
+                                      : "Sent",
+                                    timeShort(m.created_at),
+                                  ].join(" | ")}
                             </span>
                           </div>
                           <p className="mt-1 whitespace-pre-line break-words text-[14px] leading-6 text-brand-950">
@@ -384,7 +419,7 @@ export function ConversationView({
           e.preventDefault();
           submit();
         }}
-        className="safe-bottom flex items-end gap-2 border-t border-rule bg-white px-3 py-2 lg:px-4 lg:py-3"
+        className="flex shrink-0 items-end gap-2 border-t border-rule bg-white px-3 py-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] lg:px-4 lg:py-3"
       >
         <textarea
           ref={inputRef}
@@ -401,7 +436,10 @@ export function ConversationView({
           }}
           rows={1}
           placeholder="Type a message…"
-          className="min-h-[40px] flex-1 resize-none rounded-2xl border border-rule bg-white px-3.5 py-2 text-[14px] leading-snug text-brand-950 outline-none placeholder:text-brand-800/45 focus:border-brand-800 focus:ring-2 focus:ring-rule"
+          // 16px exactly. Safari zooms the page in on any input smaller than
+          // that, which is why tapping the box left the whole thread blown
+          // up — and with pinch-zoom disabled there was no way back.
+          className="min-h-[44px] flex-1 resize-none rounded-2xl border border-rule bg-white px-3.5 py-2.5 text-[16px] leading-snug text-brand-950 outline-none placeholder:text-brand-800/45 focus:border-brand-800 focus:ring-2 focus:ring-rule"
         />
         <button
           type="submit"
