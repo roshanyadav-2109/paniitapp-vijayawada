@@ -1,17 +1,140 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Loader2 } from "@/components/icons";
+
+/** The slice of Google's script this file uses. */
+interface GoogleIdApi {
+  accounts?: {
+    id?: {
+      initialize: (opts: {
+        client_id: string;
+        nonce?: string;
+        use_fedcm_for_prompt?: boolean;
+        callback: (res: { credential?: string }) => void;
+      }) => void;
+      renderButton: (
+        parent: HTMLElement,
+        opts: Record<string, string | number>
+      ) => void;
+    };
+  };
+}
+
+const GIS_SRC = "https://accounts.google.com/gsi/client";
+
+/** Loads Google's script once, and resolves when it is there. */
+function loadGis(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${GIS_SRC}"]`)) {
+      // Already requested by an earlier mount; it may still be in flight.
+      const done = () =>
+        (window as unknown as { google?: GoogleIdApi }).google?.accounts?.id
+          ? resolve()
+          : setTimeout(done, 50);
+      done();
+      return;
+    }
+    const s = document.createElement("script");
+    s.src = GIS_SRC;
+    s.async = true;
+    s.defer = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("gis_unavailable"));
+    document.head.appendChild(s);
+  });
+}
+
+/** Where the visitor goes once they are in. */
+function nextPath(): string {
+  const back = new URLSearchParams(window.location.search).get("redirect");
+  return back && back.startsWith("/") && !back.startsWith("//") ? back : "/home";
+}
 
 export function SignInForm() {
   const [oauthError, setOauthError] = useState<string | null>(null);
   const [googlePending, startGoogle] = useTransition();
+  const [gisReady, setGisReady] = useState(false);
+  const gisRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const err = new URLSearchParams(window.location.search).get("error");
     if (err) setOauthError(decodeURIComponent(err));
   }, []);
+
+  // Google Identity Services: the token exchange happens in an overlay the
+  // script owns, so the app never navigates away and an installed copy stays
+  // an installed copy. The state and nonce come from our own server first;
+  // the credential goes back to the same endpoint the redirect flow posts to.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function boot() {
+      const slot = gisRef.current;
+      if (!slot) return;
+
+      const res = await fetch(
+        `/api/auth/google/prepare?next=${encodeURIComponent(nextPath())}`,
+        { cache: "no-store" }
+      );
+      if (!res.ok) return;
+      const { clientId, state, hashedNonce } = (await res.json()) as {
+        clientId: string;
+        state: string;
+        hashedNonce: string;
+      };
+      if (cancelled) return;
+
+      await loadGis();
+      const google = (window as unknown as { google?: GoogleIdApi }).google;
+      if (cancelled || !google?.accounts?.id || !gisRef.current) return;
+
+      google.accounts.id.initialize({
+        client_id: clientId,
+        nonce: hashedNonce,
+        use_fedcm_for_prompt: true,
+        callback: ({ credential }) => {
+          if (!credential) return;
+          void completeSignIn(credential, state).catch((e: unknown) => {
+            setOauthError(e instanceof Error ? e.message : "google_sign_in_failed");
+          });
+        },
+      });
+      google.accounts.id.renderButton(gisRef.current, {
+        theme: "outline",
+        size: "large",
+        shape: "rectangular",
+        text: "continue_with",
+        logo_alignment: "center",
+        width: Math.min(Math.round(gisRef.current.clientWidth) || 320, 400),
+      });
+      setGisReady(true);
+    }
+
+    void boot().catch(() => {
+      /* leaves the redirect button showing */
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function completeSignIn(credential: string, state: string) {
+    const response = await fetch("/api/auth/google/id-token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id_token: credential, state }),
+    });
+    const payload = (await response.json().catch(() => null)) as {
+      redirectTo?: string;
+      error?: string;
+    } | null;
+    if (!response.ok || !payload?.redirectTo) {
+      throw new Error(payload?.error || "google_sign_in_failed");
+    }
+    window.location.replace(payload.redirectTo);
+  }
 
   function handleGoogle() {
     setOauthError(null);
@@ -28,19 +151,30 @@ export function SignInForm() {
 
   return (
     <div className="flex flex-col gap-4">
-      <button
-        type="button"
-        onClick={handleGoogle}
-        disabled={googlePending}
-        className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-md border border-rule bg-white px-5 text-sm font-semibold text-brand-950 shadow-sm transition-colors hover:bg-paper-deep disabled:opacity-60"
-      >
-        {googlePending ? (
-          <Loader2 className="size-4 animate-spin text-brand-800" />
-        ) : (
-          <GoogleIcon />
-        )}
-        Continue with Google
-      </button>
+      {/* Google's own button, rendered by their script into this slot. It
+          signs in without leaving the page, which is what keeps an installed
+          copy of the app out of the system browser. */}
+      <div ref={gisRef} className="min-h-[48px] w-full [&>div]:!w-full" />
+
+      {/* Shown when their script cannot load, or has not decided to offer a
+          button — an ad blocker, a locked-down network, an older webview.
+          This is the old redirect, which works everywhere and costs a trip
+          out to accounts.google.com. */}
+      {gisReady ? null : (
+        <button
+          type="button"
+          onClick={handleGoogle}
+          disabled={googlePending}
+          className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-md border border-rule bg-white px-5 text-sm font-semibold text-brand-950 shadow-sm transition-colors hover:bg-paper-deep disabled:opacity-60"
+        >
+          {googlePending ? (
+            <Loader2 className="size-4 animate-spin text-brand-800" />
+          ) : (
+            <GoogleIcon />
+          )}
+          Continue with Google
+        </button>
+      )}
 
       {oauthError ? (
         <div
