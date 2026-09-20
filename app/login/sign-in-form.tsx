@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Loader2 } from "@/components/icons";
+import { isStandalone } from "@/lib/pwa";
 
 /** The slice of Google's script this file uses. */
 interface GoogleIdApi {
@@ -11,6 +12,10 @@ interface GoogleIdApi {
         client_id: string;
         nonce?: string;
         use_fedcm_for_prompt?: boolean;
+        use_fedcm_for_button?: boolean;
+        itp_support?: boolean;
+        auto_select?: boolean;
+        cancel_on_tap_outside?: boolean;
         callback: (res: { credential?: string }) => void;
       }) => void;
       renderButton: (
@@ -94,7 +99,21 @@ export function SignInForm() {
       google.accounts.id.initialize({
         client_id: clientId,
         nonce: hashedNonce,
+        // Chrome's own account dialog, drawn over the page rather than in a
+        // popup window — in an installed copy a popup means being thrown out
+        // into the browser halfway through signing in.
         use_fedcm_for_prompt: true,
+        // The same dialog for the button, but only where it is the better of
+        // the two. Asking for it everywhere breaks the button on a desktop: a
+        // browser without FedCM, or one with third-party sign-in switched off
+        // for the site, then has no dialog to show and no popup to fall back
+        // to, so the click does nothing at all and says nothing either. Off,
+        // the click opens the ordinary popup, which every browser has. The
+        // installed app keeps FedCM, where the popup is the thing that breaks.
+        use_fedcm_for_button: isStandalone(),
+        itp_support: true,
+        auto_select: false,
+        cancel_on_tap_outside: true,
         callback: ({ credential }) => {
           if (!credential) return;
           void completeSignIn(credential, state).catch((e: unknown) => {

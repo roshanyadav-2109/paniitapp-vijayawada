@@ -103,6 +103,80 @@ export const getPublicExhibitorCount = unstable_cache(
   { revalidate: FIVE_MINUTES, tags: ["exhibitors"] }
 );
 
+export interface PublicKeyPerson {
+  id: string;
+  full_name: string | null;
+  designation: string | null;
+  company: string | null;
+  photo_url: string | null;
+}
+
+export const getPublicKeyParticipants = unstable_cache(
+  async (): Promise<PublicKeyPerson[]> => {
+    const supabase = createPublicClient();
+    const { data } = await supabase
+      .from("key_participants")
+      .select("id, full_name, designation, company, photo_url")
+      .eq("event_id", EVENT_ID)
+      .eq("is_published", true)
+      .order("display_order", { ascending: true, nullsFirst: false })
+      .order("full_name", { ascending: true });
+    return (data as PublicKeyPerson[] | null) ?? [];
+  },
+  ["public-key-participants", EVENT_ID],
+  { revalidate: FIVE_MINUTES, tags: ["key-participants"] }
+);
+
+/**
+ * Sponsor logos, which live in storage rather than a table.
+ *
+ * This was the slowest thing on the home screen: one storage listing per
+ * tier, every visit, before the page could render. The files change when
+ * somebody uploads one, which is not often, so the answer is held for an
+ * hour.
+ */
+export const getPublicSponsorTiers = unstable_cache(
+  async (
+    folders: readonly string[],
+    bucket: string,
+    prefix: string
+  ): Promise<{ name: string; logos: string[] }[]> => {
+    const supabase = createPublicClient();
+    const listings = await Promise.all(
+      folders.map((folder) =>
+        supabase.storage
+          .from(bucket)
+          .list(`${prefix}/${folder}`, {
+            limit: 100,
+            sortBy: { column: "name", order: "asc" },
+          })
+          .then((res) => ({ folder, data: res.data ?? [] }))
+      )
+    );
+
+    return listings
+      .map(({ folder, data }) => ({
+        name: folder,
+        logos: data
+          .filter(
+            (item) =>
+              !!item.name &&
+              !item.name.startsWith(".") &&
+              /\.(png|jpe?g|webp|svg|avif|gif)$/i.test(item.name)
+          )
+          .map(
+            (item) =>
+              supabase.storage
+                .from(bucket)
+                .getPublicUrl(`${prefix}/${folder}/${item.name}`).data.publicUrl
+          ),
+      }))
+      .filter((tier) => tier.logos.length > 0);
+  },
+  ["public-sponsor-tiers", EVENT_ID],
+  { revalidate: 3600, tags: ["sponsors"] }
+);
+
 export interface PublicVenue {
   id: string;
   name: string;

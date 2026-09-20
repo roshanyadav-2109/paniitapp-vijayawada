@@ -37,6 +37,11 @@ import { IitMarquee } from "./iit-marquee";
 import { EventScale } from "@/components/features/event-scale";
 import { GatePassBanner } from "./gate-pass-banner";
 import { AppPromptBanner } from "@/components/features/app-prompt-banner";
+import {
+  getPublicExhibitorCount,
+  getPublicKeyParticipants,
+  getPublicSponsorTiers,
+} from "@/lib/public-data";
 import { LegacySpeakers } from "@/components/features/legacy-speakers";
 import { PastSponsors } from "@/components/features/past-sponsors";
 import { PostStrip } from "@/components/features/post-strip";
@@ -101,81 +106,48 @@ export default async function HomePage() {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (user) {
-      const { data: me } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .maybeSingle();
-      role = (me?.role as string | null) ?? null;
-    }
+    // Everything the home screen needs at once, rather than five round
+    // trips one after another — the page could not start rendering until the
+    // last of them came back, which is what left the splash screen up.
+    // Three of them are the same for every visitor and come from the shared
+    // cache (lib/public-data.ts); only the role, the meetings and the
+    // bookmarks are this person's.
+    const [roleRes, exhibitors, kp, tiers, meetingsRes, bookmarkRes] =
+      await Promise.all([
+        user
+          ? supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
+          : Promise.resolve({ data: null }),
+        getPublicExhibitorCount(),
+        getPublicKeyParticipants(),
+        getPublicSponsorTiers(
+          SPONSOR_TIER_FOLDERS,
+          LOGO_BUCKET,
+          EVENT_STORAGE_PREFIX
+        ),
+        user
+          ? supabase
+              .from("meetings")
+              .select(
+                "id, requester_id, invitee_id, accepted_slot, status, requester:requester_id(id, full_name), invitee:invitee_id(id, full_name)",
+              )
+              .eq("event_id", EVENT_ID)
+              .or(`requester_id.eq.${user.id},invitee_id.eq.${user.id}`)
+              .eq("status", "accepted")
+          : Promise.resolve({ data: [] as unknown[] }),
+        user
+          ? supabase
+              .from("session_bookmarks")
+              .select(
+                "sessions(id, title, start_at, end_at, session_speakers(profiles:speaker_id(full_name)))",
+              )
+              .eq("user_id", user.id)
+          : Promise.resolve({ data: [] as unknown[] }),
+      ]);
 
-    // head:true — the rows are not needed, only how many there are.
-    const { count: exhibitors } = await supabase
-      .from("exhibitors")
-      .select("id", { count: "exact", head: true })
-      .eq("event_id", EVENT_ID);
+    role = ((roleRes.data as { role: string | null } | null)?.role) ?? null;
     exhibitorCount = exhibitors ?? null;
-
-    const { data: kp } = await supabase
-      .from("key_participants")
-      .select("id, full_name, designation, company, photo_url")
-      .eq("event_id", EVENT_ID)
-      .eq("is_published", true)
-      .order("display_order", { ascending: true, nullsFirst: false })
-      .order("full_name", { ascending: true });
-    keyPeople = (kp as KeyPerson[] | null) ?? [];
-
-    const sponsorListings = await Promise.all(
-      SPONSOR_TIER_FOLDERS.map((folder) =>
-        supabase.storage
-          .from(LOGO_BUCKET)
-          .list(`${EVENT_STORAGE_PREFIX}/${folder}`, {
-            limit: 100,
-            sortBy: { column: "name", order: "asc" },
-          })
-          .then((res) => ({ folder, data: res.data ?? [] })),
-      ),
-    );
-    sponsorTiers = sponsorListings
-      .map(({ folder, data }) => {
-        const logos = data
-          .filter(
-            (item) =>
-              !!item.name &&
-              !item.name.startsWith(".") &&
-              /\.(png|jpe?g|webp|svg|avif|gif)$/i.test(item.name),
-          )
-          .map((item) => {
-            const { data: pub } = supabase.storage
-              .from(LOGO_BUCKET)
-              .getPublicUrl(`${EVENT_STORAGE_PREFIX}/${folder}/${item.name}`);
-            return pub.publicUrl;
-          });
-        return { name: folder, logos };
-      })
-      .filter((tier) => tier.logos.length > 0);
-
-    const [meetingsRes, bookmarkRes] = await Promise.all([
-      user
-        ? supabase
-            .from("meetings")
-            .select(
-              "id, requester_id, invitee_id, accepted_slot, status, requester:requester_id(id, full_name), invitee:invitee_id(id, full_name)",
-            )
-            .eq("event_id", EVENT_ID)
-            .or(`requester_id.eq.${user.id},invitee_id.eq.${user.id}`)
-            .eq("status", "accepted")
-        : Promise.resolve({ data: [] as unknown[] }),
-      user
-        ? supabase
-            .from("session_bookmarks")
-            .select(
-              "sessions(id, title, start_at, end_at, session_speakers(profiles:speaker_id(full_name)))",
-            )
-            .eq("user_id", user.id)
-        : Promise.resolve({ data: [] as unknown[] }),
-    ]);
+    keyPeople = kp as unknown as KeyPerson[];
+    sponsorTiers = tiers as unknown as SponsorTier[];
 
     const acceptedMeetings = (meetingsRes.data ?? []) as Array<{
       id: string;
