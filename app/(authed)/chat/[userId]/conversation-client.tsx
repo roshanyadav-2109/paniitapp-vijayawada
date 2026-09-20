@@ -10,6 +10,7 @@ import {
   useTransition,
 } from "react";
 import { ArrowLeft, Check, CheckCheck, Loader2 } from "@/components/icons";
+import { EmptyArt } from "@/components/features/empty-art";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/client";
 import { sendMessage } from "@/app/actions/send-message";
@@ -222,7 +223,7 @@ export function ConversationView({
   }
 
   return (
-    <div className="-mx-4 flex h-[calc(100svh-3.5rem-72px)] flex-col bg-white sm:-mx-6 lg:mx-auto lg:h-[calc(100vh-7rem)] lg:max-w-3xl lg:rounded-lg lg:border lg:border-rule">
+    <div className="-mx-3 flex h-[calc(100svh-3.5rem-72px)] flex-col bg-white sm:-mx-5 lg:mx-auto lg:h-[calc(100vh-7rem)] lg:max-w-3xl lg:rounded-lg lg:border lg:border-rule">
       {/* Header */}
       <header className="flex items-center gap-3 border-b border-rule bg-white px-4 py-3 lg:px-5">
         <Link
@@ -249,7 +250,7 @@ export function ConversationView({
           </p>
           {peer.designation || peer.company ? (
             <p className="mt-0.5 truncate text-[11px] text-brand-900/70">
-              {[peer.designation, peer.company].filter(Boolean).join(" · ")}
+              {[peer.designation, peer.company].filter(Boolean).join(" | ")}
             </p>
           ) : null}
         </Link>
@@ -262,11 +263,9 @@ export function ConversationView({
       >
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-            <p className="text-[14px] font-semibold text-brand-950">
+            <EmptyArt name="empty-chat" className="mb-3 size-20" />
+            <p className="font-display text-[15px] font-semibold text-brand-950">
               Say hello to {peer.full_name?.split(" ")[0] ?? "them"}
-            </p>
-            <p className="mt-1 text-[12px] leading-5 text-brand-900/65">
-              Your messages stay between the two of you.
             </p>
           </div>
         ) : (

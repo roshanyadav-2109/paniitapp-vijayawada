@@ -42,7 +42,7 @@ export function FiltersCard({
   // is weight the content does not earn, and it was the same rectangle as
   // every card on the page beside it.
   return (
-    <div className="border-t border-rule pt-4">
+    <div className="pt-4">
       {title ? (
         <h2 className="mb-3 eyebrow text-brand-900/60">
           {title}

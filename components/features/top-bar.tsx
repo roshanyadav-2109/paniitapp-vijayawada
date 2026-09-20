@@ -11,6 +11,7 @@ import {
   type EventSocial,
 } from "@/lib/event-config";
 import { NotificationsBell } from "./notifications-bell";
+import { ChatButton } from "./chat/chat-button";
 import { DesktopNavTabs } from "./desktop-nav-tabs";
 
 // Monochrome marks for the desktop bar. Which accounts, and their URLs, come
@@ -54,11 +55,13 @@ export async function TopBar() {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <header className="safe-top sticky top-0 z-40">
-        {/* TIER 1 — white action bar (logo left, actions right). Renders as
-            the single-row mobile top bar too. */}
-        <div className="border-b border-rule bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
-          <div className="mx-auto flex h-14 w-full max-w-screen-2xl items-center gap-3 px-4 sm:px-6 lg:h-[68px] lg:px-8">
+      {/* Not a bar any more: no sticky strip, no white ground, no rule under
+          it. The greeting, WhatsApp and the bell sit on the page and scroll
+          away with it, which on a phone gives the content back the 56px that
+          a permanent header was holding. */}
+      <header className="safe-top">
+        <div>
+          <div className="mx-auto flex h-14 w-full max-w-screen-2xl items-center gap-3 px-3 sm:px-5 lg:h-[68px] lg:px-8">
             {/* Desktop: PAN IIT lockup as the brand mark */}
             <Link
               href="/home"
@@ -128,6 +131,7 @@ export async function TopBar() {
               >
                 <WhatsAppMark className="size-[26px]" />
               </a>
+              <ChatButton />
               <NotificationsBell />
               <Link
                 href="/me"
@@ -147,8 +151,11 @@ export async function TopBar() {
           </div>
         </div>
 
-        {/* TIER 2 — navy nav strip (desktop only) with the tab links centred */}
-        <div className="hidden bg-brand-900 lg:block">
+        {/* Desktop keeps its tab strip: the bottom bar that carries
+            navigation on a phone is lg:hidden, so without this there is no
+            way to move between screens on a laptop. It scrolls away with the
+            rest now rather than staying pinned. */}
+        <div className="hidden rounded-lg bg-brand-900 lg:block">
           <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-center px-8">
             <DesktopNavTabs />
           </div>

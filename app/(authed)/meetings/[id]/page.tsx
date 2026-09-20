@@ -89,7 +89,7 @@ export default async function MeetingChatPage({
             {other?.full_name ?? "Conversation"}
           </h1>
           <p className="text-xs text-brand-900/60">
-            {[other?.designation, other?.company].filter(Boolean).join(" · ") || " "}
+            {[other?.designation, other?.company].filter(Boolean).join(" | ") || " "}
           </p>
           {meeting.proposed_outside_availability ? (
             <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800">

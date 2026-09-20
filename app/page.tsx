@@ -45,15 +45,41 @@ export default async function SignInPage() {
 
         <div className="relative z-10 mx-auto flex w-full max-w-sm flex-col items-center lg:max-w-md lg:my-auto">
           <div className="w-full rounded-lg bg-paper px-5 py-4 lg:px-7 lg:py-5">
-            <Image
-              src="/logo/paniit.png"
-              alt="PAN IIT Alumni India"
-              width={512}
-              height={220}
-              priority
-              className="mx-auto h-11 w-auto lg:h-12"
-            />
-            <div className="mt-3 border-t border-rule pt-2.5 text-center">
+            {/* PanIIT, the summit, the state — three marks, no rules between
+                them. The alumni mark is the standalone square, not
+                paniit.png: that file is a lockup that already contains the
+                summit logo, so using it here printed the summit twice.
+
+                Each is sized to its own optical weight rather than to one
+                height: a square mark and a round seal at the same pixel
+                height do not look the same size. */}
+            <div className="flex items-center justify-center gap-4 lg:gap-5">
+              <Image
+                src="/logo/paniit-mark.png"
+                alt="PanIIT Alumni India"
+                width={289}
+                height={288}
+                priority
+                className="h-10 w-auto lg:h-11"
+              />
+              <Image
+                src="/logo/paniit-ap-mark.png"
+                alt={EVENT_SHORT_NAME}
+                width={860}
+                height={720}
+                priority
+                className="h-12 w-auto lg:h-14"
+              />
+              <Image
+                src="/logo/ap-government.webp"
+                alt="Government of Andhra Pradesh"
+                width={384}
+                height={400}
+                priority
+                className="h-11 w-auto lg:h-12"
+              />
+            </div>
+            <div className="mt-3 pt-2.5 text-center">
               <p className="eyebrow text-brand-800">
                 {EVENT_SHORT_NAME}
               </p>
@@ -61,7 +87,7 @@ export default async function SignInPage() {
                 {EVENT_TAGLINE}
               </p>
               <p className="mt-0.5 text-[10px] font-medium text-brand-800/80">
-                {EVENT_DATE_TEXT} · {EVENT_CITY}
+                {EVENT_DATE_TEXT} | {EVENT_CITY}
               </p>
             </div>
           </div>
@@ -122,27 +148,6 @@ export default async function SignInPage() {
           {/* Bottom spacer absorbs remaining height */}
           <div className="flex-1" aria-hidden />
 
-          {/* Neural AI footer pinned to bottom */}
-          <a
-            href="https://neuralai.in"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2.5 pt-2 text-center transition-opacity hover:opacity-80"
-          >
-            <span className="eyebrow text-brand-800/70">
-              Proudly built by
-            </span>
-            <Image
-              src="https://res.cloudinary.com/dkywjijpv/image/upload/v1774203864/useneuralai_logo-Photoroom_1_crpglq.png"
-              alt="Neural AI"
-              width={120}
-              height={32}
-              className="h-6 w-auto object-contain"
-            />
-            <span className="font-sans text-[15px] font-semibold tracking-[0.04em] text-brand-900">
-              Neural AI
-            </span>
-          </a>
         </div>
       </section>
     </main>

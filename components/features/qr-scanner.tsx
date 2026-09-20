@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyArt } from "@/components/features/empty-art";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "@/components/icons";
@@ -213,9 +214,12 @@ export function QrScanner() {
           Point the camera at another attendee&apos;s QR badge to swap contacts.
         </p>
       ) : (
-        <p className="text-center text-xs text-iit-500">
-          Camera blocked — check browser permissions and try again.
-        </p>
+        <div className="flex flex-col items-center text-center">
+          <EmptyArt name="camera-blocked" className="mb-2 size-12" />
+          <p className="text-xs text-iit-500">
+            Camera blocked — check browser permissions and try again.
+          </p>
+        </div>
       )}
     </div>
   );

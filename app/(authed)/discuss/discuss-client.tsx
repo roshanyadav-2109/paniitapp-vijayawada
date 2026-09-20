@@ -1,10 +1,12 @@
 "use client";
 
+import { EmptyArt } from "@/components/features/empty-art";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   BadgeCheck,
+  Camera,
   Check,
   Loader2,
   Reply,
@@ -13,6 +15,12 @@ import {
   Trash2,
   X,
 } from "@/components/icons";
+import {
+  MEDIA_ACCEPT,
+  cloudinaryConfigured,
+  uploadToCloudinary,
+  type UploadedMedia,
+} from "@/lib/cloudinary";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,8 +28,8 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-  EmptyDescription,
 } from "@/components/ui/empty";
+import { dayIST, timeIST } from "@/lib/date";
 import { createClient } from "@/lib/supabase/client";
 import { cn, initials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -53,6 +61,9 @@ export interface PostRow {
   id: string;
   body: string;
   kind: "text" | "poll";
+  /** Cloudinary URL of an attached photo or clip, and which it is. */
+  media_url: string | null;
+  media_type: "image" | "video" | null;
   like_count: number;
   comment_count: number;
   vote_count: number;
@@ -78,6 +89,18 @@ const MAX_BODY = 2000;
 function author(p: PostRow): PostAuthor | null {
   if (!p.author) return null;
   return Array.isArray(p.author) ? p.author[0] ?? null : p.author;
+}
+
+/**
+ * Date and time for the line under a post's author.
+ *
+ * On its own line there is room for the actual moment rather than "3h", and
+ * on a feed that spans the weeks before a summit "3h" and "9d" stop being
+ * comparable to each other anyway. Times are the summit's own zone, which is
+ * the one everybody in the room is on.
+ */
+function postedAt(iso: string): string {
+  return `${dayIST(iso)} | ${timeIST(iso)}`;
 }
 
 function timeAgo(iso: string): string {
@@ -118,13 +141,10 @@ export function DiscussClient({
       {posts.length === 0 && !errored ? (
         <Empty>
           <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <Reply />
+            <EmptyMedia className="mb-1">
+              <EmptyArt name="empty-discussion" />
             </EmptyMedia>
             <EmptyTitle>Nothing here yet</EmptyTitle>
-            <EmptyDescription>
-              Start the conversation — ask a question or run a poll.
-            </EmptyDescription>
           </EmptyHeader>
         </Empty>
       ) : (
@@ -155,15 +175,42 @@ function Composer() {
   const [isPoll, setIsPoll] = useState(false);
   const [options, setOptions] = useState<string[]>(["", ""]);
   const [pending, startTransition] = useTransition();
+  const [media, setMedia] = useState<UploadedMedia | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const canAttach = cloudinaryConfigured();
 
   const canSubmit =
     body.trim().length > 0 &&
+    !uploading &&
     (!isPoll || options.filter((o) => o.trim()).length >= 2);
+
+  async function attach(file: File | undefined) {
+    if (!file) return;
+    setUploading(true);
+    try {
+      setMedia(await uploadToCloudinary(file));
+    } catch (err) {
+      toast({
+        title: "Could not attach that",
+        description: err instanceof Error ? err.message : "Upload failed.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+      // Clear the input, or picking the same file twice does nothing.
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
 
   function submit() {
     if (!canSubmit || pending) return;
     startTransition(async () => {
-      const res = await createPost(body, isPoll ? options : undefined);
+      const res = await createPost(
+        body,
+        isPoll ? options : undefined,
+        media ?? undefined
+      );
       if ("error" in res) {
         toast({ title: "Could not post", description: res.error, variant: "destructive" });
         return;
@@ -171,6 +218,7 @@ function Composer() {
       setBody("");
       setOptions(["", ""]);
       setIsPoll(false);
+      setMedia(null);
       router.refresh();
     });
   }
@@ -223,7 +271,59 @@ function Composer() {
         </div>
       ) : null}
 
+      {/* The attachment, square like everything else that frames a picture
+          in this app. A clip gets the same square and its own controls. */}
+      {media ? (
+        <div className="relative mt-2.5 w-[132px]">
+          {media.type === "video" ? (
+            <video
+              src={media.url}
+              controls
+              playsInline
+              className="aspect-square w-full rounded-md bg-black object-cover"
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={media.url}
+              alt=""
+              className="aspect-square w-full rounded-md object-cover"
+            />
+          )}
+          <button
+            type="button"
+            onClick={() => setMedia(null)}
+            aria-label="Remove attachment"
+            className="absolute -right-2 -top-2 grid size-6 place-items-center rounded-full bg-brand-950 text-white shadow-sm"
+          >
+            <X className="size-3.5" />
+          </button>
+        </div>
+      ) : null}
+
       <div className="mt-2.5 flex items-center justify-between">
+        <input
+          ref={fileRef}
+          type="file"
+          accept={MEDIA_ACCEPT}
+          className="hidden"
+          onChange={(e) => attach(e.target.files?.[0])}
+        />
+        {canAttach ? (
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading || !!media}
+            className="mr-2 inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium text-brand-800 transition-colors hover:bg-paper-deep disabled:opacity-50"
+          >
+            {uploading ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Camera className="size-3.5" strokeWidth={1.8} />
+            )}
+            {uploading ? "Uploading" : "Photo or clip"}
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => setIsPoll((v) => !v)}
@@ -238,14 +338,9 @@ function Composer() {
           {isPoll ? "Poll" : "Add poll"}
         </button>
         <Button size="sm" onClick={submit} disabled={!canSubmit || pending}>
-          {pending ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <>
-              <Send className="size-4" strokeWidth={1.8} />
-              Post
-            </>
-          )}
+          {/* The word alone. A paper-plane beside "Post" says nothing the
+              word does not, on the one button whose label is unambiguous. */}
+          {pending ? <Loader2 className="size-4 animate-spin" /> : "Post"}
         </Button>
       </div>
     </div>
@@ -311,9 +406,17 @@ function PostCard({
     <li className="rounded-lg border border-rule bg-white p-3.5">
       <div className="flex items-start gap-2.5">
         <Link href={`/attendees/${post.author_id}`} className="shrink-0">
-          <Avatar className="size-9 ring-1 ring-rule">
-            {a?.photo_url ? <AvatarImage src={a.photo_url} alt={a.full_name ?? ""} /> : null}
-            <AvatarFallback className="bg-paper-deep text-[11px] font-semibold text-brand-800">
+          {/* Square, as on the networking cards: at this size a circle crops
+              the top of a head off every portrait. */}
+          <Avatar className="size-9 rounded-md ring-1 ring-rule">
+            {a?.photo_url ? (
+              <AvatarImage
+                src={a.photo_url}
+                alt={a.full_name ?? ""}
+                className="rounded-md"
+              />
+            ) : null}
+            <AvatarFallback className="rounded-md bg-paper-deep text-[11px] font-semibold text-brand-800">
               {initials(a?.full_name ?? null)}
             </AvatarFallback>
           </Avatar>
@@ -329,9 +432,6 @@ function PostCard({
             {a?.role === "organizer" || a?.role === "admin" ? (
               <BadgeCheck className="size-3.5 shrink-0 text-brand-800" strokeWidth={1.8} />
             ) : null}
-            <span className="shrink-0 text-[11px] text-brand-900/45">
-              · {timeAgo(post.created_at)}
-            </span>
             {post.is_pinned ? (
               <span className="ml-auto shrink-0 rounded-full bg-paper-deep px-2 py-0.5 text-[10px] font-semibold text-brand-800">
                 Pinned
@@ -339,8 +439,8 @@ function PostCard({
             ) : null}
           </div>
           {a?.designation || a?.company ? (
-            <p className="truncate text-[11px] text-brand-900/60">
-              {[a?.designation, a?.company].filter(Boolean).join(" · ")}
+            <p className="truncate text-[11px] text-brand-950">
+              {[a?.designation, a?.company].filter(Boolean).join(" | ")}
             </p>
           ) : null}
         </div>
@@ -360,6 +460,32 @@ function PostCard({
       <p className="mt-2 whitespace-pre-wrap text-[14px] leading-6 text-brand-950">
         {post.body}
       </p>
+
+      {/* Attachment in a square, capped so one photo cannot take the whole
+          screen. A clip carries controls and no autoplay — a feed that starts
+          playing at you is a feed people leave. */}
+      {post.media_url ? (
+        <div className="mt-2.5 max-w-[280px]">
+          {post.media_type === "video" ? (
+            <video
+              src={post.media_url}
+              controls
+              playsInline
+              preload="metadata"
+              className="aspect-square w-full rounded-md bg-black object-cover"
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={post.media_url}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="aspect-square w-full rounded-md object-cover"
+            />
+          )}
+        </div>
+      ) : null}
 
       {post.kind === "poll" && post.poll_options ? (
         <Poll post={post} myVote={myVote} />
@@ -385,6 +511,13 @@ function PostCard({
           <Reply className="size-4" strokeWidth={1.8} />
           {post.comment_count > 0 ? post.comment_count : "Reply"}
         </button>
+
+        {/* Posted-at in the bottom corner, opposite the two things you can
+            do with a post. It is the least urgent thing on the card, and up
+            beside the name it was taking width from it. */}
+        <span className="ml-auto shrink-0 pr-1 text-[11px] text-brand-950/70">
+          {postedAt(post.created_at)}
+        </span>
       </div>
 
       {showComments ? <Comments postId={post.id} /> : null}
@@ -457,7 +590,7 @@ function Poll({ post, myVote }: { post: PostRow; myVote: string | null }) {
       <p className="pt-0.5 text-[11px] text-brand-900/50">
         {total === 0
           ? "No votes yet"
-          : `${total} vote${total === 1 ? "" : "s"}${voted ? "" : " · tap to vote"}`}
+          : `${total} vote${total === 1 ? "" : "s"}${voted ? "" : " | tap to vote"}`}
       </p>
     </div>
   );
@@ -509,7 +642,7 @@ function Comments({ postId }: { postId: string }) {
   }
 
   return (
-    <div className="mt-2.5 border-t border-rule pt-2.5">
+    <div className="mt-2.5 pt-2.5">
       {rows === null ? (
         <div className="flex justify-center py-2">
           <Loader2 className="size-4 animate-spin text-brand-800/40" />

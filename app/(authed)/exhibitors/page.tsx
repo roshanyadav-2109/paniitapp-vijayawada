@@ -1,4 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
+import { LoginCta } from "@/components/features/login-cta";
+import { isSignedIn } from "@/lib/viewer";
+import { emptied } from "@/lib/dev-empty";
 import { rethrowIfRedirect } from "@/lib/redirect";
 import { ExhibitorsClient, type ExhibitorRow } from "./exhibitors-client";
 import { EVENT_ID } from "@/lib/event-config";
@@ -22,16 +25,24 @@ export default async function ExhibitorsPage() {
     rethrowIfRedirect(err);
   }
 
+
+  // Empty-state preview: DEV_EMPTY=1 blanks the page without
+  // touching a row in the database.
+  rows = emptied(rows);
+
+  const signedIn = await isSignedIn();
+
   return (
     <div className="mx-auto w-full max-w-3xl pt-5 lg:pt-8">
-      <header className="mb-4">
-        <h1 className="font-display text-2xl font-semibold text-brand-900 lg:text-3xl">
-          Exhibitors
-        </h1>
-        <p className="mt-1 text-sm leading-6 text-brand-900/70">
-          Browse the show floor — meet the teams behind each booth.
-        </p>
-      </header>
+      {!signedIn ? (
+        <LoginCta
+          next="/exhibitors"
+          className="mb-4"
+        />
+      ) : null}
+      {/* No title or standfirst, as on the agenda, the directory and the
+          discussion: the tab at the foot of the screen already says Expo,
+          and the search box under it says what to do with the page. */}
       <ExhibitorsClient initialRows={rows} />
     </div>
   );

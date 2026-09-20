@@ -66,16 +66,20 @@ export function AgendaFilters({ venues }: { venues: VenueOption[] }) {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1">
       <Link
         href={buildHref({ mine: mineOnly ? "0" : "1" })}
         scroll={false}
         aria-pressed={mineOnly}
         className={cn(
-          "inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-md border px-3 text-[13px] font-semibold transition-colors lg:flex-none lg:px-4",
+          // Filled in the brand navy whether or not it is on. It used to be
+          // a white outline that only took colour once pressed, which made
+          // the one control on the page look like the disabled state of
+          // itself. On shows as the deeper tone and the ticked bookmark.
+          "inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-md px-3 text-[13px] font-semibold text-white transition-colors lg:flex-none lg:px-4",
           mineOnly
-            ? "border-brand-800 bg-brand-800 text-white"
-            : "border-rule bg-white text-brand-900 hover:bg-paper-deep/40"
+            ? "bg-brand-950 hover:bg-brand-950"
+            : "bg-brand-800 hover:bg-brand-900"
         )}
       >
         {mineOnly ? (
@@ -95,9 +99,11 @@ export function AgendaFilters({ venues }: { venues: VenueOption[] }) {
                 ? `Filters (${secondaryCount} active)`
                 : "Filters"
             }
-            className="relative inline-grid size-10 shrink-0 place-items-center rounded-md border border-rule bg-white text-brand-800 transition-colors hover:bg-paper-deep/40"
+            // No border and no white ground: this sits outside the bar
+            // rather than being a second block bolted to the end of it.
+            className="relative inline-grid size-11 shrink-0 place-items-center rounded-md text-brand-800 transition-colors hover:bg-paper-deep"
           >
-            <SlidersHorizontal className="size-[18px]" strokeWidth={1.8} />
+            <SlidersHorizontal className="size-[26px]" strokeWidth={1.7} />
             {secondaryCount > 0 ? (
               <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-brand-800 text-[10px] font-bold text-white">
                 {secondaryCount}

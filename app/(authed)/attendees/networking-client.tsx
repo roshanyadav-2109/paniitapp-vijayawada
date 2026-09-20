@@ -1,9 +1,10 @@
 "use client";
 
+import { EmptyArt } from "@/components/features/empty-art";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search, SlidersHorizontal, Loader2, X } from "@/components/icons";
-import { LinkedInIcon, XIcon } from "@/components/features/social-icons";
+import { SocialActions } from "@/components/features/social-actions";
 import { createClient } from "@/lib/supabase/client";
 import { EVENT_ID } from "@/lib/event-config";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,7 +21,6 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-  EmptyDescription,
 } from "@/components/ui/empty";
 import { IIT_CAMPUSES, INTERESTS } from "@/lib/constants";
 import { cn, initials } from "@/lib/utils";
@@ -111,7 +111,7 @@ export function NetworkingClient({
   // Land on "For you" when we have something to recommend — that is the
   // reason to open this tab at a 800-person summit.
   const [tab, setTab] = useState<SubTab>(
-    recommended.length > 0 ? "foryou" : "people"
+    recommended.length > 0 ? "foryou" : "people",
   );
   const [rows, setRows] = useState<AttendeeRow[]>(initialRows);
   const [connections, setConnections] = useState<AttendeeRow[] | null>(null);
@@ -120,15 +120,12 @@ export function NetworkingClient({
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [searchInput, setSearchInput] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
-  // Total matching the current filter — separate from rows.length, which is
-  // only the number paginated into view so far. Null while it's unknown.
-  const [totalCount, setTotalCount] = useState<number | null>(null);
 
   // Debounce search input into filters.q
   useEffect(() => {
     const t = setTimeout(
       () => setFilters((f) => ({ ...f, q: searchInput.trim() })),
-      300
+      300,
     );
     return () => clearTimeout(t);
   }, [searchInput]);
@@ -136,7 +133,7 @@ export function NetworkingClient({
   const fetchPage = useCallback(
     async (
       offset: number,
-      f: Filters
+      f: Filters,
     ): Promise<{ rows: AttendeeRow[]; total: number | null }> => {
       // Ask Postgres for the exact total alongside the rows so the count we
       // show reflects everyone matching the filter — not just the page that's
@@ -147,7 +144,7 @@ export function NetworkingClient({
         // profiles itself is shared with the other edition.
         .select(
           "id, full_name, designation, company, role, iit_campus, graduation_year, interests, photo_url, linkedin_url, twitter_url, available_for_meetings, office_hours_enabled, event_participants!inner(event_id)",
-          { count: "exact" }
+          { count: "exact" },
         )
         .eq("event_participants.event_id", EVENT_ID)
         .order("full_name", { ascending: true, nullsFirst: false })
@@ -156,7 +153,7 @@ export function NetworkingClient({
       if (f.q) {
         const term = f.q.replace(/[%_,]/g, "");
         q = q.or(
-          `full_name.ilike.%${term}%,company.ilike.%${term}%,designation.ilike.%${term}%`
+          `full_name.ilike.%${term}%,company.ilike.%${term}%,designation.ilike.%${term}%`,
         );
       }
       if (f.role) q = q.eq("role", f.role);
@@ -173,20 +170,28 @@ export function NetworkingClient({
         total: count ?? null,
       };
     },
-    [supabase]
+    [supabase],
   );
 
   // Reload "people" list whenever filters change
   const filterKey = JSON.stringify(filters);
+  // The server already rendered the first page. Without this the list
+  // re-fetched exactly that page the moment it mounted, throwing away
+  // markup that was already on screen — and in any session where the
+  // browser client cannot read the table, replacing it with nothing.
+  const serverRowsFresh = useRef(initialRows.length > 0);
   useEffect(() => {
     if (tab !== "people") return;
+    if (serverRowsFresh.current) {
+      serverRowsFresh.current = false;
+      return;
+    }
     let cancelled = false;
     (async () => {
       setLoading(true);
       const page = await fetchPage(0, filters);
       if (cancelled) return;
       setRows(page.rows);
-      setTotalCount(page.total);
       setDone(page.rows.length < PAGE_SIZE);
       setLoading(false);
     })();
@@ -219,7 +224,7 @@ export function NetworkingClient({
       const { data: profs } = await supabase
         .from("profiles")
         .select(
-          "id, full_name, designation, company, role, iit_campus, graduation_year, interests, photo_url, linkedin_url, twitter_url, available_for_meetings, office_hours_enabled"
+          "id, full_name, designation, company, role, iit_campus, graduation_year, interests, photo_url, linkedin_url, twitter_url, available_for_meetings, office_hours_enabled",
         )
         .in("id", otherIds)
         .order("full_name", { ascending: true, nullsFirst: false });
@@ -245,18 +250,21 @@ export function NetworkingClient({
         setLoading(true);
         const page = await fetchPage(rows.length, filters);
         setRows((prev) => [...prev, ...page.rows]);
-        setTotalCount(page.total);
         if (page.rows.length < PAGE_SIZE) setDone(true);
         setLoading(false);
       },
-      { rootMargin: "400px 0px" }
+      { rootMargin: "400px 0px" },
     );
     io.observe(el);
     return () => io.disconnect();
   }, [rows.length, done, loading, filters, fetchPage, tab]);
 
   const visible =
-    tab === "people" ? rows : tab === "foryou" ? recommended : connections ?? [];
+    tab === "people"
+      ? rows
+      : tab === "foryou"
+        ? recommended
+        : (connections ?? []);
   const extraCount = activeExtraCount(filters);
 
   function clearAll() {
@@ -268,10 +276,16 @@ export function NetworkingClient({
     <div>
       {/* Sub-tabs */}
       <div className="mb-3 grid grid-cols-3 gap-2">
-        <FilterButton active={tab === "foryou"} onClick={() => setTab("foryou")}>
+        <FilterButton
+          active={tab === "foryou"}
+          onClick={() => setTab("foryou")}
+        >
           For you
         </FilterButton>
-        <FilterButton active={tab === "people"} onClick={() => setTab("people")}>
+        <FilterButton
+          active={tab === "people"}
+          onClick={() => setTab("people")}
+        >
           People
         </FilterButton>
         <FilterButton
@@ -283,16 +297,18 @@ export function NetworkingClient({
       </div>
 
       {/* Search + filter trigger — People tab only */}
-      <div className={tab === "people" ? "mb-3 flex items-center gap-2" : "hidden"}>
+      <div
+        className={tab === "people" ? "mb-3 flex items-center gap-2" : "hidden"}
+      >
         <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-[18px] -translate-y-1/2 text-brand-800/55" />
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-[18px] -translate-y-1/2 text-brand-950" />
           <input
             type="search"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search name, company, role…"
             aria-label="Search attendees"
-            className="h-11 w-full rounded-lg border border-rule bg-white pl-10 pr-3.5 text-sm font-medium text-brand-950 outline-none placeholder:font-normal placeholder:text-brand-800/45 focus:border-brand-800 focus:ring-2 focus:ring-rule"
+            className="h-11 w-full rounded-lg border border-rule bg-white pl-10 pr-3.5 text-sm font-medium text-brand-950 outline-none placeholder:font-normal placeholder:text-brand-950/70 focus:border-brand-800 focus:ring-2 focus:ring-rule"
           />
         </div>
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -300,12 +316,14 @@ export function NetworkingClient({
             <button
               type="button"
               aria-label={`Filters${extraCount > 0 ? ` (${extraCount} active)` : ""}`}
+              // Same mark as the agenda's: no border, no white ground, and
+              // large enough to be the control it is.
               className={cn(
-                "relative inline-grid size-11 shrink-0 place-items-center rounded-lg border border-rule bg-white text-brand-800 transition-colors hover:bg-paper-deep",
-                extraCount > 0 && "border-brand-800 text-brand-900"
+                "relative inline-grid size-11 shrink-0 place-items-center rounded-md text-brand-800 transition-colors hover:bg-paper-deep",
+                extraCount > 0 && "text-brand-900",
               )}
             >
-              <SlidersHorizontal className="size-[18px]" strokeWidth={1.8} />
+              <SlidersHorizontal className="size-[26px]" strokeWidth={1.7} />
               {extraCount > 0 ? (
                 <span className="absolute -right-1 -top-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-brand-800 px-1 text-[10px] font-semibold text-white ring-2 ring-white">
                   {extraCount}
@@ -332,8 +350,8 @@ export function NetworkingClient({
 
       {/* Role chip row (backend-synced) */}
       {tab === "people" && roles.length > 0 ? (
-        <div className="-mx-4 mb-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div className="flex w-max gap-2 px-4 sm:px-6 lg:px-8">
+        <div className="-mx-3 mb-4 overflow-x-auto sm:-mx-5 lg:-mx-6">
+          <div className="flex w-max gap-2 px-3 sm:px-5 lg:px-6">
             <RoleChip
               active={filters.role === null}
               onClick={() => setFilters((f) => ({ ...f, role: null }))}
@@ -355,21 +373,11 @@ export function NetworkingClient({
         </div>
       ) : null}
 
-      {/* Count — for the People tab we show the full filter total (which can
-          be much larger than visible.length while the user is still scrolling
-          to load more pages). Connections tab loads everyone up front, so
-          visible.length is already the truth. */}
-      <div className="mb-2 flex items-baseline justify-between">
-        <p className="text-xs font-medium text-brand-800/75">
-          {(() => {
-            if (loading && visible.length === 0) return "Searching…";
-            const count =
-              tab === "people"
-                ? totalCount ?? visible.length
-                : visible.length;
-            return `${count.toLocaleString()} ${count === 1 ? "person" : "people"}`;
-          })()}
-        </p>
+      {/* No running count. It sat above the list restating what the list
+          shows, and on a directory that fills as people register it mostly
+          announced how few there were. Clear stays — it is the only way back
+          from a filter that matched nothing. */}
+      <div className="mb-2 flex items-baseline justify-end">
         {tab === "people" && (filters.role || extraCount > 0 || filters.q) ? (
           <button
             type="button"
@@ -386,27 +394,28 @@ export function NetworkingClient({
       {visible.length === 0 && !loading ? (
         <Empty>
           <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <Search />
+            <EmptyMedia className="mb-1">
+              <EmptyArt
+                name={
+                  tab === "connections"
+                    ? "empty-network"
+                    : tab === "foryou"
+                      ? canMatch
+                        ? "empty-team"
+                        : "empty-profile"
+                      : "empty-search"
+                }
+              />
             </EmptyMedia>
             <EmptyTitle>
               {tab === "connections"
                 ? "No connections yet"
                 : tab === "foryou"
-                ? canMatch
-                  ? "No matches yet"
-                  : "Tell us what you're after"
-                : "No matches"}
+                  ? canMatch
+                    ? "No matches yet"
+                    : "Tell us what you're after"
+                  : "No matches"}
             </EmptyTitle>
-            <EmptyDescription>
-              {tab === "connections"
-                ? "Scan another attendee's QR badge to connect."
-                : tab === "foryou"
-                ? canMatch
-                  ? "As more delegates complete their profiles, suggestions will appear here."
-                  : "Add what you're looking for and what you can offer in your profile, and we'll suggest who to meet."
-                : "Try a different search or clear filters."}
-            </EmptyDescription>
           </EmptyHeader>
         </Empty>
       ) : (
@@ -426,13 +435,16 @@ export function NetworkingClient({
       )}
 
       {tab === "people" && !done ? (
-        <div ref={sentinelRef} className="flex items-center justify-center py-6">
+        <div
+          ref={sentinelRef}
+          className="flex items-center justify-center py-6"
+        >
           {loading ? (
             <Loader2 className="size-4 animate-spin text-brand-800/50" />
           ) : null}
         </div>
       ) : tab === "people" && rows.length > 0 ? (
-        <div className="py-6 text-center text-[11px] text-brand-800/50">
+        <div className="py-6 text-center text-[11px] text-brand-950">
           End of list
         </div>
       ) : null}
@@ -455,10 +467,10 @@ function FilterButton({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "rounded-lg border px-4 py-2.5 text-[13px] font-semibold transition-colors",
+        "rounded-lg border px-4 py-2.5 text-[13px] font-normal transition-colors",
         active
           ? "border-brand-800 bg-brand-800 text-white"
-          : "border-rule bg-white text-brand-900 hover:bg-paper-deep/40"
+          : "border-rule bg-white text-brand-900 hover:bg-paper-deep/40",
       )}
     >
       {children}
@@ -484,7 +496,7 @@ function RoleChip({
         "shrink-0 whitespace-nowrap rounded-[4px] border px-3.5 py-1.5 text-[12px] font-medium transition-colors",
         active
           ? "border-brand-800 bg-brand-800 text-white"
-          : "border-rule bg-white text-brand-900 hover:border-rule-strong hover:bg-paper-deep"
+          : "border-rule bg-white text-brand-900 hover:border-rule-strong hover:bg-paper-deep",
       )}
     >
       {children}
@@ -501,18 +513,37 @@ function AttendeeListItem({
   reasons?: string[];
 }) {
   const campus = shortCampus(p.iit_campus);
-  const grad = p.graduation_year ? `'${String(p.graduation_year).slice(-2)}` : "";
+  const grad = p.graduation_year
+    ? `'${String(p.graduation_year).slice(-2)}`
+    : "";
   return (
-    <li>
+    /*
+      The card is a link and so are the social marks inside it, which is an
+      <a> inside an <a>: invalid HTML that React resolves by throwing a
+      hydration error and rebuilding the list on the client — which is what
+      was emptying this tab. The link is now an overlay that fills the card
+      behind the content, so both are clickable and neither nests. The
+      content ignores the pointer so clicks reach the overlay; the marks take
+      it back.
+    */
+    <li className="group relative rounded-lg border border-rule bg-white p-3 transition-colors hover:bg-paper-deep/30">
       <Link
         href={`/attendees/${p.id}`}
-        className="group flex items-start gap-3 rounded-lg border border-rule bg-white p-3 transition-colors hover:bg-paper-deep/30"
-      >
-        <Avatar className="size-12 shrink-0 ring-1 ring-rule">
+        aria-label={p.full_name ?? "Attendee"}
+        className="absolute inset-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-800"
+      />
+      <div className="pointer-events-none flex items-start gap-3">
+        {/* Square, not a circle: these are portraits at 48px, and a circle
+            crops the top of a head off every one of them. */}
+        <Avatar className="size-12 shrink-0 rounded-md ring-1 ring-rule">
           {p.photo_url ? (
-            <AvatarImage src={p.photo_url} alt={p.full_name ?? ""} />
+            <AvatarImage
+              src={p.photo_url}
+              alt={p.full_name ?? ""}
+              className="rounded-md"
+            />
           ) : null}
-          <AvatarFallback className="bg-paper-deep text-[13px] font-semibold text-brand-800">
+          <AvatarFallback className="rounded-md bg-paper-deep text-[13px] font-semibold text-brand-800">
             {initials(p.full_name)}
           </AvatarFallback>
         </Avatar>
@@ -521,23 +552,20 @@ function AttendeeListItem({
             <div className="text-[14px] font-semibold leading-tight text-brand-950">
               {p.full_name ?? "—"}
             </div>
-            {p.role ? (
-              <span className="shrink-0 rounded-[4px] border border-rule bg-paper-deep px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-brand-800">
-                {roleLabel(p.role)}
-              </span>
-            ) : null}
           </div>
-          <div className="mt-0.5 truncate text-[12px] text-brand-900/75">
-            {[p.designation, p.company].filter(Boolean).join(" · ") || "—"}
+          <div className="mt-0.5 truncate text-[12px] text-brand-950">
+            {[p.designation, p.company].filter(Boolean).join(" | ") || "—"}
           </div>
-          <div className="mt-1 flex items-center gap-3">
-            {campus ? (
-              <span className="text-[11px] font-medium text-brand-800/70">
-                IIT {campus} {grad}
-              </span>
-            ) : null}
-            <SocialIcons p={p} />
-          </div>
+          {campus ? (
+            <div className="mt-1 text-[11px] font-medium text-brand-950">
+              IIT {campus} {grad}
+            </div>
+          ) : null}
+          <SocialActions
+            linkedin={p.linkedin_url}
+            twitter={p.twitter_url}
+            className="pointer-events-auto mt-1.5"
+          />
           {reasons && reasons.length > 0 ? (
             <div className="mt-1.5 flex flex-wrap gap-1">
               {reasons.map((r) => (
@@ -551,44 +579,8 @@ function AttendeeListItem({
             </div>
           ) : null}
         </div>
-      </Link>
+      </div>
     </li>
-  );
-}
-
-function SocialIcons({ p }: { p: AttendeeRow }) {
-  const items: { href: string; label: string; icon: React.ReactNode }[] = [];
-  if (p.linkedin_url) {
-    items.push({
-      href: p.linkedin_url,
-      label: "LinkedIn",
-      icon: <LinkedInIcon className="size-[16px]" />,
-    });
-  }
-  if (p.twitter_url) {
-    items.push({
-      href: p.twitter_url,
-      label: "Twitter / X",
-      icon: <XIcon className="size-[16px]" />,
-    });
-  }
-  if (items.length === 0) return null;
-  return (
-    <div className="flex items-center gap-2.5">
-      {items.map((it) => (
-        <a
-          key={it.label}
-          href={it.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={it.label}
-          onClick={(e) => e.stopPropagation()}
-          className="inline-flex transition-opacity hover:opacity-75"
-        >
-          {it.icon}
-        </a>
-      ))}
-    </div>
   );
 }
 
@@ -674,7 +666,9 @@ function FilterFields({
         <input
           type="checkbox"
           checked={value.availableOnly}
-          onChange={(e) => onChange({ ...value, availableOnly: e.target.checked })}
+          onChange={(e) =>
+            onChange({ ...value, availableOnly: e.target.checked })
+          }
           className="size-4 accent-brand-800"
         />
       </label>
@@ -691,9 +685,7 @@ function FilterGroup({
 }) {
   return (
     <div>
-      <div className="mb-2 eyebrow text-brand-800">
-        {label}
-      </div>
+      <div className="mb-2 eyebrow text-brand-800">{label}</div>
       <div className="flex flex-col gap-1.5">{children}</div>
     </div>
   );
@@ -721,7 +713,7 @@ function Chip({
         "rounded-[4px] border px-2.5 py-1 text-[11px] font-medium transition-colors",
         active
           ? "border-brand-800 bg-brand-800 text-white"
-          : "border-rule bg-white text-brand-900 hover:bg-paper-deep"
+          : "border-rule bg-white text-brand-900 hover:bg-paper-deep",
       )}
     >
       {children}
@@ -744,7 +736,7 @@ function RangeRow({
 }) {
   return (
     <div>
-      <div className="mb-0.5 eyebrow flex items-center justify-between text-brand-800/65">
+      <div className="mb-0.5 eyebrow flex items-center justify-between text-brand-950">
         <span>{sub}</span>
         <span className="tabular-nums">{value}</span>
       </div>

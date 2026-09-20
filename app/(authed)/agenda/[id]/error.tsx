@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { AlertTriangle, ArrowLeft, RefreshCw } from "@/components/icons";
+import { ArrowLeft, RefreshCw } from "@/components/icons";
+import { EmptyArt } from "@/components/features/empty-art";
 
 export default function AgendaDetailError({
   error,
@@ -19,10 +20,7 @@ export default function AgendaDetailError({
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-10">
       <div className="rounded-lg border border-rule bg-white p-6 text-center">
-        <AlertTriangle
-          className="mx-auto h-8 w-8 text-iit-500"
-          strokeWidth={1.6}
-        />
+        <EmptyArt name="error-generic" className="mx-auto size-28" />
         <h1 className="mt-3 font-display text-base font-semibold text-brand-950">
           We couldn&apos;t load this session
         </h1>

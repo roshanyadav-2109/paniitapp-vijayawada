@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { emptied } from "@/lib/dev-empty";
 import Image from "next/image";
 import { Building } from "@/components/icons";
 import { createClient } from "@/lib/supabase/server";
@@ -67,6 +68,11 @@ export default async function SponsorsPage() {
     return acc;
   }, new Map());
 
+
+  // Empty-state preview: DEV_EMPTY=1 blanks the page without
+  // touching a row in the database.
+  sponsors = emptied(sponsors);
+
   return (
     <div className="mx-auto w-full max-w-3xl pt-5 pb-10 lg:max-w-4xl lg:pt-8 space-y-6">
       <header>
@@ -78,9 +84,8 @@ export default async function SponsorsPage() {
 
       {errored || sponsors.length === 0 ? (
         <EmptyState
-          icon={Building}
+          art="empty-sponsors"
           title="No sponsors yet"
-          description="Sponsors will appear here once organizers finalize partners."
         />
       ) : (
         <div className="space-y-6">

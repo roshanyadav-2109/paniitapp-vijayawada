@@ -1,11 +1,11 @@
 "use client";
 
+import { EmptyArt } from "@/components/features/empty-art";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   BadgeCheck,
   Check,
   ChevronUp,
-  Hand,
   Loader2,
   MoreHorizontal,
   Pin,
@@ -219,7 +219,7 @@ export function QaClient({
 
       {filtered.length === 0 ? (
         <div className="mt-8 flex flex-col items-center px-4 text-center">
-          <Hand className="h-7 w-7 text-brand-800/55" strokeWidth={1.5} />
+          <EmptyArt name="empty-qa" />
           <h3 className="mt-3 text-[15px] font-semibold text-brand-950">
             {sort === "mine"
               ? "You haven't asked yet"
@@ -665,7 +665,7 @@ function AskBar({
           onClick={() => setOpen(false)}
         >
           <div
-            className="w-full max-w-2xl rounded-t-lg border-x border-t border-rule bg-white p-5"
+            className="w-full max-w-2xl rounded-t-lg border-x bg-white p-5"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">

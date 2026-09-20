@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyArt } from "@/components/features/empty-art";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, UserRound } from "@/components/icons";
@@ -38,7 +39,8 @@ export function KeyParticipantsStrip({ people }: { people: Person[] }) {
 
   if (list.length === 0) {
     return (
-      <div className="mx-4 rounded-lg bg-white p-5 text-center text-sm text-brand-900/75 ring-1 ring-rule sm:mx-6 lg:mx-8">
+      <div className="mx-4 flex flex-col items-center rounded-lg bg-white p-5 text-center text-sm text-brand-950 ring-1 ring-rule sm:mx-6 lg:mx-8">
+        <EmptyArt name="empty-team" className="mb-3" />
         Featured participants will appear here closer to the event.
       </div>
     );
@@ -47,8 +49,15 @@ export function KeyParticipantsStrip({ people }: { people: Person[] }) {
   const cur = list[idx];
 
   return (
+    // `overflow-x-clip`, because the card animates in from translateX(110%)
+    // and out to -110% (see `participant-bounce` in globals.css). Nothing was
+    // clipping that, so for most of every cycle the card stuck out past the
+    // viewport and the whole page scrolled sideways on a phone. It only shows
+    // when there are participants to render, which is why it survived this
+    // long. `clip` rather than `hidden` so this never becomes a scroll
+    // container and steals the sticky positioning from anything inside.
     <div
-      className="relative"
+      className="relative overflow-x-clip"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={(e) => {
@@ -67,7 +76,7 @@ export function KeyParticipantsStrip({ people }: { people: Person[] }) {
         }
       }}
     >
-      <div className="flex items-center justify-center px-4 sm:px-6 lg:px-8">
+      <div className="flex items-center justify-center px-3 sm:px-5 lg:px-6">
         <button
           type="button"
           onClick={prev}
@@ -213,7 +222,7 @@ function ParticipantCard({
         </p>
         {person.designation || person.company ? (
           <p className="mt-1 line-clamp-2 text-[12px] font-medium leading-snug text-white/85">
-            {[person.designation, person.company].filter(Boolean).join(" · ")}
+            {[person.designation, person.company].filter(Boolean).join(" | ")}
           </p>
         ) : (
           <span className="inline-flex items-center justify-center gap-1 text-[11px] text-white/70">

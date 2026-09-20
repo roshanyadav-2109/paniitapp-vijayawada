@@ -82,7 +82,7 @@ export default async function OnboardingPage({
           />
           <div className="h-6 w-px bg-rule" aria-hidden />
           <p className="eyebrow text-brand-800/75">
-            {EVENT_SHORT_NAME} · Setup
+            {EVENT_SHORT_NAME} | Setup
           </p>
         </header>
 
@@ -98,7 +98,7 @@ export default async function OnboardingPage({
             />
             <div className="h-6 w-px bg-rule" aria-hidden />
             <p className="eyebrow text-brand-800/75">
-              {EVENT_SHORT_NAME} · Setup
+              {EVENT_SHORT_NAME} | Setup
             </p>
           </div>
           <h1 className="mt-0 font-display text-2xl font-semibold text-brand-950 lg:mt-6 lg:text-[28px]">

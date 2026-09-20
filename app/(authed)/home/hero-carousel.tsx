@@ -11,6 +11,25 @@ const N = SLIDES.length;
 const INTERVAL_MS = 4500;
 const SCROLL_MS = 600;
 
+/**
+ * Move the scroller without animating it.
+ *
+ * `scrollTo({ behavior: "auto" })` does not mean "jump" — it means "do
+ * whatever CSS says", and this scroller is `scroll-smooth`. So the
+ * wrap-around from the phantom clone back to the real first slide animated,
+ * dragging the strip visibly backwards through every slide instead of
+ * reading as one continuous forward cycle. Suppressing the CSS for the
+ * duration of the assignment is the part that actually makes it instant;
+ * `behavior: "instant"` alone is younger than some of the browsers this runs
+ * on.
+ */
+function jumpTo(el: HTMLElement, left: number) {
+  const prev = el.style.scrollBehavior;
+  el.style.scrollBehavior = "auto";
+  el.scrollLeft = left;
+  el.style.scrollBehavior = prev;
+}
+
 export function HeroCarousel() {
   // Indexes 0..N-1 = real slides; N = phantom clone of slide 0 used to make
   // the wrap-around appear as continuous forward motion. After we animate to
@@ -38,11 +57,13 @@ export function HeroCarousel() {
     const t = window.setTimeout(() => {
       if (active === N) {
         const realFirst = el.children[0] as HTMLElement | undefined;
-        if (realFirst) {
-          el.scrollTo({ left: realFirst.offsetLeft, behavior: "auto" });
-        }
-        // Reset state to 0 without re-triggering the smooth-scroll branch.
+        if (realFirst) jumpTo(el, realFirst.offsetLeft);
+        // Reset state to 0. The pass that follows scrolls to a slide we are
+        // already on, so nothing moves, and it releases the lock — which has
+        // to stay held through the jump or the scroll events it emits would
+        // be read as the reader swiping.
         setActive(0);
+        return;
       }
       lockRef.current = false;
     }, SCROLL_MS);
@@ -77,23 +98,33 @@ export function HeroCarousel() {
       <div
         ref={scrollerRef}
         onScroll={onScroll}
-        className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth"
+        // items-center, not the default stretch: slides now differ in height,
+        // and a short one left top-aligned hangs in a gap instead of sitting
+        // in its own space.
+        className="no-scrollbar flex snap-x snap-mandatory items-center gap-3 overflow-x-auto scroll-smooth"
       >
         {rendered.map((s, i) => (
           <article
             key={i}
-            className="relative snap-center shrink-0 basis-full overflow-hidden rounded-lg border border-rule bg-white lg:aspect-video"
+            // No border and no ground of its own — the card around the
+            // whole masthead supplies both. The small radius stays, because
+            // the picture is inset from that card's edges rather than flush
+            // to them, and a square corner inside a rounded one at 8px of
+            // separation reads as a mistake.
+            className="relative snap-center shrink-0 basis-full overflow-hidden rounded-md"
           >
-            {/* Mobile keeps the image at its natural aspect so framing matches
-                the source. Desktop forces 16:9 with object-cover so the
-                carousel doesn't stretch tall on wide viewports. */}
+            {/* No fixed aspect. These slides are posters, banners and
+                photographs at whatever shape they were made — 4:3, 16:9, a
+                2.17:1 strip — and a 16:9 frame with object-cover cropped each
+                of them differently, taking the top off a poster to fit. The
+                frame follows the artwork instead. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={s.src}
               alt={s.alt}
               loading={i === 0 ? "eager" : "lazy"}
               decoding="async"
-              className="block h-auto w-full lg:h-full lg:object-cover"
+              className="block h-auto w-full"
             />
             {/* Caption for slides that label a person. Scrim only where the
                 text sits, so the banner artwork is untouched. */}
@@ -118,7 +149,9 @@ export function HeroCarousel() {
           </article>
         ))}
       </div>
-      <div className="mt-3 flex items-center justify-center gap-1.5">
+      {/* Padding rather than a margin: the dots are inside the card, and
+          this row is what separates the picture from the text under it. */}
+      <div className="flex items-center justify-center gap-1.5 py-2.5">
         {SLIDES.map((_, i) => (
           <button
             key={i}

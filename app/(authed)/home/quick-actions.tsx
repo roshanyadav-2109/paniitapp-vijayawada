@@ -1,16 +1,47 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import {
-  CalendarDays,
-  Mail,
-  Megaphone,
-  QrCode,
-  ScanLine,
-  ShieldCheck,
-} from "@/components/icons";
 import { MyQrDialog } from "@/components/features/my-qr-dialog";
+
+// The four tiles stack their icon over their label rather than sitting them
+// side by side, so the icon reads as the thing you aim at and the label as
+// its caption. Centred, because a stacked tile with left-aligned text leaves
+// the icon floating over an edge it does not line up with.
+// brand-800 (#1B1464), the same navy as the scale blocks these sit under.
+// They were brand-950, a near-black picked to separate them from the navy
+// masthead block above — that block is a white card now, so the reason is
+// gone, and two rows of solid tiles in two different darks read as an
+// accident rather than a distinction. Red was tried here and was far too
+// loud across four solid blocks. The artwork is navy with a red
+// accent, which would disappear on this ground, so the icons are knocked out
+// to white — `brightness-0` flattens them to black first, then `invert`
+// lifts that to white, which works on a raster PNG where a `fill` would not.
+// The red detail is lost in that trade; it is small (the scan line, the
+// calendar dot) and the alternative is an invisible icon.
+const TILE =
+  "flex flex-col items-center justify-center gap-2 rounded-lg bg-brand-800 px-3 py-4 text-center transition-colors hover:bg-brand-900 lg:py-5 [&_img]:brightness-0 [&_img]:invert";
+
+const TILE_LABEL = "text-[13px] font-normal leading-tight text-white";
+
+/**
+ * Supplied flat artwork rather than the generated Solar set, so these are
+ * <Image> not components. They are already brand navy with a red accent, so
+ * nothing here tints them.
+ */
+function TileIcon({ src, size = 28 }: { src: string; size?: number }) {
+  return (
+    <Image
+      src={src}
+      alt=""
+      width={size}
+      height={size}
+      className="shrink-0"
+      style={{ width: size, height: size }}
+    />
+  );
+}
 
 interface Props {
   role: string | null;
@@ -27,26 +58,24 @@ export function QuickActions({ role }: Props) {
         <button
           type="button"
           onClick={() => setQrOpen(true)}
-          className="flex items-center gap-3 rounded-lg border border-rule bg-white px-3.5 py-3 lg:px-4 lg:py-4 text-left transition-colors hover:bg-paper-deep/30"
+          className={TILE}
         >
-          <QrCode className="size-[18px] text-brand-800" strokeWidth={1.5} />
-          <span className="text-[13px] font-semibold leading-tight text-brand-950">
-            My QR
-          </span>
+          <TileIcon src="/ui/my-qr.webp" />
+          <span className={TILE_LABEL}>My QR</span>
         </button>
         <ActionLink
           href="/scan"
-          icon={<ScanLine className="size-[18px]" strokeWidth={1.5} />}
+          icon={<TileIcon src="/ui/scan-qr.webp" />}
           label="Scan QR"
         />
         <ActionLink
           href="mailto:summit@paniit.org"
-          icon={<Mail className="size-[18px]" strokeWidth={1.5} />}
+          icon={<TileIcon src="/ui/contact-us.webp" />}
           label="Contact us"
         />
         <ActionLink
           href="/agenda"
-          icon={<CalendarDays className="size-[18px]" strokeWidth={1.5} />}
+          icon={<TileIcon src="/ui/agenda.webp" />}
           label="Agenda"
         />
       </div>
@@ -54,9 +83,9 @@ export function QuickActions({ role }: Props) {
       {canVerify ? (
         <Link
           href="/scan?mode=verify"
-          className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-brand-800 px-4 py-3.5 text-[13px] font-semibold text-white transition-colors hover:bg-brand-900"
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-brand-800 px-4 py-3.5 text-[13px] font-semibold text-white transition-colors hover:bg-brand-900 [&_img]:brightness-0 [&_img]:invert"
         >
-          <ShieldCheck className="size-[18px]" strokeWidth={1.6} />
+          <TileIcon src="/ui/verify-attendee.webp" size={20} />
           Verify Attendee
         </Link>
       ) : null}
@@ -66,7 +95,7 @@ export function QuickActions({ role }: Props) {
           href="/admin#announce"
           className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-brand-800 bg-white px-4 py-3.5 text-[13px] font-semibold text-brand-800 transition-colors hover:bg-paper-deep"
         >
-          <Megaphone className="size-[18px]" strokeWidth={1.6} />
+          <TileIcon src="/ui/post-announcement.webp" size={20} />
           Post Announcement
         </Link>
       ) : null}
@@ -86,14 +115,9 @@ function ActionLink({
   label: string;
 }) {
   return (
-    <Link
-      href={href}
-      className="flex items-center gap-3 rounded-lg border border-rule bg-white px-3.5 py-3 lg:px-4 lg:py-4 transition-colors hover:bg-paper-deep/30"
-    >
+    <Link href={href} className={TILE}>
       <span className="text-brand-800">{icon}</span>
-      <span className="text-[13px] font-semibold leading-tight text-brand-950">
-        {label}
-      </span>
+      <span className={TILE_LABEL}>{label}</span>
     </Link>
   );
 }

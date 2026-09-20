@@ -3,11 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ChatBubbleGlyph } from "@/components/features/chat/chat-icon";
 import { ProfileAvatar } from "@/components/features/default-avatar";
-import {
-  GmailIcon,
-  LinkedInIcon,
-  XIcon,
-} from "@/components/features/social-icons";
+import { SocialActions } from "@/components/features/social-actions";
 import {
   SessionCard,
   type SessionCardData,
@@ -60,7 +56,7 @@ export default async function AttendeeProfilePage({
     const { data } = await supabase
       .from("profiles")
       .select(
-        "id, full_name, designation, company, role, bio, iit_campus, graduation_year, branch, linkedin_url, twitter_url, interests, asks, offers, photo_url, email"
+        "id, full_name, designation, company, role, bio, iit_campus, graduation_year, branch, linkedin_url, twitter_url, interests, asks, offers, photo_url, email",
       )
       .eq("id", id)
       .maybeSingle();
@@ -70,13 +66,15 @@ export default async function AttendeeProfilePage({
     const { data: sp } = await supabase
       .from("session_speakers")
       .select(
-        "sessions(id, title, description, track, start_at, end_at, is_featured, capacity, current_checkins, venues(name))"
+        "sessions(id, title, description, track, start_at, end_at, is_featured, capacity, current_checkins, venues(name))",
       )
       .eq("speaker_id", id);
 
     const rows =
       (sp as unknown as { sessions: SessionCardData | null }[] | null) ?? [];
-    speakingAt = rows.map((r) => r.sessions).filter((s): s is SessionCardData => !!s);
+    speakingAt = rows
+      .map((r) => r.sessions)
+      .filter((s): s is SessionCardData => !!s);
 
     if (user && speakingAt.length > 0) {
       const ids = speakingAt.map((s) => s.id);
@@ -86,7 +84,9 @@ export default async function AttendeeProfilePage({
         .eq("user_id", user.id)
         .in("session_id", ids);
       bookmarkSet = new Set(
-        ((bms as { session_id: string }[] | null) ?? []).map((b) => b.session_id)
+        ((bms as { session_id: string }[] | null) ?? []).map(
+          (b) => b.session_id,
+        ),
       );
     }
   } catch {
@@ -95,13 +95,9 @@ export default async function AttendeeProfilePage({
 
   if (!profile) notFound();
 
-  const eduLine = [
-    profile.iit_campus,
-    profile.graduation_year,
-    profile.branch,
-  ]
+  const eduLine = [profile.iit_campus, profile.graduation_year, profile.branch]
     .filter(Boolean)
-    .join(" · ");
+    .join(" | ");
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4 pb-12 pt-5 sm:pt-6 lg:pt-8">
@@ -117,50 +113,14 @@ export default async function AttendeeProfilePage({
           {profile.full_name ?? "Attendee"}
         </h1>
         {profile.designation || profile.company ? (
-          <p className="mt-1 text-sm font-medium text-brand-900/85">
-            {[profile.designation, profile.company].filter(Boolean).join(" · ")}
+          <p className="mt-1 text-sm font-medium text-brand-950">
+            {[profile.designation, profile.company].filter(Boolean).join(" | ")}
           </p>
         ) : null}
         {profile.role ? (
-          <p className="mt-1 eyebrow text-brand-800/75">
+          <p className="mt-1 text-[12.5px] font-normal text-brand-950">
             {roleLabel(profile.role)}
           </p>
-        ) : null}
-
-        {profile.linkedin_url || profile.twitter_url || profile.email ? (
-          <div className="mt-4 flex items-center justify-center gap-4">
-            {profile.linkedin_url ? (
-              <a
-                href={profile.linkedin_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="LinkedIn"
-                className="inline-flex transition-opacity hover:opacity-75"
-              >
-                <LinkedInIcon className="size-[22px]" />
-              </a>
-            ) : null}
-            {profile.twitter_url ? (
-              <a
-                href={profile.twitter_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="X / Twitter"
-                className="inline-flex transition-opacity hover:opacity-75"
-              >
-                <XIcon className="size-[22px]" />
-              </a>
-            ) : null}
-            {profile.email ? (
-              <a
-                href={`mailto:${profile.email}`}
-                aria-label="Email"
-                className="inline-flex transition-opacity hover:opacity-75"
-              >
-                <GmailIcon className="size-[22px]" />
-              </a>
-            ) : null}
-          </div>
         ) : null}
       </section>
 
@@ -179,23 +139,45 @@ export default async function AttendeeProfilePage({
       {/* Combined About — bio, interests, looking-for / can-offer, and
           education live in one card with subheads, so the profile reads as
           a single "who they are" block instead of five stacked cards. */}
+      {/* Two cards, not one long column: who they are, then what they work
+          on. The bio and the ways to reach them belong together — the
+          buttons are the thing you do once you have read it. */}
       {profile.bio ||
-      profile.interests?.length ||
-      profile.asks?.length ||
-      profile.offers?.length ||
-      eduLine ? (
-        <section className="space-y-5 border-t border-rule pt-4">
-          <h2 className="font-display text-[17px] font-semibold text-brand-950">About</h2>
+      profile.linkedin_url ||
+      profile.twitter_url ||
+      profile.email ? (
+        <section className="space-y-4 rounded-lg border border-rule bg-white p-5">
+          <h2 className="font-display text-[17px] font-semibold text-brand-950">
+            About
+          </h2>
 
           {profile.bio ? (
-            <p className="whitespace-pre-line text-sm leading-6 text-brand-900">
+            <p className="whitespace-pre-line text-sm leading-6 text-brand-950">
               {profile.bio}
             </p>
           ) : null}
 
+          {/* Under the bio rather than up in the identity block: three bare
+              marks under a photograph said nothing about what tapping them
+              does, and here they read as what they are — the ways to reach
+              this person. */}
+          <SocialActions
+            linkedin={profile.linkedin_url}
+            twitter={profile.twitter_url}
+            email={profile.email}
+            size="md"
+          />
+        </section>
+      ) : null}
+
+      {profile.interests?.length ||
+      profile.asks?.length ||
+      profile.offers?.length ||
+      eduLine ? (
+        <section className="space-y-5 rounded-lg border border-rule bg-white p-5">
           {profile.interests?.length ? (
             <div>
-              <h3 className="eyebrow text-brand-800/70">
+              <h3 className="font-display text-[17px] font-semibold text-brand-950">
                 Areas of interest
               </h3>
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -213,7 +195,7 @@ export default async function AttendeeProfilePage({
 
           {profile.asks?.length ? (
             <div>
-              <h3 className="eyebrow text-brand-800/70">
+              <h3 className="font-display text-[17px] font-semibold text-brand-950">
                 Looking for
               </h3>
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -231,7 +213,7 @@ export default async function AttendeeProfilePage({
 
           {profile.offers?.length ? (
             <div>
-              <h3 className="eyebrow text-brand-800/70">
+              <h3 className="font-display text-[17px] font-semibold text-brand-950">
                 Can offer
               </h3>
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -249,7 +231,7 @@ export default async function AttendeeProfilePage({
 
           {eduLine ? (
             <div>
-              <h3 className="eyebrow text-brand-800/70">
+              <h3 className="font-display text-[17px] font-semibold text-brand-950">
                 Education
               </h3>
               <p className="mt-1.5 text-sm font-medium text-brand-900">
@@ -262,7 +244,7 @@ export default async function AttendeeProfilePage({
 
       {/* Speaking at */}
       {speakingAt.length > 0 ? (
-        <section className="border-t border-rule pt-4">
+        <section className="pt-4">
           <h2 className="font-display text-[17px] font-semibold text-brand-950">
             Speaking at
           </h2>

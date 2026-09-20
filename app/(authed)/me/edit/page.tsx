@@ -87,7 +87,7 @@ export default async function MeEditPage() {
         </p>
       </header>
 
-      <section className="border-t border-rule pt-4">
+      <section className="pt-4">
         <h2 className="font-display text-[15px] font-semibold text-brand-950">
           Profile photo
         </h2>

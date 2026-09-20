@@ -1,4 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
+import { LoginCta } from "@/components/features/login-cta";
+import { isSignedIn } from "@/lib/viewer";
+import { emptied } from "@/lib/dev-empty";
 import { rethrowIfRedirect } from "@/lib/redirect";
 import { EVENT_ID } from "@/lib/event-config";
 import { MeetingsView, type MeetingRow } from "./meetings-tabs";
@@ -40,16 +43,26 @@ export default async function MeetingsPage() {
     rethrowIfRedirect(err);
   }
 
+
+  // Empty-state preview: DEV_EMPTY=1 blanks the page without
+  // touching a row in the database.
+  meetings = emptied(meetings);
+  bookmarks = emptied(bookmarks);
+
+  const signedIn = await isSignedIn();
+
   return (
     <div className="mx-auto w-full max-w-3xl space-y-5 pb-12 pt-5 lg:max-w-4xl lg:pt-8">
-      <header>
-        <h1 className="font-display text-2xl font-semibold text-brand-900 lg:text-3xl">
-          Meetings
-        </h1>
-        <p className="mt-1 text-sm leading-6 text-brand-900/70">
-          Schedule one-on-ones on 16 May 2026. Tap My availability to set when you&apos;re free.
-        </p>
-      </header>
+      {!signedIn ? (
+        <LoginCta
+          next="/meetings"
+          className="mb-4"
+        />
+      ) : null}
+      {/* No title or standfirst, as elsewhere: the tab at the foot of the
+          screen says Meetings, and the tabs and the availability button say
+          the rest. The line here also still named 16 May 2026, which is not
+          this summit's date. */}
       <MeetingsView userId={userId} meetings={meetings} bookmarks={bookmarks} />
     </div>
   );

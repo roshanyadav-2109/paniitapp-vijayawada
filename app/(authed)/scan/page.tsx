@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 export default function ScanPage() {
   return (
     <div className="mx-auto w-full max-w-md space-y-5 pb-12 pt-4">
-      <section className="border-t border-rule pt-4">
+      <section className="pt-4">
         <h1 className="font-display text-2xl font-semibold text-brand-950">
           Scan QR
         </h1>

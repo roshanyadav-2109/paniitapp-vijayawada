@@ -4,8 +4,10 @@
 
 @layer base {
   :root {
-    /* Plain white. See tailwind.config.ts `paper`. */
-    --background: 0 0% 100%;
+    /* White with the faintest cool cast. See tailwind.config.ts `paper`,
+       which is what the signed-in shell actually paints with; this is the
+       same value for the pages outside it. */
+    --background: 218 52% 96%;
     --foreground: 246 53% 16%;
 
     --card: 0 0% 100%;
@@ -132,14 +134,17 @@
    * width. This is what replaces the white card around content groupings —
    * the rule does the separating that 42 identical boxes were doing badly.
    */
+  /* Was a hairline above every section title. The rules are gone — the
+     section gap does the separating on its own now — but the class stays so
+     the heads keep a consistent offset and one place can bring a rule back. */
   .section-head {
-    border-top: 1px solid theme("colors.rule.DEFAULT");
-    padding-top: 0.75rem;
+    padding-top: 0.25rem;
   }
 
-  /* Hairline between rows of a list that is no longer boxed. */
+  /* Rows of an unboxed list. The dividers between them are gone too; the
+     row padding is what keeps them apart. */
   .list-ruled > * + * {
-    border-top: 1px solid theme("colors.rule.faint");
+    border-top: 0;
   }
 }
 
@@ -206,7 +211,25 @@
     font-variant-numeric: tabular-nums;
   }
   .animate-marquee-rtl {
-    animation: marquee-rtl 35s linear infinite;
+    /* Per-strip speed. The IIT logos keep the original 35s; a row of
+       readable cards needs longer, because the right speed is the one that
+       lets you finish a sentence before it leaves. */
+    animation: marquee-rtl var(--marquee-duration, 35s) linear infinite;
+  }
+  /* Stop under the pointer, and while anything inside has keyboard focus —
+     a link that walks away mid-read is worse than no movement at all. */
+  .marquee-hoverable:hover .animate-marquee-rtl,
+  .marquee-hoverable:focus-within .animate-marquee-rtl {
+    animation-play-state: paused;
+  }
+  /* Continuous drift is exactly what a motion-sensitivity setting is asking
+     about, and nothing here depends on the movement to be readable. */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-marquee-rtl,
+    .animate-sponsor-road-rtl,
+    .animate-sponsor-road-lift {
+      animation: none;
+    }
   }
   .animate-sponsor-road-rtl {
     animation: sponsor-road-rtl 42s linear infinite;

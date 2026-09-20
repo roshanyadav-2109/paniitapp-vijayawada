@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { emptied } from "@/lib/dev-empty";
+import { EmptyArt } from "@/components/features/empty-art";
 import { Download, FileText } from "@/components/icons";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -80,6 +82,11 @@ export default async function RecapPage() {
     /* env not configured */
   }
 
+
+  // Empty-state preview: DEV_EMPTY=1 blanks the page without
+  // touching a row in the database.
+  people = emptied(people);
+
   return (
     <div className="mx-auto w-full max-w-3xl pt-5 pb-10 lg:max-w-4xl lg:pt-8 space-y-6">
       <header>
@@ -125,7 +132,12 @@ export default async function RecapPage() {
           People you met
         </h2>
         {people.length === 0 ? (
-          <p className="mt-2 text-sm text-brand-900/60">Nobody yet. Scan badges or accept meetings.</p>
+          <div className="mt-3 flex flex-col items-center text-center">
+            <EmptyArt name="empty-network" className="mb-3" />
+            <p className="text-sm text-brand-950">
+              Nobody yet. Scan badges or accept meetings.
+            </p>
+          </div>
         ) : (
           <ul className="mt-2 grid grid-cols-3 gap-3 sm:grid-cols-4">
             {people.map((p) => (
@@ -154,6 +166,7 @@ export default async function RecapPage() {
 }
 
 function Stat({ label, value }: { label: string; value: number }) {
+
   return (
     <div className="rounded-lg border border-rule bg-white p-4">
       <div className="eyebrow text-brand-900/60">{label}</div>

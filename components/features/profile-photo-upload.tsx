@@ -166,7 +166,7 @@ export function ProfilePhotoUpload({
           ) : null}
         </div>
         <p className="text-[11px] leading-4 text-brand-800/70">
-          JPG, PNG, WebP or AVIF · up to 3&nbsp;MB
+          JPG, PNG, WebP or AVIF | up to 3&nbsp;MB
         </p>
       </div>
     </div>

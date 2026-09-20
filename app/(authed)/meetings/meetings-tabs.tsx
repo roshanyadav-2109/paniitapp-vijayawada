@@ -1,9 +1,14 @@
 "use client";
 
+import {
+  EmptyArt,
+  type EmptyArtName,
+} from "@/components/features/empty-art";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
-import { CalendarOff, Check, Clock4, Loader2, X } from "@/components/icons";
+import Image from "next/image";
+import { CalendarOff, Check, Loader2, X } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +30,7 @@ import {
 } from "@/lib/slots";
 import { createClient } from "@/lib/supabase/client";
 import { cn, initials } from "@/lib/utils";
-import { EVENT_ID } from "@/lib/event-config";
+import { EVENT_DATE_TEXT, EVENT_ID } from "@/lib/event-config";
 import { SlotPicker } from "@/components/features/slot-picker";
 
 interface MiniProfile {
@@ -242,27 +247,35 @@ export function MeetingsView({
     <>
       <MeetingsGraph meetings={accepted} />
 
-      {/* Availability button */}
-      <button
-        type="button"
-        onClick={() => setAvailOpen(true)}
-        className="flex w-full items-center justify-between rounded-lg border border-rule bg-white px-4 py-3.5 text-left transition-colors hover:bg-paper-deep/30"
-      >
-        <span className="flex items-center gap-3">
-          <Clock4 className="size-[18px] text-brand-800" strokeWidth={1.5} />
-          <span className="flex flex-col leading-tight">
-            <span className="text-[13px] font-semibold text-brand-950">
-              My availability
-            </span>
-            <span className="text-[11px] text-brand-900/65">
-              Pick 15-min blocks on 16 May 2026
-            </span>
-          </span>
-        </span>
-        <span className="eyebrow text-brand-800/75">
-          Open
-        </span>
-      </button>
+      {/* Availability banner — the same light blue block as the gate pass
+          and the sign-in prompt, so the three "open this" rows in the app
+          read as one family rather than three inventions. */}
+      <div className="flex items-center gap-3 overflow-hidden rounded-lg bg-[#D8E6FA] p-4 sm:gap-5 sm:p-5">
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-[17px] font-semibold leading-snug text-brand-950 sm:text-[19px]">
+            My availability
+          </p>
+          <p className="mt-1 text-[12.5px] leading-5 text-brand-950/70">
+            Pick 15-min blocks on {EVENT_DATE_TEXT}
+          </p>
+          <button
+            type="button"
+            onClick={() => setAvailOpen(true)}
+            className="mt-3 inline-flex h-9 items-center rounded-md bg-brand-800 px-4 text-[13px] font-medium text-white transition-colors hover:bg-brand-900"
+          >
+            Set hours
+          </button>
+        </div>
+
+        <Image
+          src="/ui/availability.webp"
+          alt=""
+          width={545}
+          height={360}
+          sizes="150px"
+          className="h-[86px] w-auto shrink-0 sm:h-[100px]"
+        />
+      </div>
 
       {/* Filter buttons — separate cards so each reads as its own action */}
       <div className="grid grid-cols-2 gap-2">
@@ -285,7 +298,6 @@ export function MeetingsView({
         byMe.length === 0 ? (
           <EmptyMsg
             title="No meetings yet"
-            body="Open an attendee profile and tap Schedule Meeting to send a request."
           />
         ) : (
           <ul className="space-y-3">
@@ -305,8 +317,8 @@ export function MeetingsView({
       {tab === "by-others" ? (
         byOthers.length === 0 ? (
           <EmptyMsg
-            title="No requests yet"
-            body="When someone asks to meet, it'll show up here."
+            art="empty-team"
+              title="No requests yet"
           />
         ) : (
           <ul className="space-y-3">
@@ -548,7 +560,7 @@ function InboxRow({
             {m.requester?.full_name ?? "Attendee"}
           </Link>
           <div className="text-xs text-brand-900/70">
-            {[m.requester?.designation, m.requester?.company].filter(Boolean).join(" · ")}
+            {[m.requester?.designation, m.requester?.company].filter(Boolean).join(" | ")}
           </div>
         </div>
         <StatusPill status={m.status} />
@@ -670,7 +682,7 @@ function SentRow({
             {m.invitee?.full_name ?? "Attendee"}
           </Link>
           <div className="text-xs text-brand-900/70">
-            {[m.invitee?.designation, m.invitee?.company].filter(Boolean).join(" · ")}
+            {[m.invitee?.designation, m.invitee?.company].filter(Boolean).join(" | ")}
           </div>
         </div>
         <StatusPill status={m.status} />
@@ -750,11 +762,17 @@ function MeetingActions({
   );
 }
 
-function EmptyMsg({ title, body }: { title: string; body: string }) {
+function EmptyMsg({
+  title,
+  art = "empty-meetings",
+}: {
+  title: string;
+  art?: EmptyArtName;
+}) {
   return (
-    <div className="rounded-lg border border-dashed border-rule bg-white p-8 text-center">
+    <div className="flex flex-col items-center rounded-lg border border-dashed border-rule bg-white p-8 text-center">
+      <EmptyArt name={art} className="mb-3" />
       <h3 className="text-sm font-semibold text-brand-900">{title}</h3>
-      <p className="mt-1 text-xs text-brand-900/70">{body}</p>
     </div>
   );
 }
@@ -930,7 +948,7 @@ function AvailabilitySheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>My availability · 16 May 2026</SheetTitle>
+          <SheetTitle>My availability | {EVENT_DATE_TEXT}</SheetTitle>
           <SheetDescription>
             Tap to save a slot as available. Tap again to save it as not available.
           </SheetDescription>

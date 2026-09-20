@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { EmptyArt } from "@/components/features/empty-art";
 import { MyQr } from "@/components/features/my-qr";
 import { QrScanner } from "@/components/features/qr-scanner";
 
@@ -45,13 +46,17 @@ export default async function QrPage() {
             </p>
           </>
         ) : (
-          <p className="text-sm text-brand-900/60">
-            Your badge token isn't set yet. Contact the organizers if this persists.
-          </p>
+          <div className="flex flex-col items-center text-center">
+            <EmptyArt name="empty-badge" className="mb-3" />
+            <p className="text-sm text-brand-950">
+              Your badge token isn&apos;t set yet. Contact the organizers if
+              this persists.
+            </p>
+          </div>
         )}
       </div>
 
-      <div className="border-t border-rule pt-6">
+      <div className="pt-6">
         <h2 className="eyebrow text-brand-900/60">
           Scan another badge
         </h2>

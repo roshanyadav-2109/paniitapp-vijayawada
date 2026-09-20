@@ -397,7 +397,7 @@ function SpeakerCard({
               </div>
               {p.designation || p.company ? (
                 <div className="mt-0.5 truncate text-[12px] font-normal text-brand-900/75">
-                  {[p.designation, p.company].filter(Boolean).join(" · ")}
+                  {[p.designation, p.company].filter(Boolean).join(" | ")}
                 </div>
               ) : null}
             </Link>

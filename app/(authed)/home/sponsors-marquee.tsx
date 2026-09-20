@@ -21,7 +21,7 @@ export function SponsorsBoard({ tiers }: { tiers: SponsorTier[] }) {
   if (visible.length === 0) return null;
 
   return (
-    <section className="border-t border-rule pt-4">
+    <section className="pt-4">
       <h2 className="font-display text-base font-semibold text-brand-950">
         Sponsors
       </h2>

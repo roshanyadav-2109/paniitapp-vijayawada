@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyArt } from "@/components/features/empty-art";
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -9,7 +10,6 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-  EmptyDescription,
 } from "@/components/ui/empty";
 
 export interface ExhibitorRow {
@@ -60,17 +60,14 @@ export function ExhibitorsClient({
       {filtered.length === 0 ? (
         <Empty>
           <EmptyHeader>
-            <EmptyMedia variant="icon">
-              {initialRows.length === 0 ? <Store /> : <Search />}
+            <EmptyMedia className="mb-1">
+              <EmptyArt
+                name={initialRows.length === 0 ? "empty-expo" : "empty-search"}
+              />
             </EmptyMedia>
             <EmptyTitle>
               {initialRows.length === 0 ? "No exhibitors yet" : "No matches"}
             </EmptyTitle>
-            <EmptyDescription>
-              {initialRows.length === 0
-                ? "The show-floor directory will appear here once exhibitors are onboarded."
-                : "Try a different search term."}
-            </EmptyDescription>
           </EmptyHeader>
         </Empty>
       ) : (
@@ -110,7 +107,7 @@ export function ExhibitorsClient({
                         <MapPin className="size-3" strokeWidth={1.8} />
                         {[e.booth_number, e.location_floor]
                           .filter(Boolean)
-                          .join(" · ")}
+                          .join(" | ")}
                       </MetaTag>
                     ) : null}
                     {e.website ? (

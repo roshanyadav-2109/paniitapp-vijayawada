@@ -1,6 +1,7 @@
-import { MapPin } from "@/components/icons";
+import { EmptyArt } from "@/components/features/empty-art";
+import { emptied } from "@/lib/dev-empty";
 import { createClient } from "@/lib/supabase/server";
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { FloorMap, type VenueRow, type SessionAtVenue } from "./floor-map";
 import { EVENT_ID, EVENT_VENUE } from "@/lib/event-config";
 
@@ -32,6 +33,12 @@ export default async function MapPage() {
     errored = true;
   }
 
+
+  // Empty-state preview: DEV_EMPTY=1 blanks the page without
+  // touching a row in the database.
+  venues = emptied(venues);
+  sessions = emptied(sessions);
+
   return (
     <div className="pt-5 lg:pt-8">
       <header className="mb-5 lg:mb-8">
@@ -39,20 +46,17 @@ export default async function MapPage() {
           Venue map
         </h1>
         <p className="mt-1 text-sm leading-6 text-brand-900/70">
-          {EVENT_VENUE} · interactive floor plan
+          {EVENT_VENUE} | interactive floor plan
         </p>
       </header>
 
       {errored || venues.length === 0 ? (
         <Empty>
           <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <MapPin />
+            <EmptyMedia className="mb-1">
+              <EmptyArt name="empty-map" />
             </EmptyMedia>
             <EmptyTitle>No venues yet</EmptyTitle>
-            <EmptyDescription>
-              The interactive floor plan appears here once venues are seeded.
-            </EmptyDescription>
           </EmptyHeader>
         </Empty>
       ) : (

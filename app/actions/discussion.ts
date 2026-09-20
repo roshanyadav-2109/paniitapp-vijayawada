@@ -11,15 +11,28 @@ const PostSchema = z.object({
   body: z.string().trim().min(1).max(2000),
   // A poll needs at least two distinct options to be a poll.
   options: z.array(z.string().trim().min(1).max(120)).max(4).optional(),
+  // The upload already happened in the browser; what arrives here is the
+  // delivery URL. Pinned to Cloudinary's CDN so a crafted call cannot point
+  // the feed's <img>/<video> at an arbitrary host.
+  media: z
+    .object({
+      url: z.string().url().startsWith("https://res.cloudinary.com/").max(500),
+      type: z.enum(["image", "video"]),
+    })
+    .optional(),
 });
 
 export async function createPost(
   body: string,
-  options?: string[]
+  options?: string[],
+  media?: { url: string; type: "image" | "video" }
 ): Promise<ActionResult> {
   const cleaned = (options ?? []).map((o) => o.trim()).filter(Boolean);
-  const parsed = PostSchema.safeParse({ body, options: cleaned });
-  if (!parsed.success) return { error: "Write something first." };
+  const parsed = PostSchema.safeParse({ body, options: cleaned, media });
+  if (!parsed.success) {
+    const onMedia = parsed.error.issues.some((i) => i.path[0] === "media");
+    return { error: onMedia ? "That attachment was rejected." : "Write something first." };
+  }
   if (cleaned.length === 1) return { error: "A poll needs at least two options." };
   if (new Set(cleaned).size !== cleaned.length)
     return { error: "Poll options must be different." };
@@ -31,16 +44,36 @@ export async function createPost(
   if (!user) return { error: "Sign in to post." };
 
   const isPoll = cleaned.length >= 2;
+  // Post-validation, so it carries the schema's guarantees rather than the
+  // argument's — same name as the parameter would shadow it.
+  const attachment = parsed.data.media;
+
+  // The media columns arrive with migration 0017. Until it is applied they
+  // do not exist, and naming them in an insert fails the whole statement —
+  // which would take plain text posts down with it. So they are only named
+  // when there is actually something to store, and a post carrying an
+  // attachment says plainly why it could not be saved.
+  const row = {
+    event_id: EVENT_ID,
+    author_id: user.id,
+    body: parsed.data.body,
+    kind: isPoll ? "poll" : "text",
+    ...(attachment
+      ? { media_url: attachment.url, media_type: attachment.type }
+      : {}),
+  };
+
   const { data: post, error } = await supabase
     .from("posts")
-    .insert({
-      event_id: EVENT_ID,
-      author_id: user.id,
-      body: parsed.data.body,
-      kind: isPoll ? "poll" : "text",
-    })
+    .insert(row)
     .select("id")
     .single();
+  if (error?.code === "42703" && attachment) {
+    return {
+      error:
+        "Attachments need a database update (migration 0017) before they can be saved.",
+    };
+  }
   if (error || !post) return { error: error?.message ?? "Could not post." };
 
   if (isPoll) {

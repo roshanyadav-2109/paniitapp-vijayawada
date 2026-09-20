@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EmptyArt } from "@/components/features/empty-art";
 import { Shield } from "@/components/icons";
 import { createClient } from "@/lib/supabase/server";
 import { AnnouncementComposer } from "./announcement-composer";
@@ -110,7 +111,10 @@ export default async function AdminPage() {
         </h2>
         <ul className="mt-2 divide-y divide-slate-100">
           {topSessions.length === 0 ? (
-            <li className="py-3 text-sm text-brand-900/60">No check-ins yet.</li>
+            <li className="flex flex-col items-center py-4 text-center">
+                <EmptyArt name="empty-checkins" className="mb-2 size-12" />
+                <span className="text-sm text-brand-950">No check-ins yet.</span>
+              </li>
           ) : (
             topSessions.map((s) => (
               <li key={s.id} className="flex items-center justify-between py-2.5">
@@ -135,7 +139,12 @@ export default async function AdminPage() {
         </h2>
         <ul className="mt-2 divide-y divide-slate-100">
           {topQuestions.length === 0 ? (
-            <li className="py-3 text-sm text-brand-900/60">No open questions right now.</li>
+            <li className="flex flex-col items-center py-4 text-center">
+                <EmptyArt name="empty-questions" className="mb-2 size-12" />
+                <span className="text-sm text-brand-950">
+                  No open questions right now.
+                </span>
+              </li>
           ) : (
             topQuestions.map((q) => (
               <li key={q.id} className="flex items-start justify-between gap-3 py-2.5">

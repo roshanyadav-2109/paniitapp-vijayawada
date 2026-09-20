@@ -16,8 +16,16 @@ export interface SessionCardData {
   capacity: number | null;
   current_checkins: number | null;
   venues:
-    | { id?: string | null; name: string | null; floor?: string | number | null }
-    | { id?: string | null; name: string | null; floor?: string | number | null }[]
+    | {
+        id?: string | null;
+        name: string | null;
+        floor?: string | number | null;
+      }
+    | {
+        id?: string | null;
+        name: string | null;
+        floor?: string | number | null;
+      }[]
     | null;
   // Optional per-session topic tags (column added in migration 0007).
   // When present they drive the Recommended match directly; otherwise we
@@ -26,14 +34,14 @@ export interface SessionCardData {
 }
 
 export function sessionVenueName(
-  venues: SessionCardData["venues"]
+  venues: SessionCardData["venues"],
 ): string | null {
   const venue = Array.isArray(venues) ? venues[0] : venues;
   return venue?.name ?? null;
 }
 
 export function sessionVenueFloor(
-  venues: SessionCardData["venues"]
+  venues: SessionCardData["venues"],
 ): string | null {
   const venue = Array.isArray(venues) ? venues[0] : venues;
   const floor = venue?.floor;
@@ -68,22 +76,45 @@ function capacityState(used: number, total: number) {
 }
 
 export function sessionInterestPool(
-  session: Pick<SessionCardData, "track" | "interests">
+  session: Pick<SessionCardData, "track" | "interests">,
 ): string[] {
-  if (session.interests && session.interests.length > 0) return session.interests;
+  if (session.interests && session.interests.length > 0)
+    return session.interests;
   const track = session.track ?? "general";
   return [...(TRACK_TO_INTERESTS[track] ?? [])];
 }
 
 export function matchedInterestsForSession(
   session: Pick<SessionCardData, "track" | "interests">,
-  userInterests: string[] | null | undefined
+  userInterests: string[] | null | undefined,
 ): string[] {
   if (!userInterests || userInterests.length === 0) return [];
   const pool = sessionInterestPool(session);
   if (pool.length === 0) return [];
   const userSet = new Set(userInterests);
   return pool.filter((i) => userSet.has(i));
+}
+
+/**
+ * The sector a session belongs to, for the "Sector:" line on the card.
+ *
+ * `interests` is the real answer where it exists — those are the sector
+ * tags ("Defense Tech", "AI & Machine Learning"), and 36 of the 58 sessions
+ * carry them. `track` is the fallback, but only for the tracks that name a
+ * field: 24 sessions are tagged `general` and 11 `keynote`, and "Sector:
+ * Keynote" is not a sector, it is a format. Those get no line at all, which
+ * is right for a registration desk or a lunch break.
+ */
+const FORMAT_TRACKS = new Set(["general", "keynote", "workshop"]);
+
+export function sessionSector(
+  session: Pick<SessionCardData, "track" | "interests">,
+): string | null {
+  const first = session.interests?.[0]?.trim();
+  if (first) return first;
+  const track = session.track ?? "general";
+  if (FORMAT_TRACKS.has(track)) return null;
+  return TRACK_LABELS[track] ?? null;
 }
 
 export function SessionCard({
@@ -97,96 +128,89 @@ export function SessionCard({
 }) {
   const capacity = session.capacity ?? 0;
   const used = session.current_checkins ?? 0;
-  const showCapacity = capacity > 0;
+  // Before the doors open every session reads "Seats available 0 / 900",
+  // which is a progress bar for a thing that has not started. It appears
+  // once people actually check in.
+  const showCapacity = capacity > 0 && used > 0;
   const cap = showCapacity ? capacityState(used, capacity) : null;
-  const pct = showCapacity ? Math.min(100, Math.round((used / capacity) * 100)) : 0;
+  const pct = showCapacity
+    ? Math.min(100, Math.round((used / capacity) * 100))
+    : 0;
   const matches = matchedInterestsForSession(session, userInterests);
   const venueName = sessionVenueName(session.venues);
   const venueFloor = sessionVenueFloor(session.venues);
-  const track = session.track ?? "general";
+  const sector = sessionSector(session);
 
   return (
     <Link
       href={`/agenda/${session.id}`}
-      className="relative block overflow-hidden rounded-lg border border-rule bg-white py-4 pl-5 pr-4 transition-colors hover:bg-paper-deep/40"
+      className="block overflow-hidden rounded-lg border border-rule bg-white transition-colors hover:bg-paper-deep/40"
     >
       {/*
-        Track as a keyline down the left edge rather than a coloured pill in
-        the metadata row. Same information, no extra object competing with the
-        title — and it gives a scanned list of sessions a colour rhythm at the
-        margin, which a row of pills never does.
+        Title, then what kind of session it is, then when and where — in that
+        order, each on its own line. Everything here is set in the brand
+        near-black rather than in tints of it: on a card carrying four short
+        lines, greying three of them to rank them just makes three of them
+        harder to read.
       */}
-      <span
-        aria-hidden
-        className="absolute inset-y-0 left-0 w-[3px]"
-        style={{ backgroundColor: trackColor(track) }}
-      />
-
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3 py-3.5 pl-4 pr-3">
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-            <span className="text-xs font-medium tabular-nums text-brand-900/70">
-              {rangeIST(session.start_at, session.end_at)}
-            </span>
-            {/*
-              One badge, not three. The card used to be able to show Featured,
-              Recommended, a track pill and up to three interest pills at once
-              — seven objects around a title, which reads as a dashboard row
-              rather than a thing happening in a room. Featured outranks
-              Recommended because it is editorial, not personalised.
-            */}
-            {session.is_featured ? (
-              <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-iit-600">
-                Featured
-              </span>
-            ) : matches.length > 0 ? (
-              <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-emerald-700">
-                Recommended
-              </span>
-            ) : null}
-          </div>
-          <h3 className="mt-1.5 font-display text-[17px] font-semibold leading-snug text-brand-950">
+          <h3 className="font-display text-[15.5px] font-semibold leading-snug text-brand-950">
             {session.title}
           </h3>
-          {session.description ? (
-            <p className="mt-1 line-clamp-2 text-[13px] leading-6 text-brand-900/60">
-              {session.description}
+
+          {sector ? (
+            <p className="mt-1 text-[13px] font-medium leading-snug text-brand-950">
+              Sector: {sector}
             </p>
           ) : null}
+
+          <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[12.5px] leading-snug text-brand-950">
+            <span className="tabular-nums">
+              {rangeIST(session.start_at, session.end_at)}
+            </span>
+            {venueName ? (
+              <>
+                {/* No separator between the time and the room. At this
+                    width the room always wraps to its own line, so the
+                    middot ended up leading a line instead of dividing
+                    two — the pin already marks where the room starts. */}
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="h-3 w-3 text-brand-950/50" />
+                  {venueName}
+                  {venueFloor ? <span>({venueFloor})</span> : null}
+                </span>
+              </>
+            ) : null}
+          </p>
         </div>
+
         <BookmarkButton sessionId={session.id} initial={bookmarked} />
       </div>
 
-      {/* Metadata as one plain line of text, separated by middots — the
-          information density of the pill row without seven bordered boxes. */}
-      <p className="mt-2.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[12.5px] text-brand-900/60">
-        <span className="font-medium text-brand-900/75">
-          {TRACK_LABELS[track] ?? track}
-        </span>
-        {venueName ? (
-          <>
-            <span aria-hidden className="text-brand-900/30">
-              &middot;
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <MapPin className="h-3 w-3 text-brand-900/40" />
-              {venueName}
-              {venueFloor ? <span className="text-brand-900/45">({venueFloor})</span> : null}
-            </span>
-          </>
-        ) : null}
-        {matches.length > 0 ? (
-          <>
-            <span aria-hidden className="text-brand-900/30">
-              &middot;
-            </span>
-            <span className="text-brand-900/55">{matches.slice(0, 2).join(", ")}</span>
-          </>
-        ) : null}
-      </p>
+      {/*
+        One bar, and only where there is something to say: Featured in the
+        IIT red, Recommended in green, the word alone — set as a word, at
+        normal weight, not in spaced capitals. The track is not in
+        it — it is under the title, where it belongs, and repeating it here
+        made the bar a second metadata row rather than a flag.
+
+        Featured outranks Recommended because it is editorial rather than
+        personalised. No hairline above either: a solid block is its own
+        edge.
+      */}
+      {session.is_featured ? (
+        <p className="bg-iit-500 px-4 py-1.5 text-[12px] font-normal text-white">
+          Featured
+        </p>
+      ) : matches.length > 0 ? (
+        <p className="bg-emerald-700 px-4 py-1.5 text-[12px] font-normal text-white">
+          Recommended
+        </p>
+      ) : null}
 
       {showCapacity && cap ? (
-        <div className="mt-3">
+        <div className="px-4 pb-3.5">
           <div className="h-[3px] overflow-hidden rounded-full bg-rule">
             <div
               className={`h-full ${cap.fill} transition-all`}

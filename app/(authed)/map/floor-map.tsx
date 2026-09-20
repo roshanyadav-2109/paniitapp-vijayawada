@@ -269,7 +269,7 @@ export function FloorMap({
         {/* Mobile-only venue list (desktop has it in left column) */}
         <div className="mt-4 lg:hidden">
           <h2 className="mb-2 eyebrow text-brand-900/60">
-            {floorLabel(floor)} · {floorVenues.length} venue{floorVenues.length === 1 ? "" : "s"}
+            {floorLabel(floor)} | {floorVenues.length} venue{floorVenues.length === 1 ? "" : "s"}
           </h2>
           <ul className="flex flex-col gap-2">
             {floorVenues.map((v) => {
@@ -311,7 +311,7 @@ export function FloorMap({
                 <SheetTitle>{selected.name}</SheetTitle>
                 <SheetDescription>
                   {selected.floor ?? floorLabel(floorOf(selected))}
-                  {selected.capacity ? ` · Capacity ${selected.capacity}` : ""}
+                  {selected.capacity ? ` | Capacity ${selected.capacity}` : ""}
                 </SheetDescription>
               </SheetHeader>
               <div className="px-6 pb-6 pt-2">

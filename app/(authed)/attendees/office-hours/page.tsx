@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users } from "@/components/icons";
+import { emptied } from "@/lib/dev-empty";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/features/empty-state";
@@ -36,6 +36,11 @@ export default async function OfficeHoursPage() {
     rows = [];
   }
 
+
+  // Empty-state preview: DEV_EMPTY=1 blanks the page without
+  // touching a row in the database.
+  rows = emptied(rows);
+
   return (
     <div className="mx-auto w-full max-w-3xl pt-5 pb-10 lg:max-w-4xl lg:pt-8 space-y-6">
       <div>
@@ -49,9 +54,8 @@ export default async function OfficeHoursPage() {
 
       {rows.length === 0 ? (
         <EmptyState
-          icon={Users}
+          art="empty-office-hours"
           title="Nobody open right now"
-          description="Check back later — people turn this on and off through the day."
         />
       ) : (
         <ul className="space-y-2">
@@ -72,7 +76,7 @@ export default async function OfficeHoursPage() {
                     {p.full_name ?? "Attendee"}
                   </div>
                   <div className="text-xs text-brand-900/60 truncate">
-                    {[p.designation, p.company].filter(Boolean).join(" · ")}
+                    {[p.designation, p.company].filter(Boolean).join(" | ")}
                   </div>
                 </div>
                 {p.role ? (

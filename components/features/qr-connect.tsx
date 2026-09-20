@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyArt } from "@/components/features/empty-art";
 import { useEffect, useMemo, useState } from "react";
 import { QrCode } from "@/components/icons";
 import {
@@ -12,7 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { MyQr } from "./my-qr";
 import { QrScanner } from "./qr-scanner";
@@ -92,13 +93,10 @@ export function QrConnect() {
               ) : (
                 <Empty>
                   <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                      <QrCode />
+                    <EmptyMedia className="mb-1">
+                      <EmptyArt name="empty-badge" />
                     </EmptyMedia>
                     <EmptyTitle>No badge token yet</EmptyTitle>
-                    <EmptyDescription>
-                      Contact organizers — your QR token isn&apos;t set.
-                    </EmptyDescription>
                   </EmptyHeader>
                 </Empty>
               )}

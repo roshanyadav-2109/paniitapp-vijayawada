@@ -1,11 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
+import { LoginCta } from "@/components/features/login-cta";
+import { isSignedIn } from "@/lib/viewer";
+import { emptied } from "@/lib/dev-empty";
 import { rethrowIfRedirect } from "@/lib/redirect";
 import {
   NetworkingClient,
   type AttendeeRow,
   type RecommendedRow,
 } from "./networking-client";
-import { EVENT_ATTENDEE_COUNT, EVENT_ID } from "@/lib/event-config";
+import { EVENT_ID } from "@/lib/event-config";
 import { canMatch, rankMatches, type MatchProfile } from "@/lib/match";
 
 export const dynamic = "force-dynamic";
@@ -100,17 +103,22 @@ export default async function AttendeesPage() {
     rethrowIfRedirect(err);
   }
 
+
+  // Empty-state preview: DEV_EMPTY=1 blanks the page without
+  // touching a row in the database.
+  rows = emptied(rows);
+  recommended = emptied(recommended);
+
+  const signedIn = await isSignedIn();
+
   return (
     <div className="mx-auto w-full max-w-3xl pt-5 lg:pt-8">
-      <header className="mb-4">
-        <h1 className="font-display text-2xl font-semibold text-brand-900 lg:text-3xl">
-          Networking
-        </h1>
-        <p className="mt-1 text-sm leading-6 text-brand-900/70">
-          {EVENT_ATTENDEE_COUNT} delegates across 23 IIT campuses. Find your next
-          conversation.
-        </p>
-      </header>
+      {!signedIn ? (
+        <LoginCta
+          next="/attendees"
+          className="mb-4"
+        />
+      ) : null}
       <NetworkingClient
         initialRows={rows}
         roles={roles}

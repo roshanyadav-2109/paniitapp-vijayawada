@@ -1,7 +1,14 @@
-import { CalendarOff } from "@/components/icons";
-import { formatInTimeZone } from "date-fns-tz";
+import { EmptyArt } from "@/components/features/empty-art";
+import { LoginCta } from "@/components/features/login-cta";
+import { isSignedIn } from "@/lib/viewer";
+import { emptied } from "@/lib/dev-empty";
 import { createClient } from "@/lib/supabase/server";
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import {
   SessionCard,
   sessionInterestPool,
@@ -10,31 +17,24 @@ import {
 } from "@/components/features/session-card";
 import { PageWithFilters } from "@/components/features/page-with-filters";
 import { AgendaFilters } from "./agenda-filters";
+import { PromoCarousel } from "@/components/features/promo-carousel";
 import { AgendaRealtime } from "@/components/features/agenda-realtime";
-import { SUMMIT_TZ } from "@/lib/constants";
-import { EVENT_DATE_TEXT, EVENT_ID, EVENT_VENUE } from "@/lib/event-config";
+import { EVENT_ID } from "@/lib/event-config";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-function hourKey(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "00:00";
-  return formatInTimeZone(date, SUMMIT_TZ, "HH:00");
-}
-
-function hourLabel(key: string): string {
-  const [h] = key.split(":");
-  const hour = Number(h);
-  const period = hour >= 12 ? "PM" : "AM";
-  const display = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${display}:00 ${period}`;
-}
+/** How much of the day a signed-out visitor sees in full. */
+const GUEST_PREVIEW = 3;
 
 export default async function AgendaPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ venue?: string; mine?: string; recommended?: string }>;
+  searchParams?: Promise<{
+    venue?: string;
+    mine?: string;
+    recommended?: string;
+  }>;
 }) {
   const sp = (await searchParams) ?? {};
   const venue = sp.venue ?? "all";
@@ -55,7 +55,7 @@ export default async function AgendaPage({
     const withInterests = await supabase
       .from("sessions")
       .select(
-        "id, title, description, track, venue_id, start_at, end_at, is_featured, capacity, current_checkins, venues(id, name, floor), interests"
+        "id, title, description, track, venue_id, start_at, end_at, is_featured, capacity, current_checkins, venues(id, name, floor), interests",
       )
       .eq("event_id", EVENT_ID)
       .order("start_at", { ascending: true });
@@ -64,14 +64,15 @@ export default async function AgendaPage({
       const fallback = await supabase
         .from("sessions")
         .select(
-          "id, title, description, track, venue_id, start_at, end_at, is_featured, capacity, current_checkins, venues(id, name, floor)"
+          "id, title, description, track, venue_id, start_at, end_at, is_featured, capacity, current_checkins, venues(id, name, floor)",
         )
         .eq("event_id", EVENT_ID)
-      .order("start_at", { ascending: true });
+        .order("start_at", { ascending: true });
       if (fallback.error) errored = true;
       sessions = (fallback.data as unknown as SessionCardData[] | null) ?? [];
     } else {
-      sessions = (withInterests.data as unknown as SessionCardData[] | null) ?? [];
+      sessions =
+        (withInterests.data as unknown as SessionCardData[] | null) ?? [];
     }
 
     if (user) {
@@ -87,10 +88,13 @@ export default async function AgendaPage({
           .maybeSingle(),
       ]);
       bookmarkSet = new Set(
-        (bmRes.data as { session_id: string }[] | null)?.map((b) => b.session_id) ?? []
+        (bmRes.data as { session_id: string }[] | null)?.map(
+          (b) => b.session_id,
+        ) ?? [],
       );
       userInterests =
-        ((profRes.data as { interests: string[] | null } | null)?.interests) ?? [];
+        (profRes.data as { interests: string[] | null } | null)?.interests ??
+        [];
     }
   } catch {
     errored = true;
@@ -103,6 +107,14 @@ export default async function AgendaPage({
     return pool.some((i) => userInterestSet.has(i));
   };
 
+  // Empty-state preview: DEV_EMPTY=1 blanks the page without touching a
+  // row in the database. It has to happen before the filtering below,
+  // which is what the page actually renders.
+  sessions = emptied(sessions);
+  userInterests = emptied(userInterests);
+
+  const signedIn = await isSignedIn();
+
   const filtered = sessions.filter((s) => {
     if (venue !== "all" && s.venue_id !== venue) return false;
     if (mineOnly && !bookmarkSet.has(s.id)) return false;
@@ -111,102 +123,118 @@ export default async function AgendaPage({
   });
 
   const venueOptions = Array.from(
-    sessions.reduce<Map<string, { id: string; label: string }>>(
-      (acc, s) => {
+    sessions
+      .reduce<Map<string, { id: string; label: string }>>((acc, s) => {
         if (!s.venue_id) return acc;
         const label = sessionVenueName(s.venues);
         if (!label) return acc;
         acc.set(s.venue_id, { id: s.venue_id, label });
         return acc;
-      },
-      new Map()
-    ).values()
+      }, new Map())
+      .values(),
   ).sort((a, b) => a.label.localeCompare(b.label));
 
-  const grouped = filtered.reduce<Map<string, SessionCardData[]>>((acc, s) => {
-    const k = hourKey(s.start_at);
-    if (!acc.has(k)) acc.set(k, []);
-    acc.get(k)!.push(s);
-    return acc;
-  }, new Map());
-  const hourKeys = Array.from(grouped.keys()).sort();
 
   return (
+    /* No page title and no date-and-venue line. The tab is called Agenda in
+       the bar at the bottom of the screen, the summit is one day in one
+       building, and the first thing under the heading was a time column
+       already. */
+    /* The banners sit in the header slot, above My Agenda and the filter
+       mark, rather than between the controls and the programme. */
     <PageWithFilters
-      header={
-        <div>
-          <h1 className="font-display text-2xl font-semibold text-brand-900 lg:text-3xl">
-            Agenda
-          </h1>
-          <p className="mt-1 text-sm leading-6 text-brand-900/70">
-            {EVENT_DATE_TEXT} · {EVENT_VENUE} · all times IST
-          </p>
-        </div>
-      }
+      header={<PromoCarousel />}
       filters={<AgendaFilters venues={venueOptions} />}
     >
       {userInterests.length === 0 ? (
-        <div className="mb-4 rounded-lg border border-rule bg-paper-deep/40 p-3">
-          <p className="text-[12px] leading-5 text-brand-900">
-            Pick your areas of interest in{" "}
-            <Link
-              href="/me/edit"
-              className="font-semibold text-brand-800 underline-offset-2 hover:underline"
-            >
-              your profile
-            </Link>{" "}
-            to highlight matching sessions and people across the summit.
-          </p>
-        </div>
+        /* In the same green as the Recommended bar on a card, because that
+           green is exactly what this offer buys you. A line of grey text
+           above a list of cards is the easiest thing on a page to skip. */
+        <p className="mb-4 rounded-md bg-emerald-700 px-3 py-2 text-[12.5px] leading-5 text-white">
+          <Link href="/me/edit" className="underline underline-offset-2">
+            Add your interests
+          </Link>{" "}
+          to see recommended sessions.
+        </p>
       ) : null}
 
-      {hourKeys.length === 0 ? (
+      {filtered.length === 0 ? (
         <Empty>
           <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <CalendarOff />
+            <EmptyMedia className="mb-1">
+              <EmptyArt
+                name={
+                  errored
+                    ? "error-generic"
+                    : mineOnly
+                      ? "empty-bookmark"
+                      : recommendedOnly
+                        ? "empty-bookmark"
+                        : "empty-calendar"
+                }
+              />
             </EmptyMedia>
             <EmptyTitle>
               {recommendedOnly
                 ? "Nothing recommended yet"
                 : mineOnly
-                ? "Nothing bookmarked yet"
-                : errored
-                ? "Can't load schedule"
-                : "No sessions"}
+                  ? "Nothing bookmarked yet"
+                  : errored
+                    ? "Can't load schedule"
+                    : "No sessions"}
             </EmptyTitle>
-            <EmptyDescription>
-              {recommendedOnly
-                ? "Add more interests in your profile to surface matching sessions."
-                : mineOnly
-                ? "Bookmark sessions to build your personal agenda."
-                : errored
-                ? "We can't reach the schedule right now."
-                : "Sessions will appear here once organizers publish them."}
-            </EmptyDescription>
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className="flex flex-col gap-6">
-          {hourKeys.map((k) => (
-            <section key={k} id={`h-${k.replace(":", "")}`}>
-              <div className="mb-2 eyebrow tabular-nums text-brand-900/60">
-                {hourLabel(k)}
+        /* One list, no hour headings. Each heading repeated the time of the
+           card directly beneath it, and nothing in the app linked to the
+           anchors they carried — the card's own time column is what makes
+           the day scannable now. */
+        <>
+          <ul className="flex flex-col gap-2">
+            {(signedIn ? filtered : filtered.slice(0, GUEST_PREVIEW)).map(
+              (s) => (
+                <li key={s.id}>
+                  <SessionCard
+                    session={s}
+                    bookmarked={bookmarkSet.has(s.id)}
+                    userInterests={userInterests}
+                  />
+                </li>
+              )
+            )}
+          </ul>
+
+          {/* A guest sees the first few sessions in full, then the ask, then
+              the rest of the day behind a blur: enough to know the programme
+              is real and worth signing in for, without printing it. The
+              blurred half is inert and hidden from screen readers — it is a
+              picture of a list, not a list. */}
+          {!signedIn && filtered.length > GUEST_PREVIEW ? (
+            <>
+              <LoginCta
+                next="/agenda"
+                className="mt-4"
+              />
+              <div
+                aria-hidden
+                className="pointer-events-none mt-4 select-none blur-[5px] [mask-image:linear-gradient(to_bottom,black,transparent)]"
+              >
+                <ul className="flex flex-col gap-2">
+                  {filtered.slice(GUEST_PREVIEW, GUEST_PREVIEW + 4).map((s) => (
+                    <li key={s.id}>
+                      <SessionCard
+                        session={s}
+                        bookmarked={false}
+                        userInterests={userInterests}
+                      />
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul className="flex flex-col gap-3">
-                {grouped.get(k)!.map((s) => (
-                  <li key={s.id}>
-                    <SessionCard
-                      session={s}
-                      bookmarked={bookmarkSet.has(s.id)}
-                      userInterests={userInterests}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
-        </div>
+            </>
+          ) : null}
+        </>
       )}
 
       <AgendaRealtime />

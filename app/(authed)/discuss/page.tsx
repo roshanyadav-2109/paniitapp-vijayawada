@@ -1,4 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
+import { LoginCta } from "@/components/features/login-cta";
+import { isSignedIn } from "@/lib/viewer";
+import { emptied } from "@/lib/dev-empty";
 import { rethrowIfRedirect } from "@/lib/redirect";
 import { EVENT_ID } from "@/lib/event-config";
 import { DiscussClient, type PostRow } from "./discuss-client";
@@ -21,17 +24,34 @@ export default async function DiscussPage() {
     } = await supabase.auth.getUser();
     userId = user?.id ?? null;
 
-    const { data, error } = await supabase
-      .from("posts")
-      .select(
-        "id, body, kind, like_count, comment_count, vote_count, is_pinned, created_at, author_id, author:author_id(id, full_name, designation, company, photo_url, role), poll_options(id, label, position, vote_count)"
-      )
-      .eq("event_id", EVENT_ID)
-      .order("is_pinned", { ascending: false })
-      .order("created_at", { ascending: false })
-      .limit(PAGE_SIZE);
+    // Attachments live in two columns added by migration 0017. Until that
+    // migration is applied the whole select would 400 on an unknown column
+    // and the feed would go blank, so ask for them, and on exactly that
+    // error ask again without them. Posts render without attachments; they
+    // appear on their own once the migration lands.
+    const COLUMNS =
+      "id, body, kind, like_count, comment_count, vote_count, is_pinned, created_at, author_id, author:author_id(id, full_name, designation, company, photo_url, role), poll_options(id, label, position, vote_count)";
+    const MEDIA = "media_url, media_type, ";
+
+    const query = (cols: string) =>
+      supabase
+        .from("posts")
+        .select(cols)
+        .eq("event_id", EVENT_ID)
+        .order("is_pinned", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(PAGE_SIZE);
+
+    let { data, error } = await query(MEDIA + COLUMNS);
+    if (error?.code === "42703") {
+      ({ data, error } = await query(COLUMNS));
+    }
     if (error) errored = true;
-    posts = (data as unknown as PostRow[] | null) ?? [];
+    posts = ((data as unknown as PostRow[] | null) ?? []).map((p) => ({
+      ...p,
+      media_url: p.media_url ?? null,
+      media_type: p.media_type ?? null,
+    }));
 
     if (user && posts.length > 0) {
       const ids = posts.map((p) => p.id);
@@ -57,16 +77,24 @@ export default async function DiscussPage() {
     errored = true;
   }
 
+
+  // Empty-state preview: DEV_EMPTY=1 blanks the page without
+  // touching a row in the database.
+  posts = emptied(posts);
+
+  const signedIn = await isSignedIn();
+
   return (
     <div className="mx-auto w-full max-w-2xl pt-5 pb-10 lg:pt-8">
-      <header className="mb-4">
-        <h1 className="font-display text-2xl font-semibold text-brand-900 lg:text-3xl">
-          Discussion
-        </h1>
-        <p className="mt-1 text-sm leading-6 text-brand-900/70">
-          Ask the room, share what you&apos;re working on, or run a quick poll.
-        </p>
-      </header>
+      {!signedIn ? (
+        <LoginCta
+          next="/discuss"
+          className="mb-4"
+        />
+      ) : null}
+      {/* No title or standfirst, as on the agenda and the directory: the tab
+          at the bottom of the screen already says Discussion, and the
+          composer under it says what to do with it. */}
       <DiscussClient
         posts={posts}
         likedIds={likedIds}

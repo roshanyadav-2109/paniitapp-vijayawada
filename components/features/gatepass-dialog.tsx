@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyArt } from "@/components/features/empty-art";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -78,13 +79,13 @@ export function GatePassDialog({
   // iit_campus is already stored with the "IIT " prefix (e.g. "IIT Bombay"),
   // so just print it as-is — don't prepend another "IIT".
   const iitLine = p
-    ? [p.iit_campus, p.graduation_year].filter(Boolean).join(" · ")
+    ? [p.iit_campus, p.graduation_year].filter(Boolean).join(" | ")
     : "";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm gap-0 overflow-hidden p-0 [&>button]:text-brand-900 [&>button]:opacity-100">
-        <DialogHeader className="space-y-0 border-b border-rule bg-white px-5 py-4">
+        <DialogHeader className="space-y-0 bg-white px-5 py-4">
           {/* Title/description are required by Radix for screen-reader labels
               but visually we want the logo + "GATE PASS" on a single row. */}
           <DialogTitle className="sr-only">
@@ -113,9 +114,12 @@ export function GatePassDialog({
             <Loader2 className="size-5 animate-spin text-brand-800/60" />
           </div>
         ) : !p || !p.qr_token ? (
-          <p className="px-5 py-8 text-sm text-brand-800/75">
-            Your gate pass isn&apos;t ready yet — finish onboarding first.
-          </p>
+          <div className="flex flex-col items-center px-5 py-8 text-center">
+            <EmptyArt name="empty-badge" className="mb-3" />
+            <p className="text-sm text-brand-950">
+              Your gate pass isn&apos;t ready yet — finish onboarding first.
+            </p>
+          </div>
         ) : (
           <div className="space-y-4 px-5 pb-5 pt-4">
             <div className="flex items-center gap-3">
@@ -131,7 +135,7 @@ export function GatePassDialog({
                 </p>
                 {p.designation || p.company ? (
                   <p className="truncate text-[12px] text-brand-900/75">
-                    {[p.designation, p.company].filter(Boolean).join(" · ")}
+                    {[p.designation, p.company].filter(Boolean).join(" | ")}
                   </p>
                 ) : null}
                 {iitLine ? (

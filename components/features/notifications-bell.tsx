@@ -1,7 +1,7 @@
 "use client";
 
+import { EmptyArt } from "@/components/features/empty-art";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bell } from "@/components/icons";
 import { EVENT_ID } from "@/lib/event-config";
 
 function PremiumBell({ className }: { className?: string }) {
@@ -37,7 +37,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -191,13 +191,10 @@ export function NotificationsBell() {
             {items.length === 0 ? (
               <Empty>
                 <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <Bell />
+                  <EmptyMedia className="mb-1">
+                    <EmptyArt name="empty-announcements" />
                   </EmptyMedia>
                   <EmptyTitle>No announcements yet</EmptyTitle>
-                  <EmptyDescription>
-                    Organizers will post updates here during the summit.
-                  </EmptyDescription>
                 </EmptyHeader>
               </Empty>
             ) : (

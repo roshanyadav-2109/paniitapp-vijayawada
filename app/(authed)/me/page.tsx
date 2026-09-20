@@ -1,13 +1,10 @@
+import Image from "next/image";
 import Link from "next/link";
-import { ChevronRight, LogOut, Pencil, QrCode, Camera } from "@/components/icons";
+import { Pencil, Camera } from "@/components/icons";
 import { createClient } from "@/lib/supabase/server";
 import { rethrowIfRedirect } from "@/lib/redirect";
 import { OfficeHoursToggle } from "@/components/features/office-hours-toggle";
 import { ProfileAvatar } from "@/components/features/default-avatar";
-import {
-  ConnectionsGlyph,
-  ShieldChime,
-} from "@/components/features/nav-icons";
 
 export const dynamic = "force-dynamic";
 
@@ -76,14 +73,16 @@ export default async function MePage() {
 
   const eduLine = [profile?.iit_campus, profile?.graduation_year, profile?.branch]
     .filter(Boolean)
-    .join(" · ");
+    .join(" | ");
   const showOfficeHours =
     profile?.role === "vc" || profile?.role === "alumni";
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-2.5 pb-12 pt-6 sm:pt-7 lg:pt-9">
-      {/* Photo + name + card */}
-      <section className="rounded-lg border border-rule bg-white px-5 pb-5 pt-6">
+    <div className="mx-auto w-full max-w-2xl px-1 pb-12 pt-6 sm:pt-7 lg:pt-9">
+      {/* Photo + name. No card around any of this: the page is a single
+          column of your own details, and four stacked white blocks made it
+          read as four unrelated things. */}
+      <div>
         <div className="flex flex-col items-center text-center">
           <div className="relative">
             <ProfileAvatar
@@ -110,7 +109,7 @@ export default async function MePage() {
           ) : null}
         </div>
 
-        <div className="mt-5 space-y-3.5">
+        <div className="mt-6 space-y-3.5">
           <Field label="Designation" value={profile?.designation ?? "—"} />
           <Field label="Organization" value={profile?.company ?? "—"} />
           <Field label="Email Address" value={maskEmail(userEmail)} />
@@ -149,53 +148,52 @@ export default async function MePage() {
 
         <Link
           href="/me/edit"
-          className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-md bg-brand-800 text-[13px] font-semibold tracking-tight text-white transition-colors hover:bg-brand-900"
+          className="mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-md bg-brand-800 text-[13px] font-semibold tracking-tight text-white transition-colors hover:bg-brand-900"
         >
           <Pencil className="size-4" strokeWidth={1.6} />
           Edit Profile
         </Link>
-      </section>
-
-      <Row
-        href="/attendees?tab=connections"
-        icon={<ConnectionsGlyph className="size-[18px]" strokeWidth={1.5} />}
-        label="My Connections"
-        meta={connectionCount > 0 ? String(connectionCount) : undefined}
-      />
-      <Row
-        href="/me/qr"
-        icon={<QrCode className="size-[18px]" strokeWidth={1.5} />}
-        label="My QR Badge"
-      />
-      <Row
-        href="/me/edit#notifications"
-        icon={<ShieldChime className="size-[18px]" strokeWidth={1.5} />}
-        label="Privacy & Notifications"
-      />
+      </div>
 
       {showOfficeHours ? (
-        <section className="rounded-lg border border-rule bg-white p-4">
-          <h2 className="text-[14px] font-bold tracking-tight text-brand-950">
+        <div className="mt-7">
+          <h2 className="font-display text-[15px] font-semibold text-brand-950">
             Availability
           </h2>
           <div className="mt-2">
             <OfficeHoursToggle initial={!!profile?.office_hours_enabled} />
           </div>
-        </section>
+        </div>
       ) : null}
 
-      <form action="/api/auth/signout" method="post">
-        <button
-          type="submit"
-          className="flex w-full items-center justify-between rounded-lg border border-rule bg-white px-4 py-3.5 transition-colors hover:bg-paper-deep/30"
-        >
-          <span className="flex items-center gap-3 text-[13px] font-semibold text-brand-950">
-            <LogOut className="size-[18px] text-brand-800" strokeWidth={1.5} />
-            Logout
-          </span>
-          <ChevronRight className="size-4 text-brand-800/65" />
-        </button>
-      </form>
+      {/* The four destinations. No rules and no boxes — the drawn icon in
+          front of each one is enough to separate them. */}
+      <div className="mt-6">
+        <Row
+          href="/attendees?tab=connections"
+          icon="connections"
+          label="My Connections"
+          meta={connectionCount > 0 ? String(connectionCount) : undefined}
+        />
+        <Row href="/me/qr" icon="qr-badge" label="My QR Badge" />
+        <Row
+          href="/me/edit#notifications"
+          icon="privacy"
+          label="Privacy & Notifications"
+        />
+
+        <form action="/api/auth/signout" method="post">
+          <button
+            type="submit"
+            className="flex w-full items-center py-3 text-left transition-colors hover:bg-white/50"
+          >
+            <span className="flex items-center gap-3.5 text-[15px] font-normal text-brand-950">
+              <RowIcon name="logout" />
+              Logout
+            </span>
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
@@ -213,7 +211,7 @@ function Field({
     <div>
       <p className="text-[12px] font-medium text-brand-900/55">{label}</p>
       <p
-        className={`mt-0.5 text-[14px] font-semibold text-brand-950 ${valueClass ?? ""}`}
+        className={`mt-0.5 text-[14px] font-normal text-brand-950 ${valueClass ?? ""}`}
       >
         {value}
       </p>
@@ -239,6 +237,22 @@ function ChipBlock({ label, items }: { label: string; items: string[] }) {
   );
 }
 
+/** The drawn row icons, cut from the supplied sheet and sized as a set. */
+type RowIconName = "connections" | "qr-badge" | "privacy" | "logout";
+
+function RowIcon({ name }: { name: RowIconName }) {
+  return (
+    <Image
+      src={`/me/${name}.webp`}
+      alt=""
+      width={256}
+      height={256}
+      sizes="56px"
+      className="size-[52px] shrink-0"
+    />
+  );
+}
+
 function Row({
   href,
   icon,
@@ -246,27 +260,24 @@ function Row({
   meta,
 }: {
   href: string;
-  icon: React.ReactNode;
+  icon: RowIconName;
   label: string;
   meta?: string;
 }) {
   return (
     <Link
       href={href}
-      className="flex items-center justify-between rounded-lg border border-rule bg-white px-4 py-3.5 transition-colors hover:bg-paper-deep/30"
+      className="flex items-center justify-between py-3 transition-colors hover:bg-white/50"
     >
-      <span className="flex items-center gap-3 text-[13px] font-semibold text-brand-950">
-        <span className="text-brand-800">{icon}</span>
+      <span className="flex items-center gap-3.5 text-[15px] font-normal text-brand-950">
+        <RowIcon name={icon} />
         {label}
       </span>
-      <span className="flex items-center gap-2">
-        {meta ? (
-          <span className="rounded-full bg-paper-deep px-2 py-0.5 text-[11px] font-semibold text-brand-800">
-            {meta}
-          </span>
-        ) : null}
-        <ChevronRight className="size-4 text-brand-800/65" />
-      </span>
+      {meta ? (
+        <span className="rounded-full bg-paper-deep px-2 py-0.5 text-[11px] font-semibold text-brand-800">
+          {meta}
+        </span>
+      ) : null}
     </Link>
   );
 }

@@ -1,17 +1,25 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { devAuthBypass } from "@/lib/dev-auth";
 
-const PUBLIC_PATHS = new Set(["/"]);
-const PUBLIC_PREFIXES = ["/api/", "/_next", "/icons/", "/auth/"];
-const PUBLIC_FILES = new Set(["/manifest.json", "/sw.js", "/favicon.ico"]);
+/**
+ * Routes that mean nothing without an account, so a guest is sent to sign
+ * in rather than shown an empty version of them. Everything else — the
+ * programme, the directory, the expo, the map — is browsable signed out,
+ * with a sign-in prompt where the content stops.
+ */
+const SIGNED_IN_ONLY = [
+  "/me",
+  "/recap",
+  "/scan",
+  "/admin",
+  "/onboarding",
+  "/chat/",
+  "/meetings/",
+];
 
-function isPublicPath(pathname: string) {
-  if (PUBLIC_PATHS.has(pathname)) return true;
-  if (PUBLIC_FILES.has(pathname)) return true;
-  if (PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) return true;
-  if (pathname.includes(".")) return true;
-  return false;
-}
+// The allow-list this file used to keep is gone with the wall: everything
+// that is not in SIGNED_IN_ONLY is now public, so there is nothing left to
+// enumerate.
 
 export async function updateSession(request: NextRequest) {
   // Local review only — see lib/dev-auth.ts. Returns early so neither the
@@ -60,7 +68,11 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    if (!user && !isPublicPath(pathname)) {
+    // Signed out is no longer a dead end: a guest may browse the app and is
+    // asked to sign in where the screen needs to know who they are. The
+    // screens that only make sense as somebody — your profile, your badge,
+    // the organiser console — still bounce to the sign-in page.
+    if (!user && SIGNED_IN_ONLY.some((p) => pathname.startsWith(p))) {
       const url = request.nextUrl.clone();
       url.pathname = "/";
       url.searchParams.set("redirect", pathname);

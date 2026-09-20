@@ -124,7 +124,7 @@ export default async function ExhibitorDetailPage({
                 <MapPin className="size-3" strokeWidth={1.8} />
                 {[exhibitor.booth_number, exhibitor.location_floor]
                   .filter(Boolean)
-                  .join(" · ")}
+                  .join(" | ")}
               </span>
             ) : null}
             {exhibitor.website ? (
@@ -144,7 +144,7 @@ export default async function ExhibitorDetailPage({
 
       {/* About */}
       {exhibitor.about ? (
-        <section className="border-t border-rule pt-4">
+        <section className="pt-4">
           <h2 className="eyebrow text-brand-800/75">
             About
           </h2>
@@ -155,7 +155,7 @@ export default async function ExhibitorDetailPage({
       ) : null}
 
       {/* Team */}
-      <section className="border-t border-rule pt-4">
+      <section className="pt-4">
         <h2 className="eyebrow text-brand-800/75">
           Team on ground
         </h2>

@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyArt } from "@/components/features/empty-art";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
@@ -74,12 +75,10 @@ export function ConversationsClient({
 
   if (initialThreads.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-rule bg-white p-8 text-center">
+      <div className="flex flex-col items-center rounded-lg border border-dashed border-rule bg-white p-8 text-center">
+        <EmptyArt name="empty-chat" className="mb-3" />
         <p className="font-display text-[17px] font-semibold text-brand-950">
           No conversations yet
-        </p>
-        <p className="mt-1 text-[12px] leading-5 text-brand-900/70">
-          Open an attendee&apos;s profile and tap Chat to start a conversation.
         </p>
       </div>
     );

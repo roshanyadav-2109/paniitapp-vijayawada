@@ -55,15 +55,21 @@ const config: Config = {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'
   			},
-  			// The app ground. Plain white — it was briefly a warm cream
-  			// (#F4F1EA), which read as light yellow rather than as paper, so
-  			// it is white again. `deep` is the inset/hover step and is a
-  			// NEUTRAL grey on purpose: the original `slate-50` was a cold
-  			// blue-grey that made navy ink look like a dashboard screenshot,
-  			// and a warm tan brings the yellow back, so neither extreme.
+  			// The app ground. Was a warm cream (#F4F1EA), which read as light
+  			// yellow, then plain white, then white with a five-point cool
+  			// cast — too slight: a white panel sitting on it was invisible.
+  			// Now 96% lightness and eleven points of blue over red, which is
+  			// still read as "white page" on its own but puts a clear step
+  			// between the ground and anything `raised` on top of it.
+  			//
+  			// `raised` is pure white and is what that step is for. `deep`
+  			// (the inset/hover state) has to stay below the ground to read
+  			// as pressed, so it moves down with it rather than staying the
+  			// neutral grey it used to be, which next to a cool ground reads
+  			// as dirty.
   			paper: {
-  				DEFAULT: '#FFFFFF',
-  				deep: '#F4F4F5',
+  				DEFAULT: '#EFF3FA',
+  				deep: '#E2E9F4',
   				raised: '#FFFFFF'
   			},
   			// Hairline rules. Replaces `brand-100` (#d4d2ed, a periwinkle) as

@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 import { TopBar } from "@/components/features/top-bar";
 import { BottomNav } from "@/components/features/bottom-nav";
-import { ChatFab } from "@/components/features/chat/chat-fab";
-import { GatePassFab } from "@/components/features/gatepass-fab";
+import { AppPromptSheet } from "@/components/features/app-prompt-sheet";
 import { createClient } from "@/lib/supabase/server";
 import { rethrowIfRedirect } from "@/lib/redirect";
 import { devAuthBypass } from "@/lib/dev-auth";
@@ -14,15 +13,20 @@ export default async function AuthedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Local review only — see lib/dev-auth.ts. Wraps the whole guard so both
-  // the sign-in redirect and the onboarding-completeness redirect are skipped.
+  // Signed out is a supported way to use this app now: a guest can browse
+  // the programme, the sectors and the expo, and is asked to sign in at the
+  // point where the app needs to know who they are. So no redirect on a
+  // missing session — only the onboarding check, which applies to someone
+  // who has signed in but not finished their profile.
+  //
+  // Local review only — see lib/dev-auth.ts.
   if (!devAuthBypass()) {
     try {
       const supabase = await createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) redirect("/");
+      if (!user) return <Shell>{children}</Shell>;
 
       const { data } = await supabase
         .from("profiles")
@@ -44,15 +48,27 @@ export default async function AuthedLayout({
     }
   }
 
+  return <Shell>{children}</Shell>;
+}
+
+/** The chrome every screen sits in, signed in or not. */
+function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-paper">
       <TopBar />
-      <main className="mx-auto w-full max-w-screen-2xl px-4 pb-32 sm:px-6 lg:px-8 lg:pb-12">
+      <main className="mx-auto w-full max-w-screen-2xl px-3 pb-32 sm:px-5 lg:px-6 lg:pb-12">
         {children}
       </main>
       <BottomNav />
-      <ChatFab />
-      <GatePassFab />
+      {/* Slides up a few seconds in, at most once a visit: install the app,
+          then — once installed — turn notifications on. The public VAPID key
+          is public by definition; the private half stays on the server. */}
+      <AppPromptSheet vapidPublicKey={process.env.VAPID_PUBLIC_KEY ?? null} />
+      {/* Nothing floats over the page any more. Chat moved into the header
+          beside WhatsApp and the bell; the gate pass is a banner on the home
+          screen. Both old FABs are still on disk —
+          components/features/gatepass-fab.tsx and chat/chat-fab.tsx — if
+          either needs to come back. */}
     </div>
   );
 }
