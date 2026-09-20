@@ -40,6 +40,13 @@ export const EVENT_MAPS_URL =
 /** Headline delegate count from the brochure's "Event in numbers". */
 export const EVENT_ATTENDEE_COUNT = "800+";
 
+/**
+ * Footfall across the day, which is not the same number as the delegate
+ * count: the brochure's 800+ is registered delegates, while the halls and
+ * the expo floor see visitors on top of them.
+ */
+export const EVENT_VISITOR_COUNT = "2000+";
+
 /** Focus areas from the brochure cover, used in About copy. */
 export const EVENT_FOCUS_AREAS =
   "AI, quantum computing, semiconductors, defence and space, green energy, " +
@@ -910,7 +917,7 @@ export interface EventScaleStat {
 
 export const EVENT_SCALE: EventScaleStat[] = [
   {
-    value: EVENT_ATTENDEE_COUNT,
+    value: EVENT_VISITOR_COUNT,
     label: "Visitors expected",
     short: "Visitors",
     icon: "/audience/ceos.webp",
