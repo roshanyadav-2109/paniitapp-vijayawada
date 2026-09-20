@@ -623,6 +623,27 @@ function AskBar({
   const [anon, setAnon] = useState(false);
   const [pending, startTransition] = useTransition();
 
+  // How far above the bottom of the screen this has to sit: the bottom bar's
+  // own height plus a gap, remeasured if it changes. On a laptop the bar is
+  // hidden, so it measures zero and the floor of 24px applies.
+  const [lift, setLift] = useState(101);
+  useEffect(() => {
+    const nav = document.querySelector<HTMLElement>("[data-bottom-nav]");
+    const measure = () => {
+      const h = nav?.getBoundingClientRect().height ?? 0;
+      setLift(Math.max(Math.round(h) + 12, 24));
+    };
+    measure();
+    if (!nav || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(nav);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, []);
+
   function submit() {
     const text = body.trim();
     if (!text || text.length > 280 || !userId) return;
@@ -649,10 +670,15 @@ function AskBar({
 
   return (
     <>
-      {/* Above the bottom bar, not behind it: the bar is z-40 and 72px tall
-          plus the home indicator, so this sat underneath both. The offset is
-          measured from the same numbers rather than guessed at. */}
-      <div className="fixed inset-x-0 bottom-[calc(72px+env(safe-area-inset-bottom)+12px)] z-40 mx-auto max-w-2xl px-3 lg:bottom-6">
+      {/* Above the bottom bar, not behind it. The offset was a written-down
+          72px; the bar is actually 89 with its labels and the home
+          indicator, so the last few pixels of this button were cut off by
+          it. It measures the bar now, and sits a rank above it so a tie in
+          z-index cannot put it behind. */}
+      <div
+        style={{ bottom: lift }}
+        className="fixed inset-x-0 z-[45] mx-auto max-w-2xl px-3"
+      >
         <button
           type="button"
           onClick={() => setOpen(true)}

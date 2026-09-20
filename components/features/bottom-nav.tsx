@@ -24,6 +24,9 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Primary"
+      // Marked so anything that has to float above it can measure it rather
+      // than carry a copy of its height that goes stale.
+      data-bottom-nav
       className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-rule bg-white shadow-[0_-8px_24px_-18px_rgba(13,9,48,0.18)] lg:hidden"
     >
       <ul className="mx-auto grid h-[88px] w-full max-w-2xl grid-cols-6">
