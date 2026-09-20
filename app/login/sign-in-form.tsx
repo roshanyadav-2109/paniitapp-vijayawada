@@ -17,6 +17,7 @@ interface GoogleIdApi {
         parent: HTMLElement,
         opts: Record<string, string | number>
       ) => void;
+      prompt: () => void;
     };
   };
 }
@@ -110,6 +111,15 @@ export function SignInForm() {
         width: Math.min(Math.round(gisRef.current.clientWidth) || 320, 400),
       });
       setGisReady(true);
+
+      // One Tap, which is the only sign-in that never shows a web page: with
+      // FedCM the account chooser is drawn by the browser itself, so someone
+      // already signed in to Google picks their account and is straight in.
+      // It shows nothing at all if there is no Google session here, which is
+      // why the button above stays — tapping that opens Google's own popup,
+      // and there is no way around that one: Google refuses to authenticate
+      // inside an embedded view, by policy.
+      google.accounts.id.prompt();
     }
 
     void boot().catch(() => {

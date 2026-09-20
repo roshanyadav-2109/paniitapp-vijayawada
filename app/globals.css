@@ -93,6 +93,9 @@
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
+    /* No 300ms wait for a second tap that is never coming, and no zoom on a
+       double tap — an app's buttons answer the first time. */
+    touch-action: manipulation;
   }
 
   /*
