@@ -44,11 +44,15 @@ function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
  */
 export function AppPromptSheet({
   vapidPublicKey,
+  signedIn,
 }: {
   vapidPublicKey: string | null;
+  /** Nobody is asked for notifications until there is an account to send
+      them to; a guest sees the sign-in banner on the home screen instead. */
+  signedIn: boolean;
 }) {
   const { toast } = useToast();
-  const status = useAppPrompt();
+  const status = useAppPrompt(signedIn);
   const [kind, setKind] = useState<AppPromptKind | null>(null);
   const [busy, setBusy] = useState(false);
   const shown = useRef(false);

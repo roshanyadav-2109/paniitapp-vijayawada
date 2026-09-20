@@ -48,7 +48,7 @@ const DEV_PREVIEW = process.env.NODE_ENV !== "production";
 // standalone is offered it; where the browser gives us no prompt to fire,
 // the sheet says how to do it by hand.
 
-export function useAppPrompt(): AppPromptStatus {
+export function useAppPrompt(signedIn = false): AppPromptStatus {
   const [ready, setReady] = useState(false);
   const [installed, setInstalled] = useState(false);
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
@@ -87,7 +87,10 @@ export function useAppPrompt(): AppPromptStatus {
     };
   }, []);
 
-  const wantsNotifications = permission === "default";
+  // And only of someone we can actually send anything to: a push
+  // subscription is stored against a profile, so asking a guest for
+  // permission buys an interruption and nothing else — installed or not.
+  const wantsNotifications = signedIn && permission === "default";
 
   // Notifications are asked for only once the app is installed. In a tab the
   // permission belongs to the browser rather than to the app, and a visitor

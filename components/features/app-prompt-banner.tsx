@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Download } from "@/components/icons";
 import { useAppPrompt } from "@/hooks/use-app-prompt";
+import { LoginCta } from "@/components/features/login-cta";
 import { EVENT_INSTALL_ART, EVENT_NOTIFY_ART } from "@/lib/event-config";
 import { openAppPrompt } from "@/lib/pwa";
 import { cn } from "@/lib/utils";
@@ -20,10 +21,18 @@ import { cn } from "@/lib/utils";
  * disappears entirely when there is nothing left to ask for — installed, and
  * notifications already answered — taking its own top margin with it so the
  * panel closes up rather than keeping the gap.
+ *
+ * Installed but signed out, the slot asks for the sign-in instead. A push
+ * subscription is stored against a profile, so permission from a guest buys
+ * an interruption and nothing else — and signing in is the thing that has to
+ * happen first anyway.
  */
-export function AppPromptBanner() {
-  const { ready, pending } = useAppPrompt();
-  if (!ready || !pending) return null;
+export function AppPromptBanner({ signedIn }: { signedIn: boolean }) {
+  const { ready, installed, pending } = useAppPrompt(signedIn);
+  if (!ready) return null;
+
+  if (installed && !signedIn) return <LoginCta next="/home" className="mb-2 mt-5" />;
+  if (!pending) return null;
 
   const isInstall = pending === "install";
   const art = isInstall ? EVENT_INSTALL_ART : EVENT_NOTIFY_ART;

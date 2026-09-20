@@ -364,7 +364,7 @@ export default async function HomePage() {
         {/* Outside the card, on the ground under it: install the app, then
             the scale of the event. Both render nothing when they have
             nothing to say, and the margins go with them. */}
-        <AppPromptBanner />
+        <AppPromptBanner signedIn={signedIn} />
         <div className="mt-3">
           <EventScale stats={scaleStats} />
         </div>
