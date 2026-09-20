@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { EVENT_ID } from "@/lib/event-config";
+import { pushDisplayName, sendPushToUser } from "@/lib/push";
 
 const SlotSchema = z.object({ start: z.string(), end: z.string() });
 const Body = z.object({
@@ -125,6 +126,15 @@ export async function POST(req: Request) {
     event_id: EVENT_ID,
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // The invitee has to be told, or the request sits unread until they next
+  // happen to open the Meetings tab.
+  await sendPushToUser(parsed.data.invitee_id, {
+    title: "New meeting request",
+    body: `${await pushDisplayName(user.id)} wants to meet at the summit.`,
+    url: "/meetings",
+    tag: "meeting-request",
+  });
 
   return NextResponse.json({ ok: true });
 }

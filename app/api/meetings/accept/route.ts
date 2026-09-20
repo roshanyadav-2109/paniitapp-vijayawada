@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { formatInTimeZone } from "date-fns-tz";
 import { createClient } from "@/lib/supabase/server";
 import { EVENT_ID } from "@/lib/event-config";
+import { SUMMIT_TZ } from "@/lib/constants";
+import { pushDisplayName, sendPushToUser } from "@/lib/push";
 
 const Body = z.object({
   meeting_id: z.string().uuid(),
@@ -106,6 +109,7 @@ export async function POST(req: Request) {
   });
   if (!rpcErr) {
     await markAvailabilityBooked(supabase, user.id, meeting_id, slot.start);
+    await notifyAccepted(meeting.requester_id, user.id, slot.start);
     return NextResponse.json({ ok: true, via: "rpc", result: rpcData });
   }
 
@@ -128,7 +132,27 @@ export async function POST(req: Request) {
     .from("connections")
     .upsert({ user_a: a, user_b: b }, { onConflict: "user_a,user_b" });
 
+  await notifyAccepted(meeting.requester_id, user.id, slot.start);
+
   return NextResponse.json({ ok: true, via: "fallback" });
+}
+
+/**
+ * The person who asked for the meeting is the one waiting on an answer, so
+ * they are the one told — with the time, which is the whole answer.
+ */
+async function notifyAccepted(
+  requesterId: string,
+  accepterId: string,
+  startsAt: string
+) {
+  const when = formatInTimeZone(new Date(startsAt), SUMMIT_TZ, "d MMM, h:mm a");
+  await sendPushToUser(requesterId, {
+    title: "Meeting confirmed",
+    body: `${await pushDisplayName(accepterId)} accepted — ${when}.`,
+    url: "/meetings",
+    tag: "meeting-accepted",
+  });
 }
 
 function asSlotArray(value: unknown): { start: string; end: string }[] {

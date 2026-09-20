@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { pushDisplayName, sendPushToUser } from "@/lib/push";
 
 const Schema = z.object({
   recipient_id: z.string().uuid(),
@@ -83,6 +84,19 @@ export async function sendMessage(input: {
     body: parsed.data.body,
   });
   if (error) return { error: "db", message: error.message };
+
+  // Tell them, if they are not looking. The tag is the conversation, so a
+  // run of messages replaces itself rather than stacking up one per line.
+  const senderName = await pushDisplayName(user.id);
+  await sendPushToUser(parsed.data.recipient_id, {
+    title: senderName,
+    body:
+      parsed.data.body.length > 120
+        ? `${parsed.data.body.slice(0, 117)}…`
+        : parsed.data.body,
+    url: `/chat/${user.id}`,
+    tag: `chat-${conv.id}`,
+  });
 
   revalidatePath("/chat");
   revalidatePath(`/chat/${parsed.data.recipient_id}`);
