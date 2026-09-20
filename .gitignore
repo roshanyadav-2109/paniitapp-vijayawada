@@ -53,3 +53,5 @@ paniit-org-*.png
 !public/**/*.png
 !app/*.png
 !logos/*.png
+
+.vercel

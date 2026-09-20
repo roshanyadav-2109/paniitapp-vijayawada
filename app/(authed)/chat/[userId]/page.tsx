@@ -25,7 +25,7 @@ export default async function ChatThreadPage({
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) redirect("/");
+    if (!user) redirect("/login?redirect=%2Fchat");
     me = user.id;
     if (me === peerId) notFound();
 

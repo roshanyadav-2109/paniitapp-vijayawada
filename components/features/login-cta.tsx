@@ -27,7 +27,7 @@ export function LoginCta({
   next?: string;
   className?: string;
 }) {
-  const href = next ? `/?redirect=${encodeURIComponent(next)}` : "/";
+  const href = next ? `/login?redirect=${encodeURIComponent(next)}` : "/login";
 
   return (
     <div

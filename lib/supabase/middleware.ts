@@ -62,7 +62,10 @@ export async function updateSession(request: NextRequest) {
 
     const { pathname } = request.nextUrl;
 
-    if (user && pathname === "/") {
+    // "/" is the app, not the door: it redirects to /home for everybody,
+    // signed in or not. Someone already signed in who opens /login is the
+    // one case still worth sending on.
+    if (user && pathname === "/login") {
       const url = request.nextUrl.clone();
       url.pathname = "/home";
       return NextResponse.redirect(url);
@@ -74,7 +77,7 @@ export async function updateSession(request: NextRequest) {
     // the organiser console — still bounce to the sign-in page.
     if (!user && SIGNED_IN_ONLY.some((p) => pathname.startsWith(p))) {
       const url = request.nextUrl.clone();
-      url.pathname = "/";
+      url.pathname = "/login";
       url.searchParams.set("redirect", pathname);
       return NextResponse.redirect(url);
     }

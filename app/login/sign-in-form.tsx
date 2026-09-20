@@ -16,7 +16,13 @@ export function SignInForm() {
   function handleGoogle() {
     setOauthError(null);
     startGoogle(() => {
-      window.location.href = "/auth/google/start?next=/home";
+      // Come back to whatever the visitor was reading. Every sign-in prompt
+      // in the app links here as /login?redirect=<path>; without this the
+      // trip always ended on the home screen and lost their place. Only a
+      // same-site path is honoured — safeNext on the server checks again.
+      const back = new URLSearchParams(window.location.search).get("redirect");
+      const next = back && back.startsWith("/") && !back.startsWith("//") ? back : "/home";
+      window.location.href = `/auth/google/start?next=${encodeURIComponent(next)}`;
     });
   }
 

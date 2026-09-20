@@ -44,7 +44,7 @@ export default async function MeEditPage() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) redirect("/");
+    if (!user) redirect("/login?redirect=%2Fme%2Fedit");
     userId = user.id;
 
     const { data } = await supabase
