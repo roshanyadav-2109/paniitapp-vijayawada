@@ -34,9 +34,6 @@
   "redirects": [
     { "source": "/admin/dashboard", "destination": "/admin", "permanent": false }
   ],
-  "crons": [
-    { "path": "/api/cron/session-reminders", "schedule": "*/10 * * * *" }
-  ],
   "github": {
     "silent": true
   }
