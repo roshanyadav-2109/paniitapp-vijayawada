@@ -22,6 +22,18 @@ import { GmailIcon, LinkedInIcon, XIcon } from "./social-icons";
  * `stopPropagation` matters wherever these sit inside something else
  * clickable, which on the networking card is the whole card.
  */
+/**
+ * Profiles are stored as people type them, which is often "linkedin.com/in/x"
+ * with no scheme. A bare path in an href is a path on this site, so the
+ * button opened a missing page in the app instead of the network.
+ */
+function externalHref(raw: string): string {
+  const v = raw.trim();
+  if (/^https?:\/\//i.test(v)) return v;
+  if (v.startsWith("//")) return `https:${v}`;
+  return `https://${v.replace(/^\/+/, "")}`;
+}
+
 export function SocialActions({
   linkedin,
   twitter,
@@ -48,7 +60,7 @@ export function SocialActions({
 
   if (linkedin) {
     items.push({
-      href: linkedin,
+      href: externalHref(linkedin),
       label: "LinkedIn",
       action: "Connect",
       icon: <LinkedInIcon className={glyph} />,
@@ -60,7 +72,7 @@ export function SocialActions({
   }
   if (twitter) {
     items.push({
-      href: twitter,
+      href: externalHref(twitter),
       label: "X",
       action: "Follow",
       icon: <XIcon className={glyph} />,

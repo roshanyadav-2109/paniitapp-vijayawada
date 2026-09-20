@@ -541,10 +541,15 @@ function AttendeeListItem({
               IIT {campus} {grad}
             </div>
           ) : null}
+          {/* relative z-10 is what makes these work at all: the overlay link
+              is absolutely positioned and so paints above static content,
+              which meant a tap on Connect landed on the card and opened the
+              profile instead of LinkedIn. Lifted a layer, the buttons take
+              the tap and everything around them still opens the profile. */}
           <SocialActions
             linkedin={p.linkedin_url}
             twitter={p.twitter_url}
-            className="pointer-events-auto mt-1.5"
+            className="pointer-events-auto relative z-10 mt-1.5"
           />
           {reasons && reasons.length > 0 ? (
             <div className="mt-1.5 flex flex-wrap gap-1">
