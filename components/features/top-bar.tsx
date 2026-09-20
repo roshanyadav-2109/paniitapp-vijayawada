@@ -35,12 +35,14 @@ function firstName(full: string | null | undefined): string {
 export async function TopBar() {
   let name: string | null = null;
   let photoUrl: string | null = null;
+  let signedIn = false;
   try {
     const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (user) {
+      signedIn = true;
       const { data } = await supabase
         .from("profiles")
         .select("full_name, photo_url")
@@ -83,14 +85,21 @@ export async function TopBar() {
               href="/me"
               className="group flex min-w-0 items-center gap-2.5 rounded-full pr-2 transition-colors hover:bg-paper-deep/60 lg:hidden"
             >
-              <Avatar className="size-9 shrink-0 ring-1 ring-rule">
-                {photoUrl ? (
-                  <AvatarImage src={photoUrl} alt={name ?? "Profile"} />
-                ) : null}
-                <AvatarFallback className="bg-paper-deep text-[12px] font-semibold text-brand-800">
-                  {initials(name)}
-                </AvatarFallback>
-              </Avatar>
+              {/* Signed out there is nobody to show: a ringed disc with "--"
+                  in it looks like a profile that failed to load. A plain
+                  person mark, no frame, reads as "not signed in". */}
+              {signedIn ? (
+                <Avatar className="size-9 shrink-0 ring-1 ring-rule">
+                  {photoUrl ? (
+                    <AvatarImage src={photoUrl} alt={name ?? "Profile"} />
+                  ) : null}
+                  <AvatarFallback className="bg-paper-deep text-[12px] font-semibold text-brand-800">
+                    {initials(name)}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <PersonMark className="size-8 shrink-0 text-brand-800" />
+              )}
               <p className="min-w-0 truncate text-sm font-semibold text-brand-900">
                 Hello, {firstName(name)}{" "}
                 <span className="inline-block align-[-1px]" aria-hidden>
@@ -122,15 +131,9 @@ export async function TopBar() {
             </div>
 
             <div className="flex shrink-0 items-center gap-1 lg:gap-2">
-              <a
-                href={EVENT_WHATSAPP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Summit help on WhatsApp"
-                className="inline-grid size-10 place-items-center rounded-full transition-transform hover:-translate-y-0.5"
-              >
-                <WhatsAppMark className="size-[26px]" />
-              </a>
+              {/* WhatsApp is out of the header for now — the mark is kept in
+                  this file, and EVENT_WHATSAPP_URL still feeds the help
+                  links elsewhere, so putting it back is one element. */}
               <ChatButton />
               <NotificationsBell />
               <Link
@@ -138,14 +141,18 @@ export async function TopBar() {
                 aria-label="Profile"
                 className="hidden shrink-0 lg:inline-flex"
               >
-                <Avatar className="size-9 ring-1 ring-rule transition-shadow hover:ring-2 hover:ring-rule-strong">
-                  {photoUrl ? (
-                    <AvatarImage src={photoUrl} alt={name ?? "Profile"} />
-                  ) : null}
-                  <AvatarFallback className="bg-paper-deep text-[12px] font-semibold text-brand-800">
-                    {initials(name)}
-                  </AvatarFallback>
-                </Avatar>
+                {signedIn ? (
+                  <Avatar className="size-9 ring-1 ring-rule transition-shadow hover:ring-2 hover:ring-rule-strong">
+                    {photoUrl ? (
+                      <AvatarImage src={photoUrl} alt={name ?? "Profile"} />
+                    ) : null}
+                    <AvatarFallback className="bg-paper-deep text-[12px] font-semibold text-brand-800">
+                      {initials(name)}
+                    </AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <PersonMark className="size-8 text-brand-800" />
+                )}
               </Link>
             </div>
           </div>
@@ -162,6 +169,26 @@ export async function TopBar() {
         </div>
       </header>
     </TooltipProvider>
+  );
+}
+
+/** Head and shoulders, drawn open — no disc, no ring behind it. */
+function PersonMark({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4.5 20c0-3.6 3.4-6 7.5-6s7.5 2.4 7.5 6" />
+    </svg>
   );
 }
 

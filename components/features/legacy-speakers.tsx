@@ -1,5 +1,7 @@
+"use client";
+
 import Image from "next/image";
-import type { CSSProperties } from "react";
+import { useDriftScroll } from "@/hooks/use-drift-scroll";
 import { EVENT_LEGACY_SPEAKERS } from "@/lib/event-config";
 
 /**
@@ -10,19 +12,22 @@ import { EVENT_LEGACY_SPEAKERS } from "@/lib/event-config";
  * it is labelled. A row that never stops moving reads as a back catalogue,
  * which is what it is.
  *
- * The track carries the list twice and translates by half its own width, so
- * at the loop point the second copy sits exactly where the first began and
- * there is no seam. That only holds if every repeat is identical, which is
- * why the page inset lives on the middle div and the spacing is a margin on
- * each portrait: padding on the animated track itself would make half the
- * width land short of one full copy, and the row would jump by that
- * difference every time round.
+ * The row carries the list twice and wraps at half its own width, so at the
+ * loop point the second copy sits exactly where the first began and there is
+ * no seam. That only holds if every repeat is identical, which is why the
+ * page inset lives on the middle div and the spacing is a margin on each
+ * portrait: padding on the scrolled list would make half the width land
+ * short of one full copy, and the row would jump by that difference every
+ * time round.
  *
- * It pauses under the pointer and for keyboard focus, and
- * prefers-reduced-motion stops it altogether — nothing here needs the
- * movement to be legible.
+ * It is a scroll container, so it can be swiped as well as watched; the
+ * drift stands aside while it is being touched, pauses under the pointer and
+ * for keyboard focus, and prefers-reduced-motion stops the drift altogether
+ * — nothing here needs the movement to be legible.
  */
 export function LegacySpeakers() {
+  const ref = useDriftScroll<HTMLDivElement>(30);
+
   if (EVENT_LEGACY_SPEAKERS.length === 0) return null;
 
   const stream = [...EVENT_LEGACY_SPEAKERS, ...EVENT_LEGACY_SPEAKERS];
@@ -30,14 +35,12 @@ export function LegacySpeakers() {
 
   return (
     <div
-      className="marquee-hoverable -mx-3 overflow-hidden sm:-mx-5 lg:-mx-6"
+      ref={ref}
+      className="no-scrollbar -mx-3 overflow-x-auto overscroll-x-contain [scroll-behavior:auto] sm:-mx-5 lg:-mx-6"
       aria-label="Speakers at previous PanIIT summits"
     >
       <div className="pl-3 sm:pl-5 lg:pl-6">
-        <ul
-          className="flex w-max animate-marquee-rtl"
-          style={{ "--marquee-duration": "48s" } as CSSProperties}
-        >
+        <ul className="flex w-max">
           {stream.map((person, i) => (
             <li
               key={`${person.slug}-${i}`}

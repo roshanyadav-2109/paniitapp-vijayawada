@@ -1,5 +1,7 @@
+"use client";
+
 import Image from "next/image";
-import type { CSSProperties } from "react";
+import { useDriftScroll } from "@/hooks/use-drift-scroll";
 import { EVENT_POSTS } from "@/lib/event-config";
 
 /**
@@ -13,14 +15,18 @@ import { EVENT_POSTS } from "@/lib/event-config";
  * edited or deleted later will not update here, which is why the whole card
  * is a link to the original.
  *
- * The row drifts rather than waiting to be swiped, and pauses under the
+ * The row drifts on its own and can also be swiped: it is a real scroll
+ * container, not a translated track, so a finger, a trackpad or a wheel all
+ * move it, and the drift stands aside while they do. It pauses under the
  * pointer or whenever a card inside it takes keyboard focus — a post that
  * walks off mid-sentence is worse than a still one. Cards are a fixed width
- * here, unlike the press strip's percentage of the viewport: a marquee
- * translates a track by exactly half its own width, and that only lands on a
- * seamless loop if every card is the same size on every screen.
+ * here, unlike the press strip's percentage of the viewport: the loop wraps
+ * at exactly half the track, and that only lands seamlessly if every card is
+ * the same size on every screen.
  */
 export function PostStrip() {
+  const ref = useDriftScroll<HTMLDivElement>(24);
+
   if (EVENT_POSTS.length === 0) return null;
 
   // Newest first, sorted here rather than trusted to the order someone
@@ -31,17 +37,15 @@ export function PostStrip() {
 
   return (
     <div
-      className="marquee-hoverable -mx-3 overflow-hidden pb-1 sm:-mx-5 lg:-mx-6"
+      ref={ref}
+      className="no-scrollbar -mx-3 overflow-x-auto overscroll-x-contain pb-1 [scroll-behavior:auto] sm:-mx-5 lg:-mx-6"
       aria-label="Posts about the summit on X"
     >
-      {/* Inset on this div, not on the track: the track translates by half
-          its own width, and padding there would make half a width land short
+      {/* Inset on this div, not on the list: the loop wraps by half the
+          track's width, and padding there would make half a width land short
           of one full copy — a visible jump every time round. */}
       <div className="pl-3 sm:pl-5 lg:pl-6">
-        <ul
-          className="flex w-max animate-marquee-rtl items-stretch"
-          style={{ "--marquee-duration": "70s" } as CSSProperties}
-        >
+        <ul className="flex w-max items-stretch">
           {stream.map((post, i) => (
             <li
               key={`${post.href}-${i}`}
