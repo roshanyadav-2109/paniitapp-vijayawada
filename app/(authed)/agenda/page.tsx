@@ -19,7 +19,7 @@ import { PageWithFilters } from "@/components/features/page-with-filters";
 import { AgendaFilters } from "./agenda-filters";
 import { PromoCarousel } from "@/components/features/promo-carousel";
 import { AgendaRealtime } from "@/components/features/agenda-realtime";
-import { EVENT_ID } from "@/lib/event-config";
+import { getPublicSessions } from "@/lib/public-data";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -52,28 +52,11 @@ export default async function AgendaPage({
       data: { user },
     } = await supabase.auth.getUser();
 
-    const withInterests = await supabase
-      .from("sessions")
-      .select(
-        "id, title, description, track, venue_id, start_at, end_at, is_featured, capacity, current_checkins, venues(id, name, floor), interests",
-      )
-      .eq("event_id", EVENT_ID)
-      .order("start_at", { ascending: true });
-    if (withInterests.error) {
-      // sessions.interests may not exist if migration 0007 hasn't run yet.
-      const fallback = await supabase
-        .from("sessions")
-        .select(
-          "id, title, description, track, venue_id, start_at, end_at, is_featured, capacity, current_checkins, venues(id, name, floor)",
-        )
-        .eq("event_id", EVENT_ID)
-        .order("start_at", { ascending: true });
-      if (fallback.error) errored = true;
-      sessions = (fallback.data as unknown as SessionCardData[] | null) ?? [];
-    } else {
-      sessions =
-        (withInterests.data as unknown as SessionCardData[] | null) ?? [];
-    }
+    // The programme is the same for everybody, so it is read once and
+    // shared rather than fetched per visitor (lib/public-data.ts). What
+    // follows it — bookmarks and interests — is this visitor's alone and
+    // stays on the cookie-carrying client.
+    sessions = (await getPublicSessions()) as unknown as SessionCardData[];
 
     if (user) {
       const [bmRes, profRes] = await Promise.all([

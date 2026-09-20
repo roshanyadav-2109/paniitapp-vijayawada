@@ -243,7 +243,7 @@ type RowIconName = "connections" | "qr-badge" | "privacy" | "logout";
 function RowIcon({ name }: { name: RowIconName }) {
   return (
     <Image
-      src={`/me/${name}.webp`}
+      src={`/ui/me/${name}.webp`}
       alt=""
       width={256}
       height={256}

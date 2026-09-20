@@ -1,26 +1,17 @@
-import { createClient } from "@/lib/supabase/server";
 import { LoginCta } from "@/components/features/login-cta";
 import { isSignedIn } from "@/lib/viewer";
 import { emptied } from "@/lib/dev-empty";
 import { rethrowIfRedirect } from "@/lib/redirect";
 import { ExhibitorsClient, type ExhibitorRow } from "./exhibitors-client";
-import { EVENT_ID } from "@/lib/event-config";
+import { getPublicExhibitors } from "@/lib/public-data";
 
 export const dynamic = "force-dynamic";
 
 export default async function ExhibitorsPage() {
   let rows: ExhibitorRow[] = [];
   try {
-    const supabase = await createClient();
-    const { data } = await supabase
-      .from("exhibitors")
-      .select(
-        "id, name, tagline, logo_url, category, booth_number, location_floor, website"
-      )
-      .eq("event_id", EVENT_ID)
-      .order("display_order", { ascending: true })
-      .order("name", { ascending: true });
-    rows = (data as ExhibitorRow[] | null) ?? [];
+    // The floor is the same for everybody; read once and shared.
+    rows = (await getPublicExhibitors()) as unknown as ExhibitorRow[];
   } catch (err) {
     rethrowIfRedirect(err);
   }

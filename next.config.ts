@@ -27,6 +27,16 @@ const nextConfig: NextConfig = {
     ],
   },
   async headers() {
+    // A year, and immutable: these files are replaced by writing a new name,
+    // never by editing one in place, so a shared cache never has to ask
+    // whether its copy is still good.
+    const forever = [
+      {
+        key: "Cache-Control",
+        value: "public, max-age=31536000, s-maxage=31536000, immutable",
+      },
+    ];
+
     return [
       {
         source: "/sw.js",
@@ -39,6 +49,47 @@ const nextConfig: NextConfig = {
         source: "/manifest.json",
         headers: [{ key: "Cache-Control", value: "public, max-age=300" }],
       },
+
+      // Artwork and logos, all of it shipped in the repo and versioned by
+      // filename. /_next/static already carries its own immutable header;
+      // everything under public/ did not.
+      { source: "/empty/:path*", headers: forever },
+      // /ui holds the profile row icons too (public/ui/me). They used to sit
+      // at /me, which is also a signed-in route — one rule would have been
+      // caching the other's pages publicly.
+      { source: "/ui/:path*", headers: forever },
+      { source: "/x/:path*", headers: forever },
+      { source: "/legacy/:path*", headers: forever },
+      { source: "/past-sponsors/:path*", headers: forever },
+      { source: "/logo/:path*", headers: forever },
+      { source: "/iits/:path*", headers: forever },
+      { source: "/sectors/:path*", headers: forever },
+      { source: "/audience/:path*", headers: forever },
+      { source: "/icons/:path*", headers: forever },
+      { source: "/press/:path*", headers: forever },
+      { source: "/carousel/:path*", headers: forever },
+
+      // Everything below is somebody's own screen. Shared caches must not
+      // hold any of it: one delegate's badge, inbox or meeting list handed
+      // to the next visitor would be worse than a slow page.
+      ...[
+        "/me/:path*",
+        "/chat/:path*",
+        "/meetings/:path*",
+        "/recap/:path*",
+        "/scan/:path*",
+        "/admin/:path*",
+        "/onboarding/:path*",
+        "/api/:path*",
+      ].map((source) => ({
+        source,
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "private, no-store, max-age=0, must-revalidate",
+          },
+        ],
+      })),
     ];
   },
 };
