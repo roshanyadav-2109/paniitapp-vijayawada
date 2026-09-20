@@ -98,7 +98,7 @@ export async function TopBar() {
                   </AvatarFallback>
                 </Avatar>
               ) : (
-                <PersonMark className="size-8 shrink-0 text-brand-800" />
+                <PersonMark className="size-8 shrink-0 text-brand-950" />
               )}
               <p className="min-w-0 truncate text-sm font-semibold text-brand-900">
                 Hello, {firstName(name)}{" "}
@@ -151,7 +151,7 @@ export async function TopBar() {
                     </AvatarFallback>
                   </Avatar>
                 ) : (
-                  <PersonMark className="size-8 text-brand-800" />
+                  <PersonMark className="size-8 text-brand-950" />
                 )}
               </Link>
             </div>
@@ -172,7 +172,11 @@ export async function TopBar() {
   );
 }
 
-/** Head and shoulders, drawn open — no disc, no ring behind it. */
+/**
+ * Head and shoulders, solid — no disc and no ring behind it, and filled
+ * rather than stroked: at 32px an outline of this shape reads as a ring with
+ * something inside it, which is the thing it replaced.
+ */
 function PersonMark({ className }: { className?: string }) {
   return (
     <svg
@@ -180,14 +184,10 @@ function PersonMark({ className }: { className?: string }) {
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden
       className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      fill="currentColor"
     >
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4.5 20c0-3.6 3.4-6 7.5-6s7.5 2.4 7.5 6" />
+      <circle cx="12" cy="7.9" r="4.3" />
+      <path d="M12 13.4c-4.3 0-7.7 2.3-7.7 6.2v.6c0 .9.7 1.6 1.6 1.6h12.2c.9 0 1.6-.7 1.6-1.6v-.6c0-3.9-3.4-6.2-7.7-6.2z" />
     </svg>
   );
 }
