@@ -18,6 +18,8 @@ export default async function ChatThreadPage({
   let me: string | null = null;
   let conversationId: string | null = null;
   let peer: PeerSummary | null = null;
+  let meProfile: { id: string; full_name: string | null; photo_url: string | null } | null =
+    null;
   let messages: ChatMessage[] = [];
 
   try {
@@ -29,13 +31,25 @@ export default async function ChatThreadPage({
     me = user.id;
     if (me === peerId) notFound();
 
-    const { data: p } = await supabase
-      .from("profiles")
-      .select("id, full_name, designation, company, photo_url")
-      .eq("id", peerId)
-      .maybeSingle();
+    const [{ data: p }, { data: mine }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, full_name, designation, company, photo_url")
+        .eq("id", peerId)
+        .maybeSingle(),
+      // Your own name and photo: the transcript labels every message with
+      // who wrote it, yours included, so it needs them too.
+      supabase
+        .from("profiles")
+        .select("id, full_name, photo_url")
+        .eq("id", user.id)
+        .maybeSingle(),
+    ]);
     peer = (p as PeerSummary | null) ?? null;
     if (!peer) notFound();
+    meProfile =
+      (mine as { id: string; full_name: string | null; photo_url: string | null } | null) ??
+      null;
 
     const a = me < peerId ? me : peerId;
     const b = me < peerId ? peerId : me;
@@ -73,6 +87,8 @@ export default async function ChatThreadPage({
   return (
     <ConversationView
       me={me!}
+      meName={meProfile?.full_name ?? null}
+      mePhoto={meProfile?.photo_url ?? null}
       peer={peer}
       conversationId={conversationId}
       initialMessages={messages}

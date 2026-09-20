@@ -9,7 +9,7 @@ import {
   useState,
   useTransition,
 } from "react";
-import { ArrowLeft, Check, CheckCheck, Loader2 } from "@/components/icons";
+import { ArrowLeft, Loader2 } from "@/components/icons";
 import { EmptyArt } from "@/components/features/empty-art";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/client";
@@ -40,6 +40,24 @@ function timeShort(iso: string): string {
   });
 }
 
+/**
+ * How long ago, in the fewest words that still say it: "just now" for the
+ * last minute, then minutes, then hours, then the date. Used for when a
+ * message was read, which is a different question from when it was sent.
+ */
+function agoShort(iso: string): string {
+  const secs = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if (secs < 60) return "just now";
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return new Date(iso).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+  });
+}
+
 function dayLabel(iso: string): string {
   const d = new Date(iso);
   const today = new Date();
@@ -64,11 +82,15 @@ function dayLabel(iso: string): string {
 
 export function ConversationView({
   me,
+  meName,
+  mePhoto,
   peer,
   conversationId,
   initialMessages,
 }: {
   me: string;
+  meName: string | null;
+  mePhoto: string | null;
   peer: PeerSummary;
   conversationId: string | null;
   initialMessages: ChatMessage[];
@@ -80,6 +102,11 @@ export function ConversationView({
   const [pending, startTransition] = useTransition();
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  // "Seen just now" is a clock reading, and the server's clock is a second
+  // or two from the browser's — rendered on both sides it is a hydration
+  // mismatch. The relative part appears once, on the client.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const scrollToBottom = useCallback(() => {
     const el = scrollerRef.current;
@@ -223,9 +250,14 @@ export function ConversationView({
   }
 
   return (
-    <div className="-mx-3 flex h-[calc(100svh-3.5rem-72px)] flex-col bg-white sm:-mx-5 lg:mx-auto lg:h-[calc(100vh-7rem)] lg:max-w-3xl lg:rounded-lg lg:border lg:border-rule">
+    // The thread owns the screen. It used to sit inside the app's page
+    // padding under the greeting header and above the bottom bar, which left
+    // the composer below the fold — you had to scroll the page to reach the
+    // box you were trying to type in. Fixed to the viewport, the list is the
+    // only thing that scrolls and the composer is always where you left it.
+    <div className="fixed inset-0 z-50 flex flex-col bg-white">
       {/* Header */}
-      <header className="flex items-center gap-3 border-b border-rule bg-white px-4 py-3 lg:px-5">
+      <header className="flex shrink-0 items-center gap-3 border-b border-rule bg-white px-4 py-3 lg:px-5">
         <Link
           href="/chat"
           aria-label="Back to chats"
@@ -259,7 +291,10 @@ export function ConversationView({
       {/* Message list */}
       <div
         ref={scrollerRef}
-        className="flex-1 overflow-y-auto bg-paper-deep/40 px-3 py-3 sm:px-4"
+        // White, not a tinted ground: with no bubbles on it, a grey field
+        // behind plain text is just a block around the message by another
+        // means.
+        className="flex-1 overflow-y-auto bg-white px-3 py-2 sm:px-4"
       >
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center px-6 text-center">
@@ -272,59 +307,70 @@ export function ConversationView({
           <ul className="flex flex-col gap-1.5">
             {grouped.map((g, gi) => (
               <li key={`g-${gi}`}>
-                <div className="my-2 flex justify-center">
-                  <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-brand-800/70 ring-1 ring-rule">
+                <div className="my-2 flex items-center gap-3">
+                  <span className="h-px flex-1 bg-rule" aria-hidden />
+                  <span className="text-[11px] font-medium text-brand-900/55">
                     {g.day}
                   </span>
+                  <span className="h-px flex-1 bg-rule" aria-hidden />
                 </div>
-                <ul className="flex flex-col gap-1">
-                  {g.items.map((m) => (
-                    <li
-                      key={m.id}
-                      className={cn(
-                        "flex w-full",
-                        m.sender_id === me ? "justify-end" : "justify-start"
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          "max-w-[78%] rounded-2xl px-3 py-2 text-[13px] leading-snug shadow-[0_1px_0_0_rgba(13,9,48,0.04)]",
-                          m.sender_id === me
-                            ? "rounded-br-md bg-brand-800 text-white"
-                            : "rounded-bl-md bg-white text-brand-950 ring-1 ring-rule"
-                        )}
-                      >
-                        <p className="whitespace-pre-line break-words">
-                          {m.body}
-                        </p>
-                        <div
-                          className={cn(
-                            "mt-1 flex items-center justify-end gap-1 pr-0.5 text-[10px]",
-                            m.sender_id === me
-                              ? "text-white/65"
-                              : "text-brand-800/55"
-                          )}
-                        >
-                          <span className="tabular-nums">
-                            {timeShort(m.created_at)}
-                          </span>
-                          {m.sender_id === me ? (
-                            m.read_at ? (
-                              <CheckCheck
-                                className="size-[14px] shrink-0 text-emerald-300"
-                                strokeWidth={2}
-                              />
-                            ) : (
-                              <Check
-                                className="size-[14px] shrink-0"
-                                strokeWidth={2}
-                              />
-                            )
+                {/* One column, not two. Bubbles pushed to opposite sides
+                    make a phone-width thread out of half-width scraps and
+                    hide who is speaking behind a colour; this reads like a
+                    transcript — the same shape for both of you, name and
+                    face on every message. */}
+                <ul className="flex flex-col">
+                  {g.items.map((m) => {
+                    const mine = m.sender_id === me;
+                    const name = mine
+                      ? (meName ?? "You")
+                      : (peer.full_name ?? "Attendee");
+                    const photo = mine ? mePhoto : peer.photo_url;
+                    return (
+                      <li key={m.id} className="flex gap-3 px-1 py-2.5">
+                        {/* Square, and tall enough to stand beside the three
+                            lines it labels: name, message, and the room the
+                            message leaves underneath it. */}
+                        <Avatar className="size-12 shrink-0 rounded-md ring-1 ring-rule">
+                          {photo ? (
+                            <AvatarImage
+                              src={photo}
+                              alt=""
+                              className="rounded-md object-cover"
+                            />
                           ) : null}
+                          <AvatarFallback className="rounded-md bg-paper-deep text-[13px] font-semibold text-brand-800">
+                            {initials(name)}
+                          </AvatarFallback>
+                        </Avatar>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-baseline gap-x-2">
+                            <p className="text-[13.5px] font-semibold leading-tight text-brand-950">
+                              {name}
+                            </p>
+                            {/* Said in words beside the name, rather than one
+                                tick or two in a corner — and separated the
+                                way the rest of the app separates a pair of
+                                facts. */}
+                            <span className="text-[11px] tabular-nums text-brand-900/55">
+                              {!mine
+                                ? timeShort(m.created_at)
+                                : m.read_at
+                                  ? `Seen ${mounted ? agoShort(m.read_at) : ""} | ${timeShort(m.created_at)}`.replace(
+                                      "  ",
+                                      " "
+                                    )
+                                  : `Sent | ${timeShort(m.created_at)}`}
+                            </span>
+                          </div>
+                          <p className="mt-1 whitespace-pre-line break-words text-[14px] leading-6 text-brand-950">
+                            {m.body}
+                          </p>
                         </div>
-                      </div>
-                    </li>
-                  ))}
+                      </li>
+                    );
+                  })}
                 </ul>
               </li>
             ))}
