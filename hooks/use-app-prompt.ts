@@ -41,6 +41,13 @@ export interface AppPromptStatus {
 // treats the app as installable in order to make the flow reviewable.
 const DEV_PREVIEW = process.env.NODE_ENV !== "production";
 
+// The offer does not wait for beforeinstallprompt. That event fires on
+// Chrome's own schedule and never at all on iOS, on desktop Safari, or in an
+// in-app browser — which meant the one screen telling people the app can be
+// installed was invisible to most of them. Anyone not already running it
+// standalone is offered it; where the browser gives us no prompt to fire,
+// the sheet says how to do it by hand.
+
 export function useAppPrompt(): AppPromptStatus {
   const [ready, setReady] = useState(false);
   const [installed, setInstalled] = useState(false);
@@ -80,7 +87,6 @@ export function useAppPrompt(): AppPromptStatus {
     };
   }, []);
 
-  const installable = !!deferred || ios || DEV_PREVIEW;
   const wantsNotifications = permission === "default";
 
   // Notifications are asked for only once the app is installed. In a tab the
@@ -89,7 +95,7 @@ export function useAppPrompt(): AppPromptStatus {
   // either — so a tab gets the install offer or nothing.
   let pending: AppPromptKind | null = null;
   if (!ready) pending = null;
-  else if (!installed) pending = installable ? "install" : null;
+  else if (!installed) pending = "install";
   else if (wantsNotifications) pending = "notifications";
 
   const due = pending && !isSnoozed(pending) ? pending : null;

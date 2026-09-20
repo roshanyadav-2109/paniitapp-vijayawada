@@ -348,30 +348,10 @@ export function NetworkingClient({
         </Sheet>
       </div>
 
-      {/* Role chip row (backend-synced) */}
-      {tab === "people" && roles.length > 0 ? (
-        <div className="-mx-3 mb-4 overflow-x-auto sm:-mx-5 lg:-mx-6">
-          <div className="flex w-max gap-2 px-3 sm:px-5 lg:px-6">
-            <RoleChip
-              active={filters.role === null}
-              onClick={() => setFilters((f) => ({ ...f, role: null }))}
-            >
-              All
-            </RoleChip>
-            {roles.map((r) => (
-              <RoleChip
-                key={r}
-                active={filters.role === r}
-                onClick={() =>
-                  setFilters((f) => ({ ...f, role: f.role === r ? null : r }))
-                }
-              >
-                {roleLabel(r)}
-              </RoleChip>
-            ))}
-          </div>
-        </div>
-      ) : null}
+      {/* The All / Alumni / Speaker chip row is gone: it was a second filter
+          control saying the same thing as the one in the sheet behind the
+          filter mark, and "All" is what the list already shows. Role is
+          still filterable there. */}
 
       {/* No running count. It sat above the list restating what the list
           shows, and on a directory that fills as people register it mostly

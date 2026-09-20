@@ -156,9 +156,10 @@ export function AppPromptSheet({
   const title = isInstall
     ? "Install the summit app"
     : "Turn on notifications";
-  // iOS never fires the install event: Safari installs through the Share
-  // sheet only, so there the prompt has to say how rather than offer a button.
-  const iosOnly = isInstall && !status.deferred && status.ios;
+  // With no prompt to fire — iOS always, and any browser that has not
+  // decided to offer one — the sheet has to say how instead of showing a
+  // button that would do nothing.
+  const byHand = isInstall && !status.deferred;
 
   return (
     <Sheet
@@ -187,15 +188,24 @@ export function AppPromptSheet({
                 {title}
               </SheetTitle>
 
-              {iosOnly ? (
+              {byHand ? (
                 <ol className="mt-3 space-y-1.5 text-[13px] text-brand-950">
-                  <li>1. Tap Share in Safari</li>
-                  <li>2. Tap Add to Home Screen</li>
+                  {status.ios ? (
+                    <>
+                      <li>1. Tap Share in Safari</li>
+                      <li>2. Tap Add to Home Screen</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>1. Open your browser&apos;s menu</li>
+                      <li>2. Tap Install app, or Add to Home screen</li>
+                    </>
+                  )}
                 </ol>
               ) : null}
 
               <div className="mt-4 flex items-center gap-2">
-                {iosOnly ? (
+                {byHand ? (
                   <button
                     type="button"
                     onClick={() => close(false)}

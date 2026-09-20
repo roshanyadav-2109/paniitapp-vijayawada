@@ -53,11 +53,18 @@ export default async function AttendeeProfilePage({
       data: { user },
     } = await supabase.auth.getUser();
 
+    // A delegate's email is for other delegates: anon holds no grant on that
+    // column, and asking for it anyway made the whole row come back empty —
+    // which landed a signed-out visitor on "this page isn't here" for every
+    // attendee in the directory. Ask for it only when there is somebody to
+    // show it to.
+    const columns =
+      "id, full_name, designation, company, role, bio, iit_campus, graduation_year, branch, linkedin_url, twitter_url, interests, asks, offers, photo_url" +
+      (user ? ", email" : "");
+
     const { data } = await supabase
       .from("profiles")
-      .select(
-        "id, full_name, designation, company, role, bio, iit_campus, graduation_year, branch, linkedin_url, twitter_url, interests, asks, offers, photo_url, email",
-      )
+      .select(columns)
       .eq("id", id)
       .maybeSingle();
     profile = (data as ProfileRow | null) ?? null;
