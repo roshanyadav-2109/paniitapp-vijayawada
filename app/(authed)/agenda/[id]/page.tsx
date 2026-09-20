@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Clock, MapPin } from "@/components/icons";
+import { GoogleClock, GoogleMapPin } from "@/components/features/google-glyphs";
 import { LinkedInIcon, XIcon } from "@/components/features/social-icons";
 import { createClient } from "@/lib/supabase/server";
 import { rethrowIfRedirect } from "@/lib/redirect";
@@ -203,7 +203,11 @@ export default async function SessionDetailPage({
     : [];
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-2.5 pb-10 pt-4 sm:px-4 lg:max-w-4xl lg:px-0 lg:pt-7">
+    // Tighter gutters than the rest of the app: this screen is a stack of
+    // cards that each carry their own padding, so the page's own inset was
+    // being spent twice. The tall bottom padding is for the Ask a question
+    // bar, which floats over the end of the page.
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-1.5 pb-32 pt-4 sm:px-3 lg:max-w-4xl lg:px-0 lg:pb-16 lg:pt-7">
       <Card className="border-rule">
         <CardContent className="flex flex-col gap-3 p-3.5">
           <div className="flex flex-wrap items-center gap-1.5">
@@ -242,7 +246,7 @@ export default async function SessionDetailPage({
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-brand-900/85">
             <span className="inline-flex items-center gap-1.5">
-              <Clock className="size-3.5 text-brand-800/65" strokeWidth={1.7} />
+              <GoogleClock className="size-4 shrink-0" />
               <span className="tabular-nums">
                 {rangeIST(session.start_at, session.end_at)}
               </span>
@@ -253,10 +257,7 @@ export default async function SessionDetailPage({
               const floor = venueFloorLabel(v.floor);
               return (
                 <span className="inline-flex items-center gap-1.5">
-                  <MapPin
-                    className="size-3.5 text-brand-800/65"
-                    strokeWidth={1.7}
-                  />
+                  <GoogleMapPin className="size-4 shrink-0" />
                   {v.name}
                   {floor ? (
                     <span className="text-[11px] text-brand-800/55">

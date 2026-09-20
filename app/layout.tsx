@@ -48,6 +48,10 @@ export const metadata: Metadata = {
     title: EVENT_APP_NAME,
   },
   formatDetection: { telephone: false },
+  // Chrome's own version of the apple-mobile-web-app flag above. Next has no
+  // field for it, and without it Android can decide to open an installed
+  // copy in a browser tab with the address bar showing.
+  other: { "mobile-web-app-capable": "yes" },
   // No `icons` block on purpose: an explicit one overrides Next's file
   // convention, and these previously pointed at the PWA tile. app/icon.png and
   // app/apple-icon.png (the PAN IIT mark) are picked up automatically and are

@@ -30,7 +30,13 @@ export function GatePassQr({ token, size = 220 }: { token: string; size?: number
 
   return (
     <div className="flex flex-col items-center">
-      <canvas ref={ref} className="block rounded-md" aria-label="Entry gate pass QR" />
+      {/* Same reason as the badge QR: drawn large, shown at the width the
+          card has, so it cannot push the pass wider than the screen. */}
+      <canvas
+        ref={ref}
+        className="block h-auto w-full max-w-[240px] rounded-md"
+        aria-label="Entry gate pass QR"
+      />
       {err ? <p className="mt-2 text-xs text-iit-500">{err}</p> : null}
     </div>
   );

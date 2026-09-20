@@ -77,7 +77,15 @@ export function MyQr({ token }: { token: string }) {
   return (
     <div className="flex flex-col items-center">
       <div className="rounded-lg border border-rule bg-white p-3 shadow-sm">
-        <canvas ref={ref} className="block" aria-label="Your badge QR" />
+        {/* Drawn at 320px for sharpness, displayed at whatever the dialog
+            has room for. Left at its natural size it was wider than the
+            dialog on a phone, which pushed the panel out and took the text
+            beside it off the edge of the screen. */}
+        <canvas
+          ref={ref}
+          className="block h-auto w-full max-w-[272px]"
+          aria-label="Your badge QR"
+        />
       </div>
       {err ? <p className="mt-3 text-xs text-iit-500">{err}</p> : null}
     </div>

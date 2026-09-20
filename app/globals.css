@@ -66,6 +66,36 @@
   }
 
   /*
+   * The things that give a web page away as a web page.
+   *
+   * A tap that flashes a grey box, a drag that peels the whole view down to
+   * reload it, a long press that offers to copy a button's label, a
+   * horizontal swipe that bounces the page sideways — none of these happen
+   * in an app, and all of them happen in a browser by default.
+   */
+  html {
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    overscroll-behavior-y: none;
+    -webkit-text-size-adjust: 100%;
+  }
+  /* Chrome, not content: the programme, a message and a bio all stay
+     selectable, because copying them is a thing people do. */
+  button,
+  a,
+  [role="button"],
+  nav,
+  header,
+  label,
+  summary {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /*
    * Never smaller than 16px on a phone.
    *
    * Safari zooms the page in when a field it is focusing is under 16px, and

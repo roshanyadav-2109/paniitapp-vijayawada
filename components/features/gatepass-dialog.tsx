@@ -84,7 +84,7 @@ export function GatePassDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm gap-0 overflow-hidden p-0 [&>button]:text-brand-900 [&>button]:opacity-100">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-sm gap-0 overflow-hidden p-0 [&>button]:text-brand-900 [&>button]:opacity-100">
         <DialogHeader className="space-y-0 bg-white px-5 py-4">
           {/* Title/description are required by Radix for screen-reader labels
               but visually we want the logo + "GATE PASS" on a single row. */}

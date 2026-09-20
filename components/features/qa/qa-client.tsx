@@ -649,7 +649,10 @@ function AskBar({
 
   return (
     <>
-      <div className="safe-bottom fixed inset-x-0 bottom-[80px] z-30 mx-auto max-w-2xl px-4 lg:bottom-6">
+      {/* Above the bottom bar, not behind it: the bar is z-40 and 72px tall
+          plus the home indicator, so this sat underneath both. The offset is
+          measured from the same numbers rather than guessed at. */}
+      <div className="fixed inset-x-0 bottom-[calc(72px+env(safe-area-inset-bottom)+12px)] z-40 mx-auto max-w-2xl px-3 lg:bottom-6">
         <button
           type="button"
           onClick={() => setOpen(true)}

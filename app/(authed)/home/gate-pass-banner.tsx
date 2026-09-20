@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { GatePassDialog } from "@/components/features/gatepass-dialog";
 
@@ -17,7 +18,7 @@ import { GatePassDialog } from "@/components/features/gatepass-dialog";
  * navy tiles. The phone's black frame carries itself against it, which it
  * could not do on the near-black this started as.
  */
-export function GatePassBanner() {
+export function GatePassBanner({ signedIn }: { signedIn: boolean }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -28,16 +29,28 @@ export function GatePassBanner() {
             Access Gate Pass QR
           </p>
           <p className="mt-1 text-[12.5px] leading-5 text-brand-950/70">
-            Your entry pass for the venue gate. Have it open when you reach the
-            desk.
+            {signedIn
+              ? "Your entry pass for the venue gate. Have it open when you reach the desk."
+              : "Your badge is issued to your account. Log in to see it."}
           </p>
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className="mt-3 inline-flex h-9 items-center rounded-md bg-brand-800 px-4 text-[13px] font-medium text-white transition-colors hover:bg-brand-900"
-          >
-            Click Here
-          </button>
+          {/* A guest has no pass to open: the button that opened an empty
+              dialog now goes to the door it was asking them through. */}
+          {signedIn ? (
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="mt-3 inline-flex h-9 items-center rounded-md bg-brand-800 px-4 text-[13px] font-medium text-white transition-colors hover:bg-brand-900"
+            >
+              Click Here
+            </button>
+          ) : (
+            <Link
+              href="/login?redirect=%2Fhome"
+              className="mt-3 inline-flex h-9 items-center rounded-md bg-brand-800 px-4 text-[13px] font-medium text-white transition-colors hover:bg-brand-900"
+            >
+              Login
+            </Link>
+          )}
         </div>
 
         {/* The supplied render, cut off its studio background, so what sits

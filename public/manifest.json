@@ -2,15 +2,39 @@
   "name": "PanIIT Andhra Pradesh Summit 2026",
   "short_name": "PanIIT AP 2026",
   "description": "The official event app for the PanIIT Andhra Pradesh Summit 2026 — Andhra's Deeptech Decade, 3 October 2026, Vijayawada.",
-  "start_url": "/",
+  "start_url": "/home",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
-  "background_color": "#ffffff",
+  "background_color": "#EFF3FA",
   "theme_color": "#1B1464",
   "scope": "/",
   "id": "/",
   "lang": "en-IN",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "launch_handler": { "client_mode": "navigate-existing" },
   "categories": ["events", "business", "productivity"],
+  "shortcuts": [
+    {
+      "name": "My QR badge",
+      "short_name": "Badge",
+      "url": "/me/qr",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Agenda",
+      "short_name": "Agenda",
+      "url": "/agenda",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Directory",
+      "short_name": "People",
+      "url": "/attendees",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
   "icons": [
     {
       "src": "/icons/icon-192.png",

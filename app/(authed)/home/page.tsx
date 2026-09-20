@@ -380,7 +380,7 @@ export default async function HomePage() {
       {/* The pass, under the four tiles: it is what you open at the door,
           and the tiles are what you open before you get there. */}
       <section className="px-3 sm:px-5 lg:px-6">
-        <GatePassBanner />
+        <GatePassBanner signedIn={signedIn} />
       </section>
 
       {/* Key guests & speakers */}
