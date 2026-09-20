@@ -58,3 +58,15 @@ paniit-org-*.png
 android/*.keystore
 android/keystore-password.txt
 android/sha256.txt
+
+# native shells
+android/app/build/
+android/.gradle/
+android/build/
+android/*.apk
+android/*.aab
+android/*.idsig
+android/*.keystore
+android/keystore-password.txt
+android/sha256.txt
+ios/
