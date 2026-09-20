@@ -245,7 +245,7 @@ function Composer() {
                   setOptions(next);
                 }}
                 placeholder={`Option ${i + 1}`}
-                className="h-9 flex-1 rounded-md border border-rule px-3 text-[13px] text-brand-950 outline-none placeholder:text-brand-900/40 focus:border-brand-300"
+                className="h-9 w-full min-w-0 flex-1 rounded-md border border-rule px-3 text-[13px] text-brand-950 outline-none placeholder:text-brand-900/40 focus:border-brand-300"
               />
               {options.length > 2 ? (
                 <button
@@ -688,7 +688,11 @@ function Comments({ postId }: { postId: string }) {
             }
           }}
           placeholder="Add a reply…"
-          className="h-9 flex-1 rounded-md border border-rule px-3 text-[13px] text-brand-950 outline-none placeholder:text-brand-900/40 focus:border-brand-300"
+          // min-w-0: a flex item will not shrink below its intrinsic width
+          // without it, and an input's is about twenty characters — so the
+          // row grew wider than the card and pushed the send button off the
+          // edge. More noticeable since inputs went to 16px on phones.
+          className="h-9 w-full min-w-0 flex-1 rounded-md border border-rule px-3 text-[13px] text-brand-950 outline-none placeholder:text-brand-900/40 focus:border-brand-300"
         />
         <button
           type="button"

@@ -141,7 +141,7 @@ export function ChatWindow({
             }}
             placeholder="Type a message..."
             rows={1}
-            className="max-h-32 min-h-[40px] flex-1 resize-none rounded-md border border-rule-strong bg-white px-3 py-2 text-sm leading-6 outline-none focus:border-brand-800 focus:ring-2 focus:ring-rule"
+            className="max-h-32 min-h-[40px] w-full min-w-0 flex-1 resize-none rounded-md border border-rule-strong bg-white px-3 py-2 text-sm leading-6 outline-none focus:border-brand-800 focus:ring-2 focus:ring-rule"
           />
           <button
             type="button"

@@ -55,3 +55,6 @@ paniit-org-*.png
 !logos/*.png
 
 .vercel
+android/*.keystore
+android/keystore-password.txt
+android/sha256.txt
