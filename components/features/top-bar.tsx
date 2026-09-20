@@ -100,7 +100,7 @@ export async function TopBar() {
               ) : (
                 <PersonMark className="size-8 shrink-0 text-brand-950" />
               )}
-              <p className="min-w-0 truncate text-sm font-semibold text-brand-900">
+              <p className="min-w-0 truncate text-[17px] font-semibold text-brand-900">
                 Hello, {firstName(name)}{" "}
                 <span className="inline-block align-[-1px]" aria-hidden>
                   👋
