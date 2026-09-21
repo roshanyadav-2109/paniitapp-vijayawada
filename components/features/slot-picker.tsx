@@ -208,10 +208,13 @@ export function SlotPicker({
         Suggest 3 times for me
       </button>
 
+      {/* Traffic lights rather than shades of the brand: free, awkward,
+          gone. Nobody has to learn what navy means. */}
       <div className="flex flex-wrap items-center gap-3 text-[11px] text-brand-900/60">
-        <LegendDot color="bg-white border border-rule-strong" /> Open
-        <LegendDot color="bg-paper-deep border border-rule" /> Taken
-        <LegendDot color="bg-brand-800" /> Picked
+        <LegendDot color="bg-emerald-100 border border-emerald-400" /> Free
+        <LegendDot color="bg-amber-100 border border-amber-400" /> Clashes
+        <LegendDot color="bg-red-100 border border-red-300" /> Unavailable
+        <LegendDot color="bg-emerald-600 border border-emerald-600" /> Picked
       </div>
 
       <div className="max-h-[360px] space-y-3 overflow-y-auto pr-1">
@@ -241,7 +244,8 @@ export function SlotPicker({
                       "flex h-10 flex-col items-center justify-center rounded-md border text-[11px] font-medium leading-tight tabular-nums transition-colors",
                       pickable
                         ? conflictStyles(c, picked)
-                        : "cursor-not-allowed border-rule bg-paper-deep text-brand-900/45"
+                        // Their time, not yours: red, and not selectable.
+                        : "cursor-not-allowed border-red-200 bg-red-50 text-red-700/70"
                     )}
                   >
                     <span>{slotLabel(s)}</span>
@@ -265,13 +269,17 @@ function LegendDot({ color }: { color: string }) {
 }
 
 function conflictStyles(c: SlotConflict, picked: boolean): string {
-  if (picked) return "bg-brand-800 text-white border-brand-800";
+  // Picked is the green filled in rather than a different colour entirely:
+  // it is the same "this one works", chosen.
+  if (picked) return "bg-emerald-600 text-white border-emerald-600";
   switch (c) {
     case "free":
-      return "bg-white text-brand-900/80 border-rule-strong hover:bg-paper";
+      return "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100";
+    // Something of yours is already here — a session you bookmarked — but it
+    // is yours to give up, so it stays choosable.
     case "soft":
       return "bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100";
     case "hard":
-      return "bg-iit-50 text-iit-700 border-iit-200 opacity-60 cursor-not-allowed";
+      return "bg-red-50 text-red-700 border-red-200 opacity-70 cursor-not-allowed";
   }
 }

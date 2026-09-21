@@ -996,11 +996,11 @@ function AvailabilitySheet({
                           className={cn(
                             "flex min-h-11 flex-col items-center justify-center rounded-md border px-2 py-2 text-[12px] font-semibold leading-tight tabular-nums transition-colors",
                             st === "available" &&
-                              "border-brand-800 bg-brand-800 text-white shadow-sm",
+                              "border-emerald-600 bg-emerald-600 text-white shadow-sm",
                             st === "booked" &&
-                              "cursor-not-allowed border-emerald-300 bg-emerald-50 text-emerald-700",
+                              "cursor-not-allowed border-amber-300 bg-amber-50 text-amber-800",
                             notAvailable &&
-                              "border-rule bg-paper-deep text-brand-900/60 hover:border-brand-300 hover:bg-paper-deep/50",
+                              "border-red-200 bg-red-50 text-red-700/70 hover:border-red-300 hover:bg-red-100/60",
                             isPending && "opacity-60"
                           )}
                         >
@@ -1027,9 +1027,9 @@ function AvailabilitySheet({
 function Legend() {
   return (
     <div className="mb-4 flex flex-wrap gap-3 text-[11px] font-medium text-brand-900/75">
-      <Swatch className="bg-brand-800" label="Available" />
-      <Swatch className="border border-rule bg-paper-deep" label="Not available" />
-      <Swatch className="border border-emerald-300 bg-emerald-50" label="Occupied" />
+      <Swatch className="bg-emerald-600" label="Available" />
+      <Swatch className="border border-red-200 bg-red-50" label="Not available" />
+      <Swatch className="border border-amber-300 bg-amber-50" label="Already booked" />
     </div>
   );
 }
