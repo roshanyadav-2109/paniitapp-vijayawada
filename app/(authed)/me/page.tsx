@@ -292,8 +292,10 @@ function Row({
         <RowIcon name={icon} />
         {label}
       </span>
+      {/* Just the number. A pill made a count of people look like an alert
+          waiting to be cleared, which is not what it is. */}
       {meta ? (
-        <span className="rounded-full bg-paper-deep px-2 py-0.5 text-[11px] font-semibold text-brand-800">
+        <span className="text-[15px] font-normal tabular-nums text-brand-900/60">
           {meta}
         </span>
       ) : null}
