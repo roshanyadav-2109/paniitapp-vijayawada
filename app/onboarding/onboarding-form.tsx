@@ -148,12 +148,22 @@ export function OnboardingForm({
       </div>
 
       {message ? (
-        <p
+        <div
           role="alert"
           className="rounded-md border border-iit-200 bg-iit-50 px-3 py-2 text-sm text-iit-700"
         >
           {message}
-        </p>
+          {/* A dead end otherwise: the session is gone, so the form cannot
+              save and nothing on the page leads anywhere. */}
+          {state && "error" in state && state.error === "unauth" ? (
+            <a
+              href="/login?redirect=%2Fonboarding"
+              className="ml-1 font-semibold underline underline-offset-2"
+            >
+              Sign in
+            </a>
+          ) : null}
+        </div>
       ) : null}
 
       <SubmitButton />

@@ -13,7 +13,13 @@ export default async function OnboardingPage({
   searchParams?: Promise<{ next?: string }>;
 }) {
   const sp = (await searchParams) ?? {};
-  const next = sp.next && sp.next.startsWith("/") ? sp.next : "/home";
+  // Anything pointing back here is refused: this page redirects a completed
+  // profile onward, so /onboarding as the destination is a loop.
+  const asked = sp.next ?? "";
+  const next =
+    asked.startsWith("/") && !asked.startsWith("//") && !asked.startsWith("/onboarding")
+      ? asked
+      : "/home";
 
   const initial: OnboardingInitial = {
     full_name: "",
@@ -32,7 +38,10 @@ export default async function OnboardingPage({
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) redirect(`/?next=${encodeURIComponent(`/onboarding?next=${next}`)}`);
+    // The sign-in page is /login now, and it reads `redirect`, not `next`;
+    // this was sending people to "/" — which redirects to /home — so a
+    // signed-out visitor bounced around instead of being asked to sign in.
+    if (!user) redirect(`/login?redirect=${encodeURIComponent("/onboarding")}`);
 
     const { data } = await supabase
       .from("profiles")

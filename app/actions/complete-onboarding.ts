@@ -88,14 +88,43 @@ export async function completeOnboarding(
     twitter_url: parsed.data.twitter_url || null,
   };
 
+  // Upsert, not update. An update matches nothing when the row is missing —
+  // which happens when the sign-in profile sync failed, since that warns and
+  // carries on — and reports no error either. The form then saved nothing,
+  // sent the person to /home, and the shell bounced them straight back here
+  // for looking incomplete: fill it in, press save, watch the form return.
   const { error } = await supabase
     .from("profiles")
-    .update(update)
-    .eq("id", user.id);
+    .upsert({ id: user.id, email: user.email ?? null, ...update }, { onConflict: "id" });
   if (error) return { error: "db", message: error.message };
+
+  // Read it back before sending them on. If the write somehow did not take,
+  // saying so is better than a redirect into the bounce it used to cause.
+  const { data: saved } = await supabase
+    .from("profiles")
+    .select("full_name, designation, company")
+    .eq("id", user.id)
+    .maybeSingle();
+  const row = saved as {
+    full_name: string | null;
+    designation: string | null;
+    company: string | null;
+  } | null;
+  if (!row?.full_name?.trim() || !row.designation?.trim() || !row.company?.trim()) {
+    return {
+      error: "db",
+      message: "Your details could not be saved. Please try again.",
+    };
+  }
 
   revalidatePath("/me");
   revalidatePath("/home");
-  const safeNext = parsed.data.next.startsWith("/") ? parsed.data.next : "/home";
+  // Never back to this page: /onboarding as the destination is a form that
+  // saves and reopens itself.
+  const wanted = parsed.data.next;
+  const safeNext =
+    wanted.startsWith("/") && !wanted.startsWith("//") && !wanted.startsWith("/onboarding")
+      ? wanted
+      : "/home";
   redirect(safeNext);
 }

@@ -6,6 +6,7 @@ import { isSignedIn } from "@/lib/viewer";
 import { createClient } from "@/lib/supabase/server";
 import { rethrowIfRedirect } from "@/lib/redirect";
 import { devAuthBypass } from "@/lib/dev-auth";
+import { syncProfileForUser } from "@/lib/auth/sync-profile";
 
 export const dynamic = "force-dynamic";
 
@@ -34,11 +35,27 @@ export default async function AuthedLayout({
         .select("full_name, designation, company")
         .eq("id", user.id)
         .maybeSingle();
-      const p = (data as {
+      let p = (data as {
         full_name: string | null;
         designation: string | null;
         company: string | null;
       } | null) ?? null;
+
+      // No row at all is a different thing from an unfinished one, and it
+      // used to be treated the same: bounced to a form that loaded empty,
+      // saved nothing and sent them back here. It happens when the sync at
+      // sign-in failed — it warns and carries on — or when the row is
+      // removed while somebody is still signed in. Rebuild it and continue.
+      if (!p) {
+        await syncProfileForUser(user);
+        const { data: healed } = await supabase
+          .from("profiles")
+          .select("full_name, designation, company")
+          .eq("id", user.id)
+          .maybeSingle();
+        p = (healed as typeof p) ?? null;
+      }
+
       const complete =
         !!p?.full_name?.trim() &&
         !!p?.designation?.trim() &&
