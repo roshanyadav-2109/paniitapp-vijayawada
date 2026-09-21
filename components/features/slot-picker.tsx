@@ -211,7 +211,7 @@ export function SlotPicker({
       {/* Traffic lights rather than shades of the brand: free, awkward,
           gone. Nobody has to learn what navy means. */}
       <div className="flex flex-wrap items-center gap-3 text-[11px] text-brand-900/60">
-        <LegendDot color="bg-emerald-100 border border-emerald-400" /> Free
+        <LegendDot color="bg-white border border-rule-strong" /> Free
         <LegendDot color="bg-amber-100 border border-amber-400" /> Clashes
         <LegendDot color="bg-red-100 border border-red-300" /> Unavailable
         <LegendDot color="bg-emerald-600 border border-emerald-600" /> Picked
@@ -269,12 +269,15 @@ function LegendDot({ color }: { color: string }) {
 }
 
 function conflictStyles(c: SlotConflict, picked: boolean): string {
-  // Picked is the green filled in rather than a different colour entirely:
-  // it is the same "this one works", chosen.
+  // Green is reserved for the one thing you chose, which is the only cell
+  // on the grid that should draw the eye.
   if (picked) return "bg-emerald-600 text-white border-emerald-600";
   switch (c) {
+    // Plain, because it is the ordinary case: most of the grid is free, and
+    // a wall of green says as little as a wall of navy did. The colours are
+    // for the two states worth noticing.
     case "free":
-      return "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100";
+      return "bg-white text-brand-900/80 border-rule-strong hover:bg-paper";
     // Something of yours is already here — a session you bookmarked — but it
     // is yours to give up, so it stays choosable.
     case "soft":
