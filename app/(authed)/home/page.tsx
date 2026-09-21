@@ -393,6 +393,22 @@ export default async function HomePage() {
         </section>
       ) : null}
 
+      {/* The two leaders the summit is held under, above the day. Full
+          bleed to the card's edges and 2:1, the ratio it was made at, so the
+          faces are never cropped out of it on a narrow screen. */}
+      <section className="px-3 sm:px-5 lg:px-6">
+        <div className="overflow-hidden rounded-lg">
+          <Image
+            src="/ui/leadership-banner.webp"
+            alt="Prime Minister Narendra Modi and Chief Minister N. Chandrababu Naidu, with the map of Andhra Pradesh"
+            width={1600}
+            height={800}
+            sizes="(max-width: 1024px) 100vw, 960px"
+            className="h-auto w-full"
+          />
+        </div>
+      </section>
+
       {/*
         Today's calendar. Was a white card containing a stack of smaller white
         cards — a box inside a box, with the border doing the work twice. Now
