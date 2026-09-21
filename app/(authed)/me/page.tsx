@@ -292,10 +292,11 @@ function Row({
         <RowIcon name={icon} />
         {label}
       </span>
-      {/* Just the number. A pill made a count of people look like an alert
-          waiting to be cleared, which is not what it is. */}
+      {/* Just the number, in the IIT red the app already uses for the one
+          thing on a row worth looking at. A pill made a count of people read
+          as an alert waiting to be cleared, which is not what it is. */}
       {meta ? (
-        <span className="text-[15px] font-normal tabular-nums text-brand-900/60">
+        <span className="text-[15px] font-normal tabular-nums text-iit-500">
           {meta}
         </span>
       ) : null}
