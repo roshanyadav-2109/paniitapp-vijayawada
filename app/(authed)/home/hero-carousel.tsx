@@ -10,6 +10,8 @@ const SLIDES: Slide[] = EVENT_HERO_SLIDES;
 const N = SLIDES.length;
 const INTERVAL_MS = 4500;
 const SCROLL_MS = 600;
+/** Quiet time after the last scroll event before the strip moves itself. */
+const IDLE_MS = 2000;
 
 /**
  * Move the scroller without animating it.
@@ -37,10 +39,41 @@ export function HeroCarousel() {
   const [active, setActive] = useState(0);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const lockRef = useRef(false);
+  // Set when the reader's own scrolling is what changed `active`. The effect
+  // below then updates the dots and leaves the scroller alone — scrolling it
+  // back to where the finger already is, which is what it used to do, is the
+  // fight that made the strip judder.
+  const fromUserRef = useRef(false);
+  // True while a finger is down or the strip is still coasting.
+  const busyRef = useRef(false);
+  const idleTimer = useRef<number | null>(null);
 
-  // Auto-advance forward forever.
+  function markBusy() {
+    busyRef.current = true;
+    if (idleTimer.current) window.clearTimeout(idleTimer.current);
+    idleTimer.current = window.setTimeout(() => {
+      busyRef.current = false;
+      idleTimer.current = null;
+      // Left sitting on the phantom clone by hand, put the strip back on the
+      // real first slide without animating, or the next advance would run
+      // the whole way backwards.
+      const el = scrollerRef.current;
+      if (!el) return;
+      setActive((cur) => {
+        if (cur !== N) return cur;
+        const realFirst = el.children[0] as HTMLElement | undefined;
+        if (realFirst) jumpTo(el, realFirst.offsetLeft);
+        fromUserRef.current = true;
+        return 0;
+      });
+    }, IDLE_MS);
+  }
+
+  // Auto-advance forward forever — except while it is being handled. A timer
+  // that fires mid-swipe yanks the strip out from under the finger.
   useEffect(() => {
     const id = window.setInterval(() => {
+      if (busyRef.current) return;
       setActive((cur) => (cur + 1) % (N + 1));
     }, INTERVAL_MS);
     return () => window.clearInterval(id);
@@ -48,6 +81,11 @@ export function HeroCarousel() {
 
   // Smooth-scroll to the active slide, then snap from phantom → real 0.
   useEffect(() => {
+    // The reader put us here; the browser's own snap has already landed it.
+    if (fromUserRef.current) {
+      fromUserRef.current = false;
+      return;
+    }
     const el = scrollerRef.current;
     if (!el) return;
     const child = el.children[active] as HTMLElement | undefined;
@@ -72,6 +110,7 @@ export function HeroCarousel() {
 
   function onScroll() {
     if (lockRef.current) return;
+    markBusy();
     const el = scrollerRef.current;
     if (!el) return;
     const center = el.scrollLeft + el.clientWidth / 2;
@@ -86,7 +125,11 @@ export function HeroCarousel() {
         bestIdx = i;
       }
     });
-    setActive(bestIdx);
+    setActive((cur) => {
+      if (cur === bestIdx) return cur;
+      fromUserRef.current = true;
+      return bestIdx;
+    });
   }
 
   // Render N + 1 slides — last one is a visual clone of slide 0.
@@ -98,6 +141,8 @@ export function HeroCarousel() {
       <div
         ref={scrollerRef}
         onScroll={onScroll}
+        onPointerDown={markBusy}
+        onTouchStart={markBusy}
         // items-center, not the default stretch: slides now differ in height,
         // and a short one left top-aligned hangs in a gap instead of sitting
         // in its own space.
