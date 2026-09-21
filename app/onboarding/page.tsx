@@ -83,7 +83,7 @@ export default async function OnboardingPage({
             Both bodies behind the summit, centred: a single mark pushed to
             one side reads as a masthead, and this screen is a form. */}
         <header className="flex flex-col items-center gap-2 lg:hidden">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center gap-4">
             <Image
               src="/logo/paniit-mark.png"
               alt="PanIIT Alumni India"
@@ -91,6 +91,14 @@ export default async function OnboardingPage({
               height={288}
               priority
               className="h-9 w-auto"
+            />
+            <Image
+              src="/logo/paniit-ap-mark.png"
+              alt={EVENT_SHORT_NAME}
+              width={860}
+              height={720}
+              priority
+              className="h-11 w-auto"
             />
             <Image
               src="/logo/ap-government.webp"
@@ -108,14 +116,22 @@ export default async function OnboardingPage({
 
         <section className="rounded-lg border border-rule bg-white p-5 lg:p-10">
           <div className="hidden flex-col items-center gap-2 lg:flex">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center gap-4">
               <Image
                 src="/logo/paniit-mark.png"
                 alt="PanIIT Alumni India"
                 width={289}
                 height={288}
                 priority
-                className="h-10 w-auto"
+                className="h-9 w-auto lg:h-10"
+              />
+              <Image
+                src="/logo/paniit-ap-mark.png"
+                alt={EVENT_SHORT_NAME}
+                width={860}
+                height={720}
+                priority
+                className="h-11 w-auto lg:h-12"
               />
               <Image
                 src="/logo/ap-government.webp"
@@ -123,7 +139,7 @@ export default async function OnboardingPage({
                 width={384}
                 height={400}
                 priority
-                className="h-11 w-auto"
+                className="h-10 w-auto lg:h-11"
               />
             </div>
             <p className="eyebrow text-brand-800/75">
