@@ -25,3 +25,46 @@ export async function isSignedIn(): Promise<boolean> {
     return false;
   }
 }
+
+export interface Viewer {
+  signedIn: boolean;
+  /** Stable per account, and the key the prompts scope themselves by. */
+  userId: string | null;
+  /** Whether THIS account has a push subscription stored against it. */
+  pushRegistered: boolean;
+}
+
+/**
+ * Who is asking, and whether they are already set up for notifications.
+ *
+ * The subscription question cannot be answered in the browser alone. A push
+ * subscription belongs to the browser, but it is stored against a profile —
+ * so when a second person signs in on a shared phone, the browser still
+ * reports a subscription while their own account has none, and nothing sent
+ * to them would ever arrive. This reads the account's own row.
+ */
+export async function getViewer(): Promise<Viewer> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { signedIn: false, userId: null, pushRegistered: false };
+
+    const { data } = await supabase
+      .from("profiles")
+      .select("push_subscription")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    return {
+      signedIn: true,
+      userId: user.id,
+      pushRegistered: !!(data as { push_subscription: unknown } | null)
+        ?.push_subscription,
+    };
+  } catch (err) {
+    rethrowIfRedirect(err);
+    return { signedIn: false, userId: null, pushRegistered: false };
+  }
+}

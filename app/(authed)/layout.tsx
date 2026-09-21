@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { TopBar } from "@/components/features/top-bar";
 import { BottomNav } from "@/components/features/bottom-nav";
 import { AppPromptSheet } from "@/components/features/app-prompt-sheet";
-import { isSignedIn } from "@/lib/viewer";
+import { getViewer } from "@/lib/viewer";
 import { createClient } from "@/lib/supabase/server";
 import { rethrowIfRedirect } from "@/lib/redirect";
 import { devAuthBypass } from "@/lib/dev-auth";
@@ -71,7 +71,7 @@ export default async function AuthedLayout({
 
 /** The chrome every screen sits in, signed in or not. */
 async function Shell({ children }: { children: React.ReactNode }) {
-  const signedIn = await isSignedIn();
+  const viewer = await getViewer();
   return (
     <div className="min-h-screen bg-paper">
       <TopBar />
@@ -84,7 +84,9 @@ async function Shell({ children }: { children: React.ReactNode }) {
           is public by definition; the private half stays on the server. */}
       <AppPromptSheet
         vapidPublicKey={process.env.VAPID_PUBLIC_KEY ?? null}
-        signedIn={signedIn}
+        signedIn={viewer.signedIn}
+        pushRegistered={viewer.pushRegistered}
+        scope={viewer.userId}
       />
       {/* Nothing floats over the page any more. Chat moved into the header
           beside WhatsApp and the bell; the gate pass is a banner on the home

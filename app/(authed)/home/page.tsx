@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { LoginCta } from "@/components/features/login-cta";
-import { isSignedIn } from "@/lib/viewer";
+import { getViewer } from "@/lib/viewer";
 import Link from "next/link";
 import { emptied } from "@/lib/dev-empty";
 import {
@@ -218,7 +218,8 @@ export default async function HomePage() {
     rethrowIfRedirect(err);
   }
 
-  const signedIn = await isSignedIn();
+  const viewer = await getViewer();
+  const signedIn = viewer.signedIn;
 
   const scaleStats: EventScaleStat[] = [
     exhibitorCount && exhibitorCount > 0
@@ -336,7 +337,11 @@ export default async function HomePage() {
         {/* Outside the card, on the ground under it: install the app, then
             the scale of the event. Both render nothing when they have
             nothing to say, and the margins go with them. */}
-        <AppPromptBanner signedIn={signedIn} />
+        <AppPromptBanner
+          signedIn={signedIn}
+          pushRegistered={viewer.pushRegistered}
+          scope={viewer.userId}
+        />
         <div className="mt-3">
           <EventScale stats={scaleStats} />
         </div>

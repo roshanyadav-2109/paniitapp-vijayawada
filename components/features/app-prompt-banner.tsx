@@ -27,8 +27,20 @@ import { cn } from "@/lib/utils";
  * an interruption and nothing else — and signing in is the thing that has to
  * happen first anyway.
  */
-export function AppPromptBanner({ signedIn }: { signedIn: boolean }) {
-  const { ready, installed, pending } = useAppPrompt(signedIn);
+export function AppPromptBanner({
+  signedIn,
+  pushRegistered,
+  scope,
+}: {
+  signedIn: boolean;
+  pushRegistered: boolean;
+  scope: string | null;
+}) {
+  const { ready, installed, pending } = useAppPrompt({
+    signedIn,
+    pushRegistered,
+    scope,
+  });
   if (!ready) return null;
 
   if (installed && !signedIn) return <LoginCta next="/home" className="mb-2 mt-5" />;

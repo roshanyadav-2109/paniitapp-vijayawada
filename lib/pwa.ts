@@ -46,10 +46,20 @@ const SNOOZE_KEY = "paniit:app-prompt-snooze";
 
 type SnoozeMap = Partial<Record<AppPromptKind, number>>;
 
-function readSnooze(): SnoozeMap {
+/**
+ * One store per account, because a phone is not one person.
+ *
+ * A dismissal used to be remembered for the device: whoever signed in next
+ * inherited somebody else's "Not now" and was never asked.
+ */
+function keyFor(scope?: string | null): string {
+  return scope ? `${SNOOZE_KEY}:${scope}` : SNOOZE_KEY;
+}
+
+function readSnooze(scope?: string | null): SnoozeMap {
   if (typeof window === "undefined") return {};
   try {
-    return JSON.parse(localStorage.getItem(SNOOZE_KEY) ?? "{}") as SnoozeMap;
+    return JSON.parse(localStorage.getItem(keyFor(scope)) ?? "{}") as SnoozeMap;
   } catch {
     // Private windows and blocked site data both throw here; a prompt that
     // reappears is better than one that crashes the page.
@@ -58,17 +68,21 @@ function readSnooze(): SnoozeMap {
 }
 
 /** Dismissed recently enough that we should not ask again yet. */
-export function isSnoozed(kind: AppPromptKind): boolean {
-  const until = readSnooze()[kind];
+export function isSnoozed(kind: AppPromptKind, scope?: string | null): boolean {
+  const until = readSnooze(scope)[kind];
   return typeof until === "number" && Date.now() < until;
 }
 
-export function snooze(kind: AppPromptKind, days: number): void {
+export function snooze(
+  kind: AppPromptKind,
+  days: number,
+  scope?: string | null
+): void {
   if (typeof window === "undefined") return;
   try {
-    const map = readSnooze();
+    const map = readSnooze(scope);
     map[kind] = Date.now() + days * 24 * 60 * 60 * 1000;
-    localStorage.setItem(SNOOZE_KEY, JSON.stringify(map));
+    localStorage.setItem(keyFor(scope), JSON.stringify(map));
   } catch {
     /* see readSnooze */
   }

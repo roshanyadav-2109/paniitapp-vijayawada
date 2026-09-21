@@ -45,14 +45,20 @@ function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
 export function AppPromptSheet({
   vapidPublicKey,
   signedIn,
+  pushRegistered,
+  scope,
 }: {
   vapidPublicKey: string | null;
   /** Nobody is asked for notifications until there is an account to send
       them to; a guest sees the sign-in banner on the home screen instead. */
   signedIn: boolean;
+  /** Whether this account already has a subscription stored. */
+  pushRegistered: boolean;
+  /** Account id: dismissals belong to a person, not to a phone. */
+  scope: string | null;
 }) {
   const { toast } = useToast();
-  const status = useAppPrompt(signedIn);
+  const status = useAppPrompt({ signedIn, pushRegistered, scope });
   const [kind, setKind] = useState<AppPromptKind | null>(null);
   const [busy, setBusy] = useState(false);
   const shown = useRef(false);
@@ -93,10 +99,10 @@ export function AppPromptSheet({
 
   const close = useCallback(
     (dismissed: boolean) => {
-      if (dismissed && kind) snooze(kind, SNOOZE_DAYS[kind]);
+      if (dismissed && kind) snooze(kind, SNOOZE_DAYS[kind], scope);
       setKind(null);
     },
-    [kind]
+    [kind, scope]
   );
 
   async function install() {
@@ -117,6 +123,9 @@ export function AppPromptSheet({
     setBusy(true);
     try {
       if (!("Notification" in window)) return;
+      // Already granted resolves immediately, which is what makes this
+      // usable as a repair for a device that has permission but no
+      // subscription — nothing is asked of the visitor twice.
       const perm = await Notification.requestPermission();
       status.setPermission(perm);
       if (perm !== "granted") {
@@ -136,11 +145,14 @@ export function AppPromptSheet({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
           }));
-        await fetch("/api/push/subscribe", {
+        const res = await fetch("/api/push/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(sub),
         });
+        if (!res.ok) throw new Error("Could not register this device");
+        // The prompt asks until a subscription exists; it does now.
+        status.setSubscribed(true);
       }
       setKind(null);
       toast({ title: "Notifications on" });
@@ -164,6 +176,10 @@ export function AppPromptSheet({
   // decided to offer one — the sheet has to say how instead of showing a
   // button that would do nothing.
   const byHand = isInstall && !status.deferred;
+  // Blocked once is blocked for good as far as the page is concerned: the
+  // browser refuses to ask again, so the only honest thing is to say where
+  // the switch lives.
+  const blocked = !isInstall && status.permission === "denied";
 
   return (
     <Sheet
@@ -192,6 +208,22 @@ export function AppPromptSheet({
                 {title}
               </SheetTitle>
 
+              {blocked ? (
+                <ol className="mt-3 space-y-1.5 text-[13px] text-brand-950">
+                  {status.ios ? (
+                    <>
+                      <li>1. iPhone Settings, then Notifications</li>
+                      <li>2. Find this app and allow them</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>1. Hold the app icon, then App info</li>
+                      <li>2. Notifications, then allow them</li>
+                    </>
+                  )}
+                </ol>
+              ) : null}
+
               {byHand ? (
                 <ol className="mt-3 space-y-1.5 text-[13px] text-brand-950">
                   {status.ios ? (
@@ -209,7 +241,7 @@ export function AppPromptSheet({
               ) : null}
 
               <div className="mt-4 flex items-center gap-2">
-                {byHand ? (
+                {byHand || blocked ? (
                   <button
                     type="button"
                     onClick={() => close(false)}
