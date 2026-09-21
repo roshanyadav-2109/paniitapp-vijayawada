@@ -7,6 +7,7 @@ import {
   completeOnboarding,
   type OnboardingResult,
 } from "@/app/actions/complete-onboarding";
+import { ProfilePhotoUpload } from "@/components/features/profile-photo-upload";
 
 export interface OnboardingInitial {
   full_name: string;
@@ -50,9 +51,14 @@ function errorMessage(state: OnboardingResult | null): string | null {
 export function OnboardingForm({
   initial,
   next,
+  userId,
+  photoUrl,
 }: {
   initial: OnboardingInitial;
   next: string;
+  /** Null only if the session went away between page and render. */
+  userId: string | null;
+  photoUrl: string | null;
 }) {
   const [state, action] = useActionState<OnboardingResult | null, FormData>(
     completeOnboarding,
@@ -63,6 +69,26 @@ export function OnboardingForm({
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="next" value={next} />
+
+      {/* Optional, and outside the form's own submit: the uploader saves the
+          photo the moment it is chosen, so nothing here can fail the way a
+          required field does. Someone who skips it still has a face in the
+          directory — their initials — and can add one later from Edit
+          Profile. */}
+      {userId ? (
+        <div>
+          <Label>Profile photo</Label>
+          <p className="mb-2 text-[11px] text-brand-900/60">
+            Optional. It is what people look for when they are trying to find
+            you in a room.
+          </p>
+          <ProfilePhotoUpload
+            userId={userId}
+            initialPhotoUrl={photoUrl}
+            fallbackName={initial.full_name || null}
+          />
+        </div>
+      ) : null}
 
       <Field
         label="Full name"

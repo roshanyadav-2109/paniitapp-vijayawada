@@ -3,6 +3,7 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { rethrowIfRedirect } from "@/lib/redirect";
 import { OnboardingForm, type OnboardingInitial } from "./onboarding-form";
+import { syncProfileForUser } from "@/lib/auth/sync-profile";
 import { EVENT_SHORT_NAME } from "@/lib/event-config";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,9 @@ export default async function OnboardingPage({
     asked.startsWith("/") && !asked.startsWith("//") && !asked.startsWith("/onboarding")
       ? asked
       : "/home";
+
+  let userId: string | null = null;
+  let photoUrl: string | null = null;
 
   const initial: OnboardingInitial = {
     full_name: "",
@@ -43,13 +47,30 @@ export default async function OnboardingPage({
     // signed-out visitor bounced around instead of being asked to sign in.
     if (!user) redirect(`/login?redirect=${encodeURIComponent("/onboarding")}`);
 
-    const { data } = await supabase
+    userId = user.id;
+
+    let { data } = await supabase
       .from("profiles")
       .select(
-        "full_name, designation, company, iit_campus, graduation_year, branch, bio, linkedin_url, twitter_url"
+        "full_name, designation, company, iit_campus, graduation_year, branch, bio, linkedin_url, twitter_url, photo_url"
       )
       .eq("id", user.id)
       .maybeSingle();
+
+    // The photo upload writes straight to this row, and so does the form.
+    // Build it first if it is missing — the shell does the same, but this
+    // page sits outside the shell, so it has to do its own.
+    if (!data) {
+      await syncProfileForUser(user);
+      ({ data } = await supabase
+        .from("profiles")
+        .select(
+          "full_name, designation, company, iit_campus, graduation_year, branch, bio, linkedin_url, twitter_url, photo_url"
+        )
+        .eq("id", user.id)
+        .maybeSingle());
+    }
+
     if (data) {
       const d = data as Partial<OnboardingInitial>;
       Object.assign(initial, {
@@ -63,6 +84,7 @@ export default async function OnboardingPage({
         linkedin_url: d.linkedin_url ?? "",
         twitter_url: d.twitter_url ?? "",
       });
+      photoUrl = (d as { photo_url?: string | null }).photo_url ?? null;
 
       // Already onboarded — bounce them onward. Gate only on the three
       // mandatory fields the user must fill in to enter the app.
@@ -155,7 +177,12 @@ export default async function OnboardingPage({
           </p>
 
           <div className="mt-5 lg:mt-7">
-            <OnboardingForm initial={initial} next={next} />
+            <OnboardingForm
+              initial={initial}
+              next={next}
+              userId={userId}
+              photoUrl={photoUrl}
+            />
           </div>
         </section>
       </div>
