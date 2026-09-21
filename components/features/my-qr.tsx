@@ -4,42 +4,67 @@ import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 
 const PREFIX = "paniit2026:";
-// Login-card PAN IIT lockup. Local public asset so the canvas can draw it
-// without a CORS taint.
-const QR_LOGO_URL = "/logo/paniit.png";
+// Both bodies behind the summit, drawn into the middle of the code. Local
+// assets so the canvas can read them back without a CORS taint, and both
+// already cut out — the only background either had was the plate this used
+// to draw behind them.
+const QR_LOGOS = ["/logo/paniit-mark.png", "/logo/ap-government.webp"];
 
-function drawCenterLogo(canvas: HTMLCanvasElement, image: HTMLImageElement) {
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(src));
+    img.src = src;
+  });
+}
+
+/**
+ * Draws the marks across the middle of a finished code.
+ *
+ * No plate behind them: the area is cleared to the code's own white, so the
+ * marks sit on the same background as the rest of it and read as part of the
+ * card rather than a sticker on top of one. That clearing is what makes it
+ * safe — modules left under a transparent logo are what confuse a scanner,
+ * and error correction H can rebuild roughly a third of the code, far more
+ * than this takes out.
+ */
+function drawCenterLogos(
+  canvas: HTMLCanvasElement,
+  images: HTMLImageElement[]
+) {
   const ctx = canvas.getContext("2d");
-  if (!ctx) return;
+  if (!ctx || images.length === 0) return;
 
   const size = canvas.width;
-  // The PAN IIT lockup is wider than tall, so the badge cutout is a
-  // rectangle and the image is drawn at its natural aspect ratio inside.
-  const ratio = image.naturalWidth / image.naturalHeight || 2.3;
-  const badgeW = Math.round(size * 0.34);
-  const badgeH = Math.round(badgeW / ratio + badgeW * 0.18);
-  const badgeX = Math.round((size - badgeW) / 2);
-  const badgeY = Math.round((size - badgeH) / 2);
-  const radius = Math.round(Math.min(badgeW, badgeH) * 0.18);
-  const padX = Math.round(badgeW * 0.1);
-  const padY = Math.round(badgeH * 0.18);
-  const innerW = badgeW - padX * 2;
-  const innerH = badgeH - padY * 2;
-  let drawW = innerW;
-  let drawH = innerW / ratio;
-  if (drawH > innerH) {
-    drawH = innerH;
-    drawW = innerH * ratio;
-  }
-  const dx = badgeX + (badgeW - drawW) / 2;
-  const dy = badgeY + (badgeH - drawH) / 2;
+  const targetH = Math.round(size * 0.1);
+  const gap = Math.round(size * 0.022);
+
+  const drawn = images.map((img) => {
+    const ratio = img.naturalWidth / img.naturalHeight || 1;
+    return { img, w: Math.round(targetH * ratio), h: targetH };
+  });
+
+  const totalW =
+    drawn.reduce((sum, d) => sum + d.w, 0) + gap * (drawn.length - 1);
+  const padX = Math.round(size * 0.025);
+  const padY = Math.round(size * 0.022);
 
   ctx.save();
   ctx.fillStyle = "#ffffff";
-  ctx.beginPath();
-  ctx.roundRect(badgeX, badgeY, badgeW, badgeH, radius);
-  ctx.fill();
-  ctx.drawImage(image, dx, dy, drawW, drawH);
+  ctx.fillRect(
+    Math.round((size - totalW) / 2) - padX,
+    Math.round((size - targetH) / 2) - padY,
+    totalW + padX * 2,
+    targetH + padY * 2
+  );
+
+  let x = Math.round((size - totalW) / 2);
+  const y = Math.round((size - targetH) / 2);
+  for (const d of drawn) {
+    ctx.drawImage(d.img, x, y, d.w, d.h);
+    x += d.w + gap;
+  }
   ctx.restore();
 }
 
@@ -67,9 +92,13 @@ export function MyQr({ token }: { token: string }) {
         setErr(null);
         const canvas = ref.current;
         if (!canvas) return;
-        const logo = new Image();
-        logo.onload = () => drawCenterLogo(canvas, logo);
-        logo.src = QR_LOGO_URL;
+        // Both or neither: a half-drawn pair looks like a mistake, and the
+        // code scans perfectly well with nothing in the middle.
+        Promise.all(QR_LOGOS.map(loadImage))
+          .then((imgs) => drawCenterLogos(canvas, imgs))
+          .catch(() => {
+            /* a code without the marks still works */
+          });
       }
     );
   }, [token]);
