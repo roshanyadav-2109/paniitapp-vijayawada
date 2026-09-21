@@ -79,41 +79,61 @@ export default async function OnboardingPage({
   return (
     <main className="min-h-[100svh] bg-paper px-4 py-8 sm:px-6 lg:flex lg:items-center lg:justify-center lg:p-12">
       <div className="mx-auto w-full max-w-xl space-y-6 lg:w-[70vw] lg:max-w-3xl lg:space-y-0">
-        {/* Mobile header — desktop tucks the lockup inside the modal card */}
-        <header className="flex items-center gap-3 lg:hidden">
-          <Image
-            src="/logo/paniit.png"
-            alt="PAN IIT Alumni India"
-            width={512}
-            height={220}
-            priority
-            className="h-8 w-auto"
-          />
-          <div className="h-6 w-px bg-rule" aria-hidden />
+        {/* Mobile header — desktop tucks the lockup inside the modal card.
+            Both bodies behind the summit, centred: a single mark pushed to
+            one side reads as a masthead, and this screen is a form. */}
+        <header className="flex flex-col items-center gap-2 lg:hidden">
+          <div className="flex items-center gap-3">
+            <Image
+              src="/logo/paniit-mark.png"
+              alt="PanIIT Alumni India"
+              width={289}
+              height={288}
+              priority
+              className="h-9 w-auto"
+            />
+            <Image
+              src="/logo/ap-government.webp"
+              alt="Government of Andhra Pradesh"
+              width={384}
+              height={400}
+              priority
+              className="h-10 w-auto"
+            />
+          </div>
           <p className="eyebrow text-brand-800/75">
             {EVENT_SHORT_NAME} | Setup
           </p>
         </header>
 
         <section className="rounded-lg border border-rule bg-white p-5 lg:p-10">
-          <div className="hidden items-center gap-3 lg:flex">
-            <Image
-              src="/logo/paniit.png"
-              alt="PAN IIT Alumni India"
-              width={512}
-              height={220}
-              priority
-              className="h-9 w-auto"
-            />
-            <div className="h-6 w-px bg-rule" aria-hidden />
+          <div className="hidden flex-col items-center gap-2 lg:flex">
+            <div className="flex items-center gap-3">
+              <Image
+                src="/logo/paniit-mark.png"
+                alt="PanIIT Alumni India"
+                width={289}
+                height={288}
+                priority
+                className="h-10 w-auto"
+              />
+              <Image
+                src="/logo/ap-government.webp"
+                alt="Government of Andhra Pradesh"
+                width={384}
+                height={400}
+                priority
+                className="h-11 w-auto"
+              />
+            </div>
             <p className="eyebrow text-brand-800/75">
               {EVENT_SHORT_NAME} | Setup
             </p>
           </div>
-          <h1 className="mt-0 font-display text-2xl font-semibold text-brand-950 lg:mt-6 lg:text-[28px]">
+          <h1 className="mt-5 text-center font-display text-2xl font-semibold text-brand-950 lg:mt-6 lg:text-[28px]">
             Tell us about you
           </h1>
-          <p className="mt-1 text-sm leading-6 text-brand-900/75">
+          <p className="mt-1 text-center text-sm leading-6 text-brand-900/75">
             We&apos;ll show this to other attendees so they can find you in
             the Networking tab. All starred fields are required.
           </p>

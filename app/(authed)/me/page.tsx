@@ -194,6 +194,25 @@ export default async function MePage() {
           </button>
         </form>
       </div>
+
+      {/* The two bodies behind the summit, closing the screen. Centred and
+          last: a footer, not a header — nothing here is tappable. */}
+      <div className="mt-10 flex items-center justify-center gap-3">
+        <Image
+          src="/logo/paniit-mark.png"
+          alt="PanIIT Alumni India"
+          width={289}
+          height={288}
+          className="h-9 w-auto"
+        />
+        <Image
+          src="/logo/ap-government.webp"
+          alt="Government of Andhra Pradesh"
+          width={384}
+          height={400}
+          className="h-10 w-auto"
+        />
+      </div>
     </div>
   );
 }
