@@ -964,7 +964,12 @@ export interface EventPromo {
   href?: string;
 }
 
-export const EVENT_PROMOS: EventPromo[] = [];
+export const EVENT_PROMOS: EventPromo[] = [
+  {
+    src: "/ui/leadership-banner.webp",
+    alt: "Prime Minister Narendra Modi and Chief Minister N. Chandrababu Naidu, with the map of Andhra Pradesh",
+  },
+];
 
 /** Placeholders drawn while EVENT_PROMOS is empty. */
 export const EVENT_PROMO_SLOTS = 3;

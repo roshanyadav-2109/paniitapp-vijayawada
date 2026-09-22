@@ -72,7 +72,14 @@ export function PromoCarousel() {
         const promo = promos[i];
 
         const frame = (
-          <span className="relative block aspect-[16/9] w-full overflow-hidden rounded-lg">
+          <span
+            className={`relative block w-full overflow-hidden rounded-lg ${
+              // Alone it is a banner across the page and can keep its own
+              // shape; in a row they have to agree on one, or the row is a
+              // ragged edge.
+              count === 1 ? "aspect-[2/1]" : "aspect-[16/9]"
+            }`}
+          >
             {promo ? (
               <Image
                 src={promo.src}
@@ -100,7 +107,13 @@ export function PromoCarousel() {
         return (
           <li
             key={promo?.src ?? `slot-${i}`}
-            className="w-[78%] shrink-0 snap-start sm:w-[46%] lg:w-[31%]"
+            // A peek at the next card is what says "these scroll". With one
+            // banner there is no next card, so the peek is just a gap.
+            className={
+              count === 1
+                ? "w-full shrink-0 snap-start"
+                : "w-[78%] shrink-0 snap-start sm:w-[46%] lg:w-[31%]"
+            }
           >
             {promo?.href ? (
               <Link href={promo.href} className="block">
