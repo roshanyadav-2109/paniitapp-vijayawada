@@ -552,6 +552,23 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* The skyline closes the page and stays its last element — anything
+          added later goes above this, never below it. Full-bleed and flush
+          with the foot: the sections' side padding would leave a city
+          floating in the middle of the page, and the container's bottom
+          padding would leave a strip of ground under it. */}
+      <div className="-mb-6 select-none">
+        <Image
+          src="/ui/skyline-footer.webp"
+          alt=""
+          aria-hidden
+          width={1600}
+          height={781}
+          sizes="100vw"
+          className="h-auto w-full"
+        />
+      </div>
     </div>
   );
 }

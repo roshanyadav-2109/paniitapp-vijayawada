@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { CalendarOff } from "@/components/icons";
 import { createClient } from "@/lib/supabase/server";
+import { RealtimeRefresh } from "@/components/features/realtime-refresh";
 import { ChatWindow } from "./chat-window";
 
 interface MeetingRow {
@@ -83,6 +84,12 @@ export default async function MeetingChatPage({
 
   return (
     <div className="flex h-[calc(100vh-8.5rem)] flex-col">
+      {/* The messages have always been live; the meeting itself was not, so
+          an accept or a cancel by the other side left this header stale. */}
+      <RealtimeRefresh
+        channel={`meeting-${meeting.id}`}
+        tables={[{ table: "meetings", filter: `id=eq.${meeting.id}` }]}
+      />
       <header className="border-b border-rule bg-white px-4 py-3">
         <div>
           <h1 className="font-display text-base font-semibold text-brand-900">

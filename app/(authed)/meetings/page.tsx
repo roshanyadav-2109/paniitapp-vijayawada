@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { LoginCta } from "@/components/features/login-cta";
+import { RealtimeRefresh } from "@/components/features/realtime-refresh";
 import { isSignedIn } from "@/lib/viewer";
 import { emptied } from "@/lib/dev-empty";
 import { rethrowIfRedirect } from "@/lib/redirect";
@@ -53,6 +54,18 @@ export default async function MeetingsPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-5 pb-12 pt-5 lg:max-w-4xl lg:pt-8">
+      {/* Your own meetings only: one binding for the ones you asked for,
+          one for the ones asked of you. A request, an acceptance or a
+          decline lands here without the other person telling you. */}
+      {userId ? (
+        <RealtimeRefresh
+          channel={`meetings-${userId}`}
+          tables={[
+            { table: "meetings", filter: `requester_id=eq.${userId}` },
+            { table: "meetings", filter: `invitee_id=eq.${userId}` },
+          ]}
+        />
+      ) : null}
       {!signedIn ? (
         <LoginCta
           next="/meetings"

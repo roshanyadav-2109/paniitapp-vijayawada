@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { LoginCta } from "@/components/features/login-cta";
+import { RealtimeRefresh } from "@/components/features/realtime-refresh";
 import { isSignedIn } from "@/lib/viewer";
 import { emptied } from "@/lib/dev-empty";
 import { rethrowIfRedirect } from "@/lib/redirect";
@@ -86,6 +87,19 @@ export default async function DiscussPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl pt-5 pb-10 lg:pt-8">
+      {/* The feed is everyone's, so it has to move on its own. Likes and
+          votes arrive in bursts, hence the longer quiet period. */}
+      <RealtimeRefresh
+        channel="discuss-feed"
+        quietMs={1500}
+        tables={[
+          { table: "posts" },
+          { table: "post_comments" },
+          { table: "post_likes" },
+          { table: "poll_votes" },
+          { table: "poll_options" },
+        ]}
+      />
       {!signedIn ? (
         <LoginCta
           next="/discuss"

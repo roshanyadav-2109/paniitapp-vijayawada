@@ -3,7 +3,14 @@
 import { EmptyArt } from "@/components/features/empty-art";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import {
   BadgeCheck,
   Camera,
@@ -608,20 +615,49 @@ function Comments({ postId }: { postId: string }) {
   const [pending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement | null>(null);
 
+  const load = useCallback(async () => {
+    const { data } = await supabase
+      .from("post_comments")
+      .select("id, body, created_at, user_id, profiles:user_id(full_name, photo_url)")
+      .eq("post_id", postId)
+      .order("created_at", { ascending: true });
+    return (data as unknown as CommentRow[] | null) ?? [];
+  }, [postId, supabase]);
+
+  // Open replies are a conversation, so they follow the post's comments as
+  // they are written rather than waiting for the next thing you do. The
+  // whole list is re-read instead of the new row being appended: a comment
+  // arrives without its author's name attached, and this is a handful of
+  // rows.
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      const { data } = await supabase
-        .from("post_comments")
-        .select("id, body, created_at, user_id, profiles:user_id(full_name, photo_url)")
-        .eq("post_id", postId)
-        .order("created_at", { ascending: true });
-      if (!cancelled) setRows((data as unknown as CommentRow[] | null) ?? []);
-    })();
+    load().then((r) => {
+      if (!cancelled) setRows(r);
+    });
+
+    const ch = supabase
+      .channel(`post-comments-${postId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "post_comments",
+          filter: `post_id=eq.${postId}`,
+        },
+        () => {
+          load().then((r) => {
+            if (!cancelled) setRows(r);
+          });
+        }
+      )
+      .subscribe();
+
     return () => {
       cancelled = true;
+      supabase.removeChannel(ch);
     };
-  }, [postId, supabase]);
+  }, [postId, supabase, load]);
 
   function submit() {
     const text = body.trim();
@@ -630,12 +666,7 @@ function Comments({ postId }: { postId: string }) {
       const res = await addComment(postId, text);
       if ("error" in res) return;
       setBody("");
-      const { data } = await supabase
-        .from("post_comments")
-        .select("id, body, created_at, user_id, profiles:user_id(full_name, photo_url)")
-        .eq("post_id", postId)
-        .order("created_at", { ascending: true });
-      setRows((data as unknown as CommentRow[] | null) ?? []);
+      setRows(await load());
       router.refresh();
       inputRef.current?.focus();
     });
