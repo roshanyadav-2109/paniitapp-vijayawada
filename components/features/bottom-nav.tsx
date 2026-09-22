@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 // Supplied flat artwork, one icon per tab rather than the linear/bold pair
@@ -20,6 +21,13 @@ const TABS = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  // A tap has to look answered before the page it asks for exists. The tab
+  // you pressed lights up immediately and stays lit until the route it
+  // belongs to is the one you are on — otherwise nothing happens on screen
+  // for as long as the server takes, and the tap reads as missed.
+  const [tapped, setTapped] = useState<string | null>(null);
+  useEffect(() => setTapped(null), [pathname]);
+  const shown = tapped ?? pathname;
 
   return (
     <nav
@@ -32,14 +40,19 @@ export function BottomNav() {
       <ul className="mx-auto grid h-[88px] w-full max-w-2xl grid-cols-6">
         {TABS.map(({ href, label, icon }) => {
           const active =
-            pathname === href ||
-            (href !== "/home" && pathname.startsWith(`${href}/`));
+            shown === href || (href !== "/home" && shown.startsWith(`${href}/`));
           return (
             <li key={href} className="flex">
               <Link
                 href={href}
                 prefetch
-                aria-current={active ? "page" : undefined}
+                onClick={() => setTapped(href)}
+                aria-current={
+                  pathname === href ||
+                  (href !== "/home" && pathname.startsWith(`${href}/`))
+                    ? "page"
+                    : undefined
+                }
                 className={cn(
                   "flex w-full flex-col items-center justify-center gap-1.5 px-0.5 transition-colors",
                   active ? "text-brand-800" : "text-brand-800/45 hover:text-brand-800"
