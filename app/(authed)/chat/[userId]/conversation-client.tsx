@@ -87,6 +87,9 @@ export function ConversationView({
   peer,
   conversationId,
   initialMessages,
+  // Where the arrow goes. The same transcript is reached from the chat list
+  // and from a meeting, and back should mean the way you came in.
+  backHref = "/chat",
 }: {
   me: string;
   meName: string | null;
@@ -94,6 +97,7 @@ export function ConversationView({
   peer: PeerSummary;
   conversationId: string | null;
   initialMessages: ChatMessage[];
+  backHref?: string;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
@@ -292,8 +296,8 @@ export function ConversationView({
       {/* Header */}
       <header className="flex shrink-0 items-center gap-3 border-b border-rule bg-white px-4 py-3 lg:px-5">
         <Link
-          href="/chat"
-          aria-label="Back to chats"
+          href={backHref}
+          aria-label="Back"
           className="inline-grid size-9 place-items-center rounded-full text-brand-800 hover:bg-paper-deep"
         >
           <ArrowLeft className="size-4" strokeWidth={1.7} />
