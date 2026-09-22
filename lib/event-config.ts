@@ -969,6 +969,18 @@ export const EVENT_PROMOS: EventPromo[] = [
     src: "/ui/leadership-banner.webp",
     alt: "Prime Minister Narendra Modi and Chief Minister N. Chandrababu Naidu, with the map of Andhra Pradesh",
   },
+  {
+    src: "/ui/promos/cm-report.webp",
+    alt: "The PanIIT Andhra Pradesh Summit report being presented to Chief Minister N. Chandrababu Naidu",
+  },
+  {
+    src: "/ui/promos/bangalore-summit.webp",
+    alt: "Delegates and volunteers on stage at the PanIIT Bangalore Summit 2026",
+  },
+  {
+    src: "/ui/promos/felicitation.webp",
+    alt: "A speaker being felicitated on stage at a PanIIT Alumni India summit",
+  },
 ];
 
 /** Placeholders drawn while EVENT_PROMOS is empty. */
