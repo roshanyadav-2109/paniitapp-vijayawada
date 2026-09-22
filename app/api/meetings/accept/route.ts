@@ -22,6 +22,7 @@ interface MeetingRow {
   invitee_id: string;
   status: string;
   proposed_slots: unknown;
+  proposed_outside_availability: boolean | null;
 }
 
 interface AvailabilityRow {
@@ -55,7 +56,9 @@ export async function POST(req: Request) {
 
   const { data: meetingData } = await supabase
     .from("meetings")
-    .select("id, requester_id, invitee_id, status, proposed_slots")
+    .select(
+      "id, requester_id, invitee_id, status, proposed_slots, proposed_outside_availability"
+    )
     .eq("id", meeting_id)
     .maybeSingle();
   const meeting = (meetingData as MeetingRow | null) ?? null;
@@ -69,18 +72,46 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "slot_not_proposed" }, { status: 400 });
   }
 
-  const { data: availability, error: availErr } = await supabase
+  // Availability is a constraint you opt into, and it is checked here only
+  // if you did.
+  //
+  // This used to demand a row marked available for the exact slot, full
+  // stop. Almost nobody sets availability — there were five rows across the
+  // whole event — so there was no row to find, and every accept came back
+  // "that slot is no longer free" for a slot nobody had taken. The request
+  // side already allows proposing to someone who has set nothing, and marks
+  // the meeting as proposed outside availability when it does; accepting had
+  // never been taught the same rule.
+  const { count: availCount, error: availCountErr } = await supabase
     .from("availability_slots")
-    .select("slot_start, slot_end, status")
+    .select("slot_start", { count: "exact", head: true })
     .eq("event_id", EVENT_ID)
-    .eq("user_id", user.id)
-    .eq("slot_start", slot.start)
-    .eq("status", "available")
-    .maybeSingle();
-  if (availErr) return NextResponse.json({ error: availErr.message }, { status: 500 });
-  const available = (availability as AvailabilityRow | null) ?? null;
-  if (!available || new Date(available.slot_end).toISOString() !== slot.end) {
-    return NextResponse.json({ error: "slot_not_available" }, { status: 409 });
+    .eq("user_id", user.id);
+  if (availCountErr) {
+    return NextResponse.json({ error: availCountErr.message }, { status: 500 });
+  }
+
+  // Set hours, and a proposal inside them: it has to be one of the free ones.
+  // Set nothing, or a proposal that already knows it falls outside — which
+  // you are answering by choosing this slot — and there is nothing to check.
+  const hasSetAvailability = (availCount ?? 0) > 0;
+  const mustBeAvailable =
+    hasSetAvailability && !meeting.proposed_outside_availability;
+
+  if (mustBeAvailable) {
+    const { data: availability, error: availErr } = await supabase
+      .from("availability_slots")
+      .select("slot_start, slot_end, status")
+      .eq("event_id", EVENT_ID)
+      .eq("user_id", user.id)
+      .eq("slot_start", slot.start)
+      .eq("status", "available")
+      .maybeSingle();
+    if (availErr) return NextResponse.json({ error: availErr.message }, { status: 500 });
+    const available = (availability as AvailabilityRow | null) ?? null;
+    if (!available || new Date(available.slot_end).toISOString() !== slot.end) {
+      return NextResponse.json({ error: "slot_not_available" }, { status: 409 });
+    }
   }
 
   const { data: acceptedMeetings, error: acceptedErr } = await supabase
@@ -102,15 +133,29 @@ export async function POST(req: Request) {
   );
   if (conflict) return NextResponse.json({ error: "slot_occupied" }, { status: 409 });
 
-  // Try the Postgres RPC first (race-condition safe). Fall back to in-app logic.
+  // Try the Postgres RPC first, which takes a lock and so settles two people
+  // accepting the same slot at once. Fall back to a plain update if it is
+  // not installed.
   const { data: rpcData, error: rpcErr } = await supabase.rpc("accept_meeting", {
     p_meeting_id: meeting_id,
     p_slot: slot,
   });
+
   if (!rpcErr) {
-    await markAvailabilityBooked(supabase, user.id, meeting_id, slot.start);
-    await notifyAccepted(meeting.requester_id, user.id, slot.start);
-    return NextResponse.json({ ok: true, via: "rpc", result: rpcData });
+    // The function reports a refusal in its return value, not as an error.
+    // Only the transport failing shows up in rpcErr, so a refused accept
+    // used to be answered with ok: true — the screen said the meeting was
+    // confirmed while the row stayed pending.
+    const result = (rpcData ?? {}) as { success?: boolean; reason?: string };
+    if (result.success === false) {
+      const reason = result.reason ?? "conflict";
+      return NextResponse.json(
+        { error: reason === "slot_conflict" ? "slot_occupied" : reason },
+        { status: reason === "meeting_not_found" ? 404 : 409 }
+      );
+    }
+    await settleAccepted(supabase, meeting, user.id, meeting_id, slot);
+    return NextResponse.json({ ok: true, via: "rpc" });
   }
 
   // Fallback path.
@@ -124,17 +169,44 @@ export async function POST(req: Request) {
   if (updErr || !updated)
     return NextResponse.json({ error: updErr?.message ?? "race" }, { status: 409 });
 
-  await markAvailabilityBooked(supabase, user.id, meeting_id, slot.start);
-
-  const a = meeting.requester_id < meeting.invitee_id ? meeting.requester_id : meeting.invitee_id;
-  const b = meeting.requester_id < meeting.invitee_id ? meeting.invitee_id : meeting.requester_id;
-  await supabase
-    .from("connections")
-    .upsert({ user_a: a, user_b: b }, { onConflict: "user_a,user_b" });
-
-  await notifyAccepted(meeting.requester_id, user.id, slot.start);
+  await settleAccepted(supabase, meeting, user.id, meeting_id, slot);
 
   return NextResponse.json({ ok: true, via: "fallback" });
+}
+
+/**
+ * Everything that follows an accepted meeting, wherever it was accepted.
+ *
+ * The connection in particular only used to be written on the fallback path,
+ * so a meeting accepted through the RPC — which is the path that normally
+ * runs — left the two of them unconnected. Meeting someone is one of the two
+ * ways a connection is meant to be made at all.
+ */
+async function settleAccepted(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  meeting: MeetingRow,
+  userId: string,
+  meetingId: string,
+  slot: { start: string; end: string }
+) {
+  await markAvailabilityBooked(supabase, userId, meetingId, slot.start);
+
+  const a =
+    meeting.requester_id < meeting.invitee_id
+      ? meeting.requester_id
+      : meeting.invitee_id;
+  const b =
+    meeting.requester_id < meeting.invitee_id
+      ? meeting.invitee_id
+      : meeting.requester_id;
+  await supabase
+    .from("connections")
+    .upsert(
+      { user_a: a, user_b: b, source: "meeting" },
+      { onConflict: "user_a,user_b" }
+    );
+
+  await notifyAccepted(meeting.requester_id, userId, slot.start);
 }
 
 /**
