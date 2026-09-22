@@ -297,6 +297,24 @@
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }
+  /* The skyline that closes the home page, pulled down until it meets the
+     navigation bar. Below it sit the column's own 1.5rem and the layout's
+     8rem — the room every page leaves so nothing finishes behind the bar —
+     and the bar is 88px plus whatever the phone reserves for its home
+     indicator. Taking back the difference leaves exactly the bar. */
+  .skyline-foot {
+    /* Important because the column it sits in uses space-y, and that sets
+       margin-bottom: 0 on every child through a selector this cannot
+       outweigh — which is also why the -mb-6 tried here first did nothing
+       at all. */
+    margin-bottom: calc(-4rem + env(safe-area-inset-bottom)) !important;
+  }
+  @media (min-width: 1024px) {
+    .skyline-foot {
+      /* No bar on a desktop, and the layout leaves 3rem instead of 8rem. */
+      margin-bottom: -4.5rem !important;
+    }
+  }
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }

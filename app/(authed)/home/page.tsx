@@ -558,7 +558,13 @@ export default async function HomePage() {
           with the foot: the sections' side padding would leave a city
           floating in the middle of the page, and the container's bottom
           padding would leave a strip of ground under it. */}
-      <div className="-mb-6 select-none">
+      {/* Sized to land on the bar rather than somewhere above it. Below the
+          image sit the column's own 24px and the layout's 128px, which is
+          there so nothing ends up behind the navigation bar — 152px in all,
+          against a bar 88px tall plus whatever the phone reserves for its
+          home indicator. Pulling back the difference leaves exactly the bar,
+          and the city meets it. */}
+      <div className="skyline-foot select-none">
         <Image
           src="/ui/skyline-footer.webp"
           alt=""
