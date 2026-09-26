@@ -369,6 +369,16 @@ export default async function HomePage() {
           <div className="mt-4">
             <KeyParticipantsStrip people={keyPeople} />
           </div>
+          {/* The strip shows one person at a time, which is no way to find
+              somebody in particular; this opens the whole list. */}
+          <div className="mt-4 px-3 sm:px-5 lg:px-6">
+            <Link
+              href="/speakers"
+              className="flex h-11 w-full items-center justify-center rounded-md bg-brand-800 text-[13px] font-semibold text-white transition-colors hover:bg-brand-900"
+            >
+              View all
+            </Link>
+          </div>
         </section>
       ) : null}
 

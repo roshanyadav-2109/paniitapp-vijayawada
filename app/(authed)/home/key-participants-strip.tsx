@@ -104,20 +104,25 @@ export function KeyParticipantsStrip({ people }: { people: Person[] }) {
         </button>
       </div>
 
-      {/* Dots */}
-      <div className="mt-3 flex items-center justify-center gap-1.5">
-        {list.map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            aria-label={`Show participant ${i + 1}`}
-            onClick={() => setIdx(i)}
-            className={`h-1.5 rounded-full transition-all ${
-              i === idx ? "w-5 bg-brand-800" : "w-1.5 bg-brand-200"
-            }`}
-          />
-        ))}
-      </div>
+      {/* One dot a person works for a dozen; at fifty-seven it is a ruler
+          drawn across the page and no dot is big enough to aim at, so past a
+          dozen there is nothing here — the cards rotate, and View all is
+          underneath for anyone looking for a particular face. */}
+      {list.length <= 12 ? (
+        <div className="mt-3 flex items-center justify-center gap-1.5">
+          {list.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              aria-label={`Show participant ${i + 1}`}
+              onClick={() => setIdx(i)}
+              className={`h-1.5 rounded-full transition-all ${
+                i === idx ? "w-5 bg-brand-800" : "w-1.5 bg-brand-200"
+              }`}
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
