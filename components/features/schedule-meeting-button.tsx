@@ -17,11 +17,16 @@ import { useToast } from "@/hooks/use-toast";
 import { SlotPicker } from "./slot-picker";
 import type { Slot } from "@/lib/slots";
 
+// Places in this building, from the convention centre's own floor plans.
+// These were the previous summit's rooms — Investor Lounge, Sponsor Plaza,
+// Mysore Hall foyer — so anyone arranging to meet here was picking a spot
+// in another city's venue.
 const LOCATIONS = [
-  "Investor Lounge",
-  "Sponsor Plaza",
-  "Mysore Hall foyer",
-  "Lobby café",
+  "Entrance Lobby",
+  "Dining Hall",
+  "Lounge North (First floor)",
+  "Lounge South (First floor)",
+  "Waiting Lounge (First floor)",
   "Open — to be confirmed",
 ];
 const CUSTOM_LOCATION = "__custom__";

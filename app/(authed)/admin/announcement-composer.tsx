@@ -67,7 +67,7 @@ export function AnnouncementComposer() {
             id="ann-title"
             value={title}
             onChange={(e) => setTitle(e.target.value.slice(0, 120))}
-            placeholder="Lunch is now open in the Sponsor Plaza"
+            placeholder="Lunch is now open in the Dining Hall"
             className="mt-1"
           />
         </div>
