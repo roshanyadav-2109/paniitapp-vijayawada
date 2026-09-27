@@ -19,11 +19,9 @@ import {
 
 /** One colour per stall zone, so a booth says where it is from across the hall. */
 export const ZONE_COLOR: Record<StallZone, string> = {
-  forecourt: "#F59E0B",
-  dining: "#0EA5E9",
-  "south-corridor": "#10B981",
-  lobby: "#8B5CF6",
-  "north-corridor": "#6366F1",
+  exhibition: "#0EA5E9",
+  "prefunction-1": "#10B981",
+  "prefunction-2": "#8B5CF6",
 };
 
 const WALL = "#FFFFFF";
@@ -31,10 +29,10 @@ const BLOCK = "#C9D1DD";
 const STAGE = "#7A5A3C";
 const EXTERIOR = "#AEB9CA";
 const HALL_WALL = "#9FAFC6";
-const DESK = "#C026D3";
-const BOOTH_BLUE = "#2563EB";
-const CLOSED = "#DC2626";
 const ENTRANCE = "#16A34A";
+const LOOP = "#059669";
+const BLOCKED = "#DC2626";
+const BACKDROP = "#1B1464";
 const SELECTED = "#1B1464";
 
 const BOOTH_H = 2.5;
@@ -99,12 +97,10 @@ function Scene({ occupied, selected, onSelect, focus, resetNonce }: CanvasProps)
           onSelect={onSelect}
         />
       ))}
-      {VENUE_3D.desks.map((d, i) => (
-        <Desk key={`d${i}`} f={d} />
-      ))}
-      <PhotoBooth />
-      <Closures />
-      <Entrance />
+      <Backdrops />
+      <OneWayLoop />
+      <Blocked />
+      <Entrances />
       <Labels />
 
       <OrbitControls
@@ -212,8 +208,9 @@ function Booth({
   onSelect: (code: string | null) => void;
 }) {
   const colour = ZONE_COLOR[stall.zone];
-  const fascia = useFasciaTexture(stall.code, holder, colour);
-  const tag = useTagTexture(stall.code, colour, selected);
+  // The plan and the stall itself say "S14"; the area is what the colour is for.
+  const fascia = useFasciaTexture(stall.label, holder, colour);
+  const tag = useTagTexture(stall.label, colour, selected);
 
   // Work in the booth's own frame: "width" runs along the open front,
   // "depth" runs back from it. A booth facing east or west is the same
@@ -365,90 +362,142 @@ function useTagTexture(code: string, colour: string, selected: boolean) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Registration, photo booth, closures, entrance                       */
+/* Backdrops, the one-way loop, doors                                   */
 /* ------------------------------------------------------------------ */
 
-function Desk({ f }: { f: Footprint }) {
-  return (
-    <group position={[f.x, 0, f.z]}>
-      <mesh position={[0, 0.55, 0]}>
-        <boxGeometry args={[f.w, 1.1, Math.max(0.7, f.d)]} />
-        <meshStandardMaterial color="#FFFFFF" roughness={0.8} />
-      </mesh>
-      <mesh position={[0, 1.13, 0]}>
-        <boxGeometry args={[f.w + 0.1, 0.06, Math.max(0.8, f.d) + 0.1]} />
-        <meshStandardMaterial color={DESK} roughness={0.6} />
-      </mesh>
-    </group>
-  );
-}
+/**
+ * The two 6 m backdrops in the entrance lobby. They face the main doors,
+ * so the printed side is the west one.
+ */
+function Backdrops() {
+  const checks = useMemo(() => canvasTexture(512, 256, (g, w, h) => {
+    const n = 16;
+    const size = w / n;
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < Math.ceil(h / size); j++) {
+        g.fillStyle = (i + j) % 2 ? "#FFFFFF" : BACKDROP;
+        g.fillRect(i * size, j * size, size, size);
+      }
+    }
+  }), []);
+  const media = useMemo(() => canvasTexture(1024, 512, (g, w, h) => {
+    g.fillStyle = BACKDROP;
+    g.fillRect(0, 0, w, h);
+    g.fillStyle = "#FFFFFF";
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.font = "800 96px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+    g.fillText("PanIIT", w / 2, h * 0.36);
+    g.font = "600 44px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+    g.fillText("Andhra Pradesh Summit 2026", w / 2, h * 0.64);
+  }), []);
 
-function PhotoBooth() {
-  const { backdrop, area } = VENUE_3D.photo;
   return (
-    <group>
-      <mesh position={[area.x, 0.03, area.z]}>
-        <boxGeometry args={[area.w, 0.06, area.d]} />
-        <meshStandardMaterial color="#BFDBFE" roughness={1} />
-      </mesh>
-      <mesh position={[backdrop.x, 1.5, backdrop.z]}>
-        <boxGeometry args={[Math.max(0.12, backdrop.w * 0.3), 3.0, backdrop.d]} />
-        <meshStandardMaterial color={BOOTH_BLUE} roughness={0.6} />
-      </mesh>
-    </group>
-  );
-}
-
-function Closures() {
-  return (
-    <group>
-      {VENUE_3D.closed.map((c, i) =>
-        c.kind === "entry-closed" ? (
-          // A barrier across the old west entrance: posts and a red rail.
-          <group key={i} position={[c.x, 0, c.z]}>
-            <mesh position={[0, 0.55, 0]}>
-              <boxGeometry args={[0.18, 0.12, c.d]} />
-              <meshStandardMaterial color={CLOSED} />
-            </mesh>
-            {Array.from({ length: 6 }).map((_, k) => (
-              <mesh key={k} position={[0, 0.5, -c.d / 2 + (k * c.d) / 5]}>
-                <cylinderGeometry args={[0.07, 0.07, 1.0, 10]} />
-                <meshStandardMaterial color="#374151" />
-              </mesh>
-            ))}
-          </group>
-        ) : (
-          <mesh key={i} position={[c.x, 0.3, c.z]}>
-            <boxGeometry args={[c.w, 0.6, Math.max(0.6, c.d)]} />
-            <meshStandardMaterial color={CLOSED} roughness={0.8} transparent opacity={0.8} />
+    <>
+      {VENUE_3D.backdrops.map((b) => {
+        const face = b.kind === "checkered" ? checks : media;
+        return (
+          <mesh key={b.kind} position={[b.x, 1.6, b.z]}>
+            <boxGeometry args={[0.25, 3.2, b.d]} />
+            <meshStandardMaterial attach="material-0" color="#2B2F3A" />
+            {/* -x, toward the doors */}
+            <meshBasicMaterial attach="material-1" map={face} />
+            <meshStandardMaterial attach="material-2" color="#2B2F3A" />
+            <meshStandardMaterial attach="material-3" color="#2B2F3A" />
+            <meshStandardMaterial attach="material-4" color="#2B2F3A" />
+            <meshStandardMaterial attach="material-5" color="#2B2F3A" />
           </mesh>
-        )
-      )}
-    </group>
+        );
+      })}
+    </>
   );
 }
 
-function Entrance() {
-  const e = VENUE_3D.entrance;
+/**
+ * The exhibition's one-way loop, as the drawing sets it out: in along the
+ * south row from S1, round at the east end, back along the north row.
+ */
+function OneWayLoop() {
+  const shape = useMemo(() => arrowShape(), []);
+  const start = VENUE_3D.loopStart;
   return (
-    <group position={[e.x, 0, e.z]}>
-      {[-1, 1].map((side) => (
-        <mesh key={side} position={[(side * e.w) / 2, 2.0, 0]}>
-          <boxGeometry args={[0.35, 4.0, 0.35]} />
-          <meshStandardMaterial color={ENTRANCE} />
+    <>
+      {VENUE_3D.loop.map((a, i) => (
+        <mesh
+          key={i}
+          rotation={[-Math.PI / 2, 0, a.dir === "east" ? -Math.PI / 2 : Math.PI / 2]}
+          position={[a.x, 0.07, a.z]}
+          scale={0.42}
+        >
+          <shapeGeometry args={[shape]} />
+          <meshBasicMaterial color={LOOP} />
         </mesh>
       ))}
-      <mesh position={[0, 4.1, 0]}>
-        <boxGeometry args={[e.w + 0.35, 0.5, 0.4]} />
-        <meshStandardMaterial color={ENTRANCE} />
+      <mesh rotation-x={-Math.PI / 2} position={[start.x, 0.06, start.z]}>
+        <circleGeometry args={[0.9, 28]} />
+        <meshBasicMaterial color={LOOP} />
       </mesh>
-      {/* an arrow on the ground, pointing in */}
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.06, 3.2]}>
-        <shapeGeometry args={[arrowShape()]} />
-        <meshBasicMaterial color={ENTRANCE} />
-      </mesh>
-    </group>
+    </>
   );
+}
+
+/** The doorway the drawing marks as blocked, with stall bays over it. */
+function Blocked() {
+  return (
+    <>
+      {VENUE_3D.blocked.map((b, i) => (
+        <mesh key={i} position={[b.x, 0.5, b.z]}>
+          <boxGeometry args={[b.w, 1.0, 0.3]} />
+          <meshStandardMaterial color={BLOCKED} />
+        </mesh>
+      ))}
+    </>
+  );
+}
+
+const TURN: Record<string, number> = { north: 0, east: -Math.PI / 2, south: Math.PI, west: Math.PI / 2 };
+
+/** An arch over each way in, and an arrow on the ground pointing inside. */
+function Entrances() {
+  const shape = useMemo(() => arrowShape(), []);
+  return (
+    <>
+      {VENUE_3D.entrances.map((e) => (
+        <group key={e.name} position={[e.x, 0, e.z]} rotation-y={TURN[e.facing] + Math.PI}>
+          {[-1, 1].map((side) => (
+            <mesh key={side} position={[(side * e.w) / 2, 2.0, 0]}>
+              <boxGeometry args={[0.35, 4.0, 0.35]} />
+              <meshStandardMaterial color={ENTRANCE} />
+            </mesh>
+          ))}
+          <mesh position={[0, 4.1, 0]}>
+            <boxGeometry args={[e.w + 0.35, 0.5, 0.4]} />
+            <meshStandardMaterial color={ENTRANCE} />
+          </mesh>
+          {/* outside the door, pointing in */}
+          <mesh rotation={[-Math.PI / 2, 0, Math.PI]} position={[0, 0.06, -3.2]}>
+            <shapeGeometry args={[shape]} />
+            <meshBasicMaterial color={ENTRANCE} />
+          </mesh>
+        </group>
+      ))}
+    </>
+  );
+}
+
+function canvasTexture(
+  w: number,
+  h: number,
+  draw: (g: CanvasRenderingContext2D, w: number, h: number) => void
+) {
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  draw(c.getContext("2d")!, w, h);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
 }
 
 function arrowShape() {

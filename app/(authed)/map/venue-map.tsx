@@ -30,11 +30,15 @@ const VenueCanvas = dynamic(() => import("./venue-canvas"), {
 
 /** Kept here rather than imported from the canvas, so the page does not pull three.js in to colour a legend. */
 const ZONE_COLOR: Record<StallZone, string> = {
-  forecourt: "#F59E0B",
-  dining: "#0EA5E9",
-  "south-corridor": "#10B981",
-  lobby: "#8B5CF6",
-  "north-corridor": "#6366F1",
+  exhibition: "#0EA5E9",
+  "prefunction-1": "#10B981",
+  "prefunction-2": "#8B5CF6",
+};
+
+const ZONE_SHORT: Record<StallZone, string> = {
+  exhibition: "Exhibition",
+  "prefunction-1": "Pre-function 1",
+  "prefunction-2": "Pre-function 2",
 };
 
 export interface Occupant {
@@ -45,7 +49,18 @@ export interface Occupant {
   href: string;
 }
 
+/**
+ * A stall's code from however somebody typed or stored it: "EX-S14",
+ * "ex s14", "PF1 3", "pf1-s3". Returns null for a bare number, which is
+ * ambiguous — every area numbers its own stalls from S1.
+ */
 function normaliseCode(raw: string): string | null {
+  const m = raw.trim().toUpperCase().replace(/\s+/g, " ").match(/^(EX|PF1|PF2)[\s-]*S?\s*(\d{1,2})$/);
+  return m ? `${m[1]}-S${Number(m[2])}` : null;
+}
+
+/** "14" or "S14", matched against every area. */
+function bareNumber(raw: string): string | null {
   const m = raw.trim().toUpperCase().match(/^S?\s*(\d{1,2})$/);
   return m ? `S${Number(m[1])}` : null;
 }
@@ -76,15 +91,16 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
     const q = query.trim().toLowerCase();
     if (!q) return [];
     const code = normaliseCode(query);
+    const bare = bareNumber(query);
     const out: { code: string; label: string; sub: string }[] = [];
     for (const s of STALLS) {
       const holder = byCode[s.code];
-      const hitCode = code === s.code;
+      const hitCode = code === s.code || bare === s.label;
       const hitName = holder?.name.toLowerCase().includes(q);
       if (hitCode || hitName) {
         out.push({
           code: s.code,
-          label: holder ? `${s.code} · ${holder.name}` : s.code,
+          label: holder ? `${s.label} · ${holder.name}` : s.label,
           sub: ZONE_NAMES[s.zone],
         });
       }
@@ -167,17 +183,17 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
               className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold text-brand-900 shadow-sm"
             >
               <span className="size-2.5 rounded-sm" style={{ background: ZONE_COLOR[z] }} />
-              {ZONE_NAMES[z].split(",")[0]}
+              {ZONE_SHORT[z]}
             </span>
           ))}
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold text-brand-900 shadow-sm">
-            <span className="size-2.5 rounded-sm bg-[#C026D3]" /> Registration
-          </span>
           <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold text-brand-900 shadow-sm">
             <span className="size-2.5 rounded-sm bg-[#16A34A]" /> Entrance
           </span>
           <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold text-brand-900 shadow-sm">
-            <span className="size-2.5 rounded-sm bg-[#DC2626]" /> Closed
+            <span className="size-2.5 rounded-sm bg-[#059669]" /> One-way loop
+          </span>
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold text-brand-900 shadow-sm">
+            <span className="size-2.5 rounded-sm bg-[#1B1464]" /> Backdrop
           </span>
         </div>
       </div>
@@ -197,13 +213,13 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
                     className="inline-grid h-7 min-w-9 place-items-center rounded-md px-2 text-[13px] font-bold text-white"
                     style={{ background: ZONE_COLOR[stall.zone] }}
                   >
-                    {stall.code}
+                    {stall.label}
                   </span>
                   {holder ? holder.name : "Available"}
                 </SheetTitle>
                 <SheetDescription className="flex items-center gap-1.5">
                   <MapPin className="size-3.5" strokeWidth={1.8} />
-                  {ZONE_NAMES[stall.zone]} · 3 m × 2 m
+                  {ZONE_NAMES[stall.zone]} · 3 m × 2 m · {stall.code}
                 </SheetDescription>
               </SheetHeader>
 
