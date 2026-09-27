@@ -1,11 +1,7 @@
 export default function MapLoading() {
   return (
-    <div className="mx-auto w-full max-w-3xl pt-5 pb-10 lg:pt-8">
-      <div className="mb-4">
-        <div className="h-7 w-20 animate-pulse rounded bg-paper-deep" />
-        <div className="mt-2 h-4 w-64 animate-pulse rounded bg-paper-deep" />
-      </div>
-      <div className="h-[380px] animate-pulse rounded-lg border border-rule bg-paper-deep" />
+    <div className="pb-6 pt-2 lg:pt-6">
+      <div className="-mx-3 -mt-2 h-[74dvh] min-h-[440px] animate-pulse bg-[#EAF0F7] sm:-mx-5 lg:mx-0 lg:mt-0 lg:h-[78vh] lg:rounded-lg" />
     </div>
   );
 }

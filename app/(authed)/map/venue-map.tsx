@@ -1,0 +1,255 @@
+"use client";
+
+import dynamic from "next/dynamic";
+import Image from "next/image";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { RotateCcw } from "lucide-react";
+import { Loader2, MapPin, Search } from "@/components/icons";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { STALLS, ZONE_NAMES, type StallZone } from "@/lib/venue-3d";
+
+// three.js is most of a megabyte. It loads on this page and nowhere else,
+// and only in the browser — there is nothing to render on the server.
+const VenueCanvas = dynamic(() => import("./venue-canvas"), {
+  ssr: false,
+  loading: () => (
+    <div className="grid h-full w-full place-items-center bg-[#EAF0F7]">
+      <span className="inline-flex items-center gap-2 text-[13px] font-medium text-brand-900/60">
+        <Loader2 className="size-4 animate-spin" /> Building the venue…
+      </span>
+    </div>
+  ),
+});
+
+/** Kept here rather than imported from the canvas, so the page does not pull three.js in to colour a legend. */
+const ZONE_COLOR: Record<StallZone, string> = {
+  forecourt: "#F59E0B",
+  dining: "#0EA5E9",
+  "south-corridor": "#10B981",
+  lobby: "#8B5CF6",
+  "north-corridor": "#6366F1",
+};
+
+export interface Occupant {
+  code: string;
+  name: string;
+  logo_url: string | null;
+  category: string | null;
+  href: string;
+}
+
+function normaliseCode(raw: string): string | null {
+  const m = raw.trim().toUpperCase().match(/^S?\s*(\d{1,2})$/);
+  return m ? `S${Number(m[1])}` : null;
+}
+
+export function VenueMap({ occupants }: { occupants: Occupant[] }) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const [focus, setFocus] = useState<{ code: string; nonce: number } | null>(null);
+  const [resetNonce, setResetNonce] = useState(0);
+  const [query, setQuery] = useState("");
+
+  const byCode = useMemo(() => {
+    const m: Record<string, Occupant> = {};
+    for (const o of occupants) {
+      const code = normaliseCode(o.code);
+      if (code) m[code] = { ...o, code };
+    }
+    return m;
+  }, [occupants]);
+
+  const occupied = useMemo(
+    () => Object.fromEntries(Object.values(byCode).map((o) => [o.code, o.name])),
+    [byCode]
+  );
+
+  const booked = Object.keys(occupied).length;
+
+  const matches = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    const code = normaliseCode(query);
+    const out: { code: string; label: string; sub: string }[] = [];
+    for (const s of STALLS) {
+      const holder = byCode[s.code];
+      const hitCode = code === s.code;
+      const hitName = holder?.name.toLowerCase().includes(q);
+      if (hitCode || hitName) {
+        out.push({
+          code: s.code,
+          label: holder ? `${s.code} · ${holder.name}` : s.code,
+          sub: ZONE_NAMES[s.zone],
+        });
+      }
+    }
+    return out.slice(0, 6);
+  }, [query, byCode]);
+
+  function go(code: string) {
+    setQuery("");
+    setSelected(code);
+    setFocus({ code, nonce: Date.now() });
+  }
+
+  const stall = selected ? STALLS.find((s) => s.code === selected) : undefined;
+  const holder = selected ? byCode[selected] : undefined;
+
+  return (
+    // Edge to edge on a phone: the page's side padding is taken back so the
+    // building gets the whole width, and the controls sit on the canvas
+    // rather than above it.
+    <div className="-mx-3 -mt-2 sm:-mx-5 lg:mx-0 lg:mt-0">
+      <div className="relative h-[74dvh] min-h-[440px] w-full overflow-hidden bg-[#EAF0F7] lg:h-[78vh] lg:rounded-lg lg:ring-1 lg:ring-rule">
+        <VenueCanvas
+          occupied={occupied}
+          selected={selected}
+          onSelect={setSelected}
+          focus={focus}
+          resetNonce={resetNonce}
+        />
+
+        {/* search */}
+        <div className="absolute inset-x-3 top-3 z-10 flex gap-2 sm:left-4 sm:right-auto sm:w-[340px]">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-brand-900/45" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Find a stall or a company"
+              className="h-10 w-full min-w-0 rounded-full border border-white/70 bg-white/95 pl-9 pr-3 text-[16px] text-brand-950 shadow-[0_4px_14px_rgba(15,23,42,0.12)] outline-none placeholder:text-brand-900/45 focus:border-brand-300 sm:text-[14px]"
+            />
+            {matches.length > 0 ? (
+              <ul className="absolute inset-x-0 top-11 overflow-hidden rounded-xl border border-rule bg-white shadow-lg">
+                {matches.map((m) => (
+                  <li key={m.code}>
+                    <button
+                      type="button"
+                      onClick={() => go(m.code)}
+                      className="flex w-full flex-col items-start px-3.5 py-2 text-left hover:bg-paper"
+                    >
+                      <span className="text-[13px] font-semibold text-brand-950">{m.label}</span>
+                      <span className="text-[11px] text-brand-900/60">{m.sub}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : query.trim() ? (
+              <p className="absolute inset-x-0 top-11 rounded-xl border border-rule bg-white px-3.5 py-2 text-[12px] text-brand-900/60 shadow-lg">
+                No stall or company by that name.
+              </p>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setSelected(null);
+              setResetNonce((n) => n + 1);
+            }}
+            aria-label="Show the whole venue"
+            className="grid size-10 shrink-0 place-items-center rounded-full border border-white/70 bg-white/95 text-brand-800 shadow-[0_4px_14px_rgba(15,23,42,0.12)]"
+          >
+            <RotateCcw className="size-4" strokeWidth={1.8} />
+          </button>
+        </div>
+
+        {/* legend */}
+        <div className="no-scrollbar absolute inset-x-0 bottom-2 z-10 flex gap-1.5 overflow-x-auto px-3">
+          {(Object.keys(ZONE_COLOR) as StallZone[]).map((z) => (
+            <span
+              key={z}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold text-brand-900 shadow-sm"
+            >
+              <span className="size-2.5 rounded-sm" style={{ background: ZONE_COLOR[z] }} />
+              {ZONE_NAMES[z].split(",")[0]}
+            </span>
+          ))}
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold text-brand-900 shadow-sm">
+            <span className="size-2.5 rounded-sm bg-[#C026D3]" /> Registration
+          </span>
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold text-brand-900 shadow-sm">
+            <span className="size-2.5 rounded-sm bg-[#16A34A]" /> Entrance
+          </span>
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold text-brand-900 shadow-sm">
+            <span className="size-2.5 rounded-sm bg-[#DC2626]" /> Closed
+          </span>
+        </div>
+      </div>
+
+      <p className="px-3 pt-2 text-[12px] leading-5 text-brand-900/60 sm:px-5 lg:px-0">
+        {STALLS.length} stalls, 3 m × 2 m · {booked} allocated. Drag to turn, pinch to zoom,
+        tap a stall to see who is in it.
+      </p>
+
+      <Sheet open={!!stall} onOpenChange={(o) => !o && setSelected(null)}>
+        <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
+          {stall ? (
+            <>
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  <span
+                    className="inline-grid h-7 min-w-9 place-items-center rounded-md px-2 text-[13px] font-bold text-white"
+                    style={{ background: ZONE_COLOR[stall.zone] }}
+                  >
+                    {stall.code}
+                  </span>
+                  {holder ? holder.name : "Available"}
+                </SheetTitle>
+                <SheetDescription className="flex items-center gap-1.5">
+                  <MapPin className="size-3.5" strokeWidth={1.8} />
+                  {ZONE_NAMES[stall.zone]} · 3 m × 2 m
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="mt-4 pb-4">
+                {holder ? (
+                  <Link
+                    href={holder.href}
+                    className="flex items-center gap-3 rounded-lg border border-rule bg-white p-3 transition-colors hover:bg-paper"
+                  >
+                    <span className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-md bg-paper-deep">
+                      {holder.logo_url ? (
+                        <Image
+                          src={holder.logo_url}
+                          alt={holder.name}
+                          fill
+                          sizes="48px"
+                          className="object-contain p-1"
+                        />
+                      ) : (
+                        <span className="text-[13px] font-bold text-brand-800">
+                          {holder.name.slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-[14px] font-semibold text-brand-950">
+                        {holder.name}
+                      </span>
+                      {holder.category ? (
+                        <span className="block truncate text-[12px] text-brand-900/60">
+                          {holder.category}
+                        </span>
+                      ) : null}
+                    </span>
+                  </Link>
+                ) : (
+                  <p className="text-[13px] leading-5 text-brand-900/65">
+                    Nobody has been allocated this stall yet.
+                  </p>
+                )}
+              </div>
+            </>
+          ) : null}
+        </SheetContent>
+      </Sheet>
+    </div>
+  );
+}
+

@@ -90,6 +90,33 @@ export const getPublicExhibitors = unstable_cache(
   { revalidate: FIVE_MINUTES, tags: ["exhibitors"] }
 );
 
+/**
+ * Sponsors that hold a stall, for the venue map. Only the columns guests
+ * are granted: a booth's QR token and redeem code are what make the booth
+ * worth visiting, so they never leave the server.
+ */
+export interface PublicSponsorBooth {
+  id: string;
+  name: string;
+  tier: string | null;
+  logo_url: string | null;
+  booth_number: string | null;
+}
+
+export const getPublicSponsorBooths = unstable_cache(
+  async (): Promise<PublicSponsorBooth[]> => {
+    const supabase = createPublicClient();
+    const { data } = await supabase
+      .from("sponsors")
+      .select("id, name, tier, logo_url, booth_number")
+      .eq("event_id", EVENT_ID)
+      .not("booth_number", "is", null);
+    return (data as PublicSponsorBooth[] | null) ?? [];
+  },
+  ["public-sponsor-booths", EVENT_ID],
+  { revalidate: FIVE_MINUTES, tags: ["sponsors"] }
+);
+
 export const getPublicExhibitorCount = unstable_cache(
   async (): Promise<number> => {
     const supabase = createPublicClient();
