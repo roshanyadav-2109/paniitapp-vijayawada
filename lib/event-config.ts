@@ -26,9 +26,17 @@ export const EVENT_SUBTAGLINE = "Swarna Andhra to Viksit Bharat 2047";
  * this date. Changing it moves every generated availability slot.
  */
 export const EVENT_DATE_ISO = "2026-10-03";
-export const EVENT_DATE_LABEL = "3 October 2026 · all times IST";
+export const EVENT_DATE_LABEL = "2–3 October 2026 · all times IST";
+/**
+ * The summit day itself, which is not the same as the summit's dates: the
+ * Friday is the Chief Minister's gala dinner for invited guests, and the
+ * programme, the meetings and the availability grid all run on the
+ * Saturday. Anything that asks somebody to pick a time uses this one.
+ */
 export const EVENT_DATE_TEXT = "October 3, 2026";
-export const EVENT_DATE_STAT = { value: "3 Oct", hint: "2026" };
+/** Both days, for the places that name the summit rather than a slot. */
+export const EVENT_DATES_TEXT = "October 2–3, 2026";
+export const EVENT_DATE_STAT = { value: "2–3 Oct", hint: "2026" };
 
 export const EVENT_VENUE =
   "Dr. B. R. Ambedkar Kala Vedika, Buckingham Peta, Vijayawada";

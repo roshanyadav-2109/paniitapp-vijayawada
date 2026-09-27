@@ -8,7 +8,7 @@ import {
   EVENT_ATTENDEE_COUNT,
   EVENT_CITY,
   EVENT_DATE_STAT,
-  EVENT_DATE_TEXT,
+  EVENT_DATES_TEXT,
   EVENT_SHORT_NAME,
   EVENT_TAGLINE,
   EVENT_VENUE_STAT,
@@ -87,7 +87,7 @@ export default async function SignInPage() {
                 {EVENT_TAGLINE}
               </p>
               <p className="mt-0.5 text-[10px] font-medium text-brand-800/80">
-                {EVENT_DATE_TEXT} | {EVENT_CITY}
+                {EVENT_DATES_TEXT} | {EVENT_CITY}
               </p>
             </div>
           </div>

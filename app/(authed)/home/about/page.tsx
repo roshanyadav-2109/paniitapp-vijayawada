@@ -4,7 +4,7 @@ import {
   EVENT_AUDIENCE,
   EVENT_CITY,
   EVENT_CONTACTS,
-  EVENT_DATE_TEXT,
+  EVENT_DATES_TEXT,
   EVENT_FOCUS_AREAS,
   EVENT_HIGHLIGHTS,
   EVENT_MEDIA,
@@ -63,11 +63,11 @@ export default function AboutSummitPage() {
         </h1>
         <p className="eyebrow mt-1.5 text-brand-800/75">{EVENT_SUBTAGLINE}</p>
         <p className="mt-4 max-w-[62ch] text-[15px] leading-[1.75] text-brand-900/85">
-          The {EVENT_NAME} brings the technology community together for a single
-          day of focused work across {EVENT_FOCUS_AREAS}. Aligned with Swarna
+          The {EVENT_NAME} brings the technology community together for two
+          days of focused work across {EVENT_FOCUS_AREAS}. Aligned with Swarna
           Andhra 2047 and Viksit Bharat 2047, alumni, founders, investors and
           policy makers from all 23 IIT campuses converge in {EVENT_CITY} on{" "}
-          {EVENT_DATE_TEXT}.
+          {EVENT_DATES_TEXT}.
         </p>
 
         {/* Sits between the paragraph and the link rather than under the

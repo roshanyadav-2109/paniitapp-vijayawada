@@ -21,6 +21,7 @@ import { PromoCarousel } from "@/components/features/promo-carousel";
 import { AgendaRealtime } from "@/components/features/agenda-realtime";
 import { getPublicSessions } from "@/lib/public-data";
 import Link from "next/link";
+import { dayIST } from "@/lib/date";
 
 export const dynamic = "force-dynamic";
 
@@ -117,6 +118,10 @@ export default async function AgendaPage({
       .values(),
   ).sort((a, b) => a.label.localeCompare(b.label));
 
+  // Does the programme span more than one day? If it does, every day gets a
+  // heading, including the first.
+  const multiDay = new Set(filtered.map((s) => dayIST(s.start_at))).size > 1;
+
 
   return (
     /* No page title and no date-and-venue line. The tab is called Agenda in
@@ -176,15 +181,29 @@ export default async function AgendaPage({
         <>
           <ul className="flex flex-col gap-2">
             {(signedIn ? filtered : filtered.slice(0, GUEST_PREVIEW)).map(
-              (s) => (
-                <li key={s.id}>
-                  <SessionCard
-                    session={s}
-                    bookmarked={bookmarkSet.has(s.id)}
-                    userInterests={userInterests}
-                  />
-                </li>
-              )
+              (s, i, shown) => {
+                // The summit is two days now — the Chief Minister's gala
+                // dinner on the Friday, everything else on the Saturday —
+                // and a card only prints a time. Without a line saying which
+                // day, 7pm Friday reads as 7pm Saturday. It appears only
+                // when the list actually spans more than one.
+                const day = dayIST(s.start_at);
+                const newDay = i === 0 ? multiDay : day !== dayIST(shown[i - 1].start_at);
+                return (
+                  <li key={s.id}>
+                    {newDay ? (
+                      <p className="mb-2 mt-4 text-[12px] font-semibold uppercase tracking-[0.08em] text-brand-900/55 first:mt-0">
+                        {day}
+                      </p>
+                    ) : null}
+                    <SessionCard
+                      session={s}
+                      bookmarked={bookmarkSet.has(s.id)}
+                      userInterests={userInterests}
+                    />
+                  </li>
+                );
+              }
             )}
           </ul>
 
