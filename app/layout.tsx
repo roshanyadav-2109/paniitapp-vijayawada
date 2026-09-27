@@ -97,15 +97,32 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         {children}
         <Toaster />
+        {/* Production only. In development Next serves its chunks at URLs
+            that never change between edits, so a registered worker hands
+            back yesterday's code from its cache and every change looks as
+            if it did nothing. A worker left over from an earlier session is
+            removed instead. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `
+            __html:
+              process.env.NODE_ENV === "production"
+                ? `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function () {
                   navigator.serviceWorker
                     .register('/sw.js', { scope: '/' })
                     .catch(function (err) { console.warn('SW registration failed', err); });
                 });
+              }
+            `
+                : `
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function (rs) {
+                  rs.forEach(function (r) { r.unregister(); });
+                });
+                if (window.caches) {
+                  caches.keys().then(function (ks) { ks.forEach(function (k) { caches.delete(k); }); });
+                }
               }
             `,
           }}
