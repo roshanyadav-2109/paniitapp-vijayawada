@@ -1,8 +1,7 @@
 /**
- * Generated from page 3 of the NICC project brief ("Event & Exhibition Stall
- * Layout") by scripts/build_venue3d.py — edit the drawing or the script, not
- * this file. Coordinates are metres from the middle of the drawing: x runs
- * east, z runs south.
+ * Generated from the NICC project brief by scripts/build_venue3d.py — edit
+ * the drawings or the script, not this file. Metres from the middle of the
+ * building: x runs east, z runs south.
  */
 
 export interface Footprint {
@@ -24,14 +23,24 @@ export interface Stall extends Footprint {
   facing: "north" | "south" | "east" | "west";
 }
 
+export type FloorKey = "basement" | "ground" | "first";
+
+/** Bottom to top, as a lift panel reads. */
+export const FLOOR_ORDER: FloorKey[] = ["basement", "ground", "first"];
+export const FLOOR_NAMES: Record<FloorKey, string> = {
+  basement: "Basement",
+  ground: "Ground",
+  first: "First",
+};
+
 export const STALLS: readonly Stall[] = [
  {
   "code": "EX-S1",
   "label": "S1",
   "zone": "exhibition",
   "facing": "north",
-  "x": -15.71,
-  "z": 26.07,
+  "x": -15.55,
+  "z": 24.32,
   "w": 3.0,
   "d": 2.0
  },
@@ -40,8 +49,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S2",
   "zone": "exhibition",
   "facing": "north",
-  "x": -12.65,
-  "z": 26.07,
+  "x": -12.52,
+  "z": 24.32,
   "w": 3.0,
   "d": 2.0
  },
@@ -50,8 +59,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S3",
   "zone": "exhibition",
   "facing": "north",
-  "x": -9.59,
-  "z": 26.07,
+  "x": -9.49,
+  "z": 24.32,
   "w": 3.0,
   "d": 2.0
  },
@@ -60,8 +69,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S4",
   "zone": "exhibition",
   "facing": "north",
-  "x": -6.53,
-  "z": 26.07,
+  "x": -6.46,
+  "z": 24.32,
   "w": 3.0,
   "d": 2.0
  },
@@ -70,8 +79,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S5",
   "zone": "exhibition",
   "facing": "north",
-  "x": -3.47,
-  "z": 26.07,
+  "x": -3.43,
+  "z": 24.32,
   "w": 3.0,
   "d": 2.0
  },
@@ -80,8 +89,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S6",
   "zone": "exhibition",
   "facing": "north",
-  "x": -0.41,
-  "z": 26.07,
+  "x": -0.4,
+  "z": 24.32,
   "w": 3.0,
   "d": 2.0
  },
@@ -90,8 +99,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S7",
   "zone": "exhibition",
   "facing": "north",
-  "x": 2.65,
-  "z": 26.07,
+  "x": 2.63,
+  "z": 24.32,
   "w": 3.0,
   "d": 2.0
  },
@@ -100,8 +109,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S8",
   "zone": "exhibition",
   "facing": "north",
-  "x": 5.72,
-  "z": 26.07,
+  "x": 5.66,
+  "z": 24.32,
   "w": 3.0,
   "d": 2.0
  },
@@ -110,8 +119,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S9",
   "zone": "exhibition",
   "facing": "north",
-  "x": 15.6,
-  "z": 26.07,
+  "x": 15.45,
+  "z": 24.32,
   "w": 3.0,
   "d": 2.0
  },
@@ -120,8 +129,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S10",
   "zone": "exhibition",
   "facing": "north",
-  "x": 18.67,
-  "z": 26.07,
+  "x": 18.48,
+  "z": 24.32,
   "w": 3.0,
   "d": 2.0
  },
@@ -130,8 +139,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S11",
   "zone": "exhibition",
   "facing": "north",
-  "x": 21.73,
-  "z": 26.07,
+  "x": 21.51,
+  "z": 24.32,
   "w": 3.0,
   "d": 2.0
  },
@@ -140,8 +149,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S12",
   "zone": "exhibition",
   "facing": "south",
-  "x": 24.79,
-  "z": 20.67,
+  "x": 24.54,
+  "z": 18.97,
   "w": 3.0,
   "d": 2.0
  },
@@ -150,8 +159,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S13",
   "zone": "exhibition",
   "facing": "south",
-  "x": 21.73,
-  "z": 20.67,
+  "x": 21.51,
+  "z": 18.97,
   "w": 3.0,
   "d": 2.0
  },
@@ -160,8 +169,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S14",
   "zone": "exhibition",
   "facing": "south",
-  "x": 18.67,
-  "z": 20.67,
+  "x": 18.48,
+  "z": 18.97,
   "w": 3.0,
   "d": 2.0
  },
@@ -170,8 +179,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S15",
   "zone": "exhibition",
   "facing": "south",
-  "x": 15.6,
-  "z": 20.67,
+  "x": 15.45,
+  "z": 18.97,
   "w": 3.0,
   "d": 2.0
  },
@@ -180,8 +189,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S16",
   "zone": "exhibition",
   "facing": "south",
-  "x": 5.72,
-  "z": 20.67,
+  "x": 5.66,
+  "z": 18.97,
   "w": 3.0,
   "d": 2.0
  },
@@ -190,8 +199,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S17",
   "zone": "exhibition",
   "facing": "south",
-  "x": 2.65,
-  "z": 20.67,
+  "x": 2.63,
+  "z": 18.97,
   "w": 3.0,
   "d": 2.0
  },
@@ -200,8 +209,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S18",
   "zone": "exhibition",
   "facing": "south",
-  "x": -0.41,
-  "z": 20.67,
+  "x": -0.4,
+  "z": 18.97,
   "w": 3.0,
   "d": 2.0
  },
@@ -210,8 +219,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S19",
   "zone": "exhibition",
   "facing": "south",
-  "x": -3.47,
-  "z": 20.67,
+  "x": -3.43,
+  "z": 18.97,
   "w": 3.0,
   "d": 2.0
  },
@@ -220,8 +229,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S20",
   "zone": "exhibition",
   "facing": "south",
-  "x": -6.53,
-  "z": 20.67,
+  "x": -6.46,
+  "z": 18.97,
   "w": 3.0,
   "d": 2.0
  },
@@ -230,8 +239,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S21",
   "zone": "exhibition",
   "facing": "south",
-  "x": -9.59,
-  "z": 20.67,
+  "x": -9.49,
+  "z": 18.97,
   "w": 3.0,
   "d": 2.0
  },
@@ -240,8 +249,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S22",
   "zone": "exhibition",
   "facing": "south",
-  "x": -15.71,
-  "z": 20.67,
+  "x": -15.55,
+  "z": 18.97,
   "w": 3.0,
   "d": 2.0
  },
@@ -250,8 +259,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S1",
   "zone": "prefunction-1",
   "facing": "north",
-  "x": -31.02,
-  "z": 18.03,
+  "x": -30.7,
+  "z": 16.36,
   "w": 3.0,
   "d": 2.0
  },
@@ -260,8 +269,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S2",
   "zone": "prefunction-1",
   "facing": "north",
-  "x": -27.96,
-  "z": 18.03,
+  "x": -27.67,
+  "z": 16.36,
   "w": 3.0,
   "d": 2.0
  },
@@ -270,8 +279,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S3",
   "zone": "prefunction-1",
   "facing": "north",
-  "x": -24.9,
-  "z": 18.03,
+  "x": -24.64,
+  "z": 16.36,
   "w": 3.0,
   "d": 2.0
  },
@@ -280,8 +289,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S4",
   "zone": "prefunction-1",
   "facing": "north",
-  "x": -21.83,
-  "z": 18.03,
+  "x": -21.61,
+  "z": 16.36,
   "w": 3.0,
   "d": 2.0
  },
@@ -290,8 +299,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S5",
   "zone": "prefunction-1",
   "facing": "north",
-  "x": -18.77,
-  "z": 18.03,
+  "x": -18.58,
+  "z": 16.36,
   "w": 3.0,
   "d": 2.0
  },
@@ -300,8 +309,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S6",
   "zone": "prefunction-1",
   "facing": "north",
-  "x": -15.71,
-  "z": 18.03,
+  "x": -15.55,
+  "z": 16.36,
   "w": 3.0,
   "d": 2.0
  },
@@ -310,8 +319,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S7",
   "zone": "prefunction-1",
   "facing": "north",
-  "x": -9.59,
-  "z": 18.03,
+  "x": -9.49,
+  "z": 16.36,
   "w": 3.0,
   "d": 2.0
  },
@@ -320,8 +329,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S8",
   "zone": "prefunction-1",
   "facing": "north",
-  "x": -6.53,
-  "z": 18.03,
+  "x": -6.46,
+  "z": 16.36,
   "w": 3.0,
   "d": 2.0
  },
@@ -330,8 +339,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S9",
   "zone": "prefunction-1",
   "facing": "north",
-  "x": -3.47,
-  "z": 18.03,
+  "x": -3.43,
+  "z": 16.36,
   "w": 3.0,
   "d": 2.0
  },
@@ -340,8 +349,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S10",
   "zone": "prefunction-1",
   "facing": "north",
-  "x": -0.41,
-  "z": 18.03,
+  "x": -0.4,
+  "z": 16.36,
   "w": 3.0,
   "d": 2.0
  },
@@ -350,8 +359,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S11",
   "zone": "prefunction-1",
   "facing": "north",
-  "x": 2.65,
-  "z": 18.03,
+  "x": 2.63,
+  "z": 16.36,
   "w": 3.0,
   "d": 2.0
  },
@@ -360,8 +369,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S12",
   "zone": "prefunction-1",
   "facing": "north",
-  "x": 5.72,
-  "z": 18.03,
+  "x": 5.66,
+  "z": 16.36,
   "w": 3.0,
   "d": 2.0
  },
@@ -370,8 +379,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S13",
   "zone": "prefunction-1",
   "facing": "north",
-  "x": 15.6,
-  "z": 18.03,
+  "x": 15.45,
+  "z": 16.36,
   "w": 3.0,
   "d": 2.0
  },
@@ -380,8 +389,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S14",
   "zone": "prefunction-1",
   "facing": "north",
-  "x": 18.67,
-  "z": 18.03,
+  "x": 18.48,
+  "z": 16.36,
   "w": 3.0,
   "d": 2.0
  },
@@ -390,8 +399,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S15",
   "zone": "prefunction-1",
   "facing": "north",
-  "x": 21.73,
-  "z": 18.03,
+  "x": 21.51,
+  "z": 16.36,
   "w": 3.0,
   "d": 2.0
  },
@@ -400,8 +409,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S1",
   "zone": "prefunction-2",
   "facing": "south",
-  "x": -15.71,
-  "z": -24.54,
+  "x": -15.55,
+  "z": -25.78,
   "w": 3.0,
   "d": 2.0
  },
@@ -410,8 +419,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S2",
   "zone": "prefunction-2",
   "facing": "south",
-  "x": -12.65,
-  "z": -24.54,
+  "x": -12.52,
+  "z": -25.78,
   "w": 3.0,
   "d": 2.0
  },
@@ -420,8 +429,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S3",
   "zone": "prefunction-2",
   "facing": "south",
-  "x": -9.59,
-  "z": -24.54,
+  "x": -9.49,
+  "z": -25.78,
   "w": 3.0,
   "d": 2.0
  },
@@ -430,8 +439,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S4",
   "zone": "prefunction-2",
   "facing": "south",
-  "x": -6.53,
-  "z": -24.54,
+  "x": -6.46,
+  "z": -25.78,
   "w": 3.0,
   "d": 2.0
  },
@@ -440,8 +449,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S5",
   "zone": "prefunction-2",
   "facing": "south",
-  "x": -3.47,
-  "z": -24.54,
+  "x": -3.43,
+  "z": -25.78,
   "w": 3.0,
   "d": 2.0
  },
@@ -450,8 +459,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S6",
   "zone": "prefunction-2",
   "facing": "south",
-  "x": 12.54,
-  "z": -24.54,
+  "x": 12.42,
+  "z": -25.78,
   "w": 3.0,
   "d": 2.0
  },
@@ -460,8 +469,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S7",
   "zone": "prefunction-2",
   "facing": "south",
-  "x": 15.6,
-  "z": -24.54,
+  "x": 15.45,
+  "z": -25.78,
   "w": 3.0,
   "d": 2.0
  },
@@ -470,8 +479,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S8",
   "zone": "prefunction-2",
   "facing": "south",
-  "x": 18.67,
-  "z": -24.54,
+  "x": 18.48,
+  "z": -25.78,
   "w": 3.0,
   "d": 2.0
  },
@@ -480,8 +489,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S9",
   "zone": "prefunction-2",
   "facing": "south",
-  "x": 21.73,
-  "z": -24.54,
+  "x": 21.51,
+  "z": -25.78,
   "w": 3.0,
   "d": 2.0
  },
@@ -490,8 +499,8 @@ export const STALLS: readonly Stall[] = [
   "label": "S10",
   "zone": "prefunction-2",
   "facing": "south",
-  "x": 24.79,
-  "z": -24.54,
+  "x": 24.54,
+  "z": -25.78,
   "w": 3.0,
   "d": 2.0
  }

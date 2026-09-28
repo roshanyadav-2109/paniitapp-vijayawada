@@ -39,7 +39,7 @@ export default async function MapPage() {
   // No heading and no standfirst: the building is the page. The stalls
   // stand whether or not anyone has been allocated one yet.
   return (
-    <div className="pb-6 pt-2 lg:pt-6">
+    <div className="venue-page pt-2 lg:pt-6">
       <VenueMap occupants={occupants} />
     </div>
   );

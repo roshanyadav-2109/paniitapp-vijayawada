@@ -315,6 +315,25 @@
       margin-bottom: -4.5rem !important;
     }
   }
+  /* The venue map takes the whole screen between the top bar and the tab
+     bar, and the page under it does not scroll: the layout's 8rem of room
+     for the tab bar is taken back, since the map already stops above it. */
+  .venue-stage {
+    height: calc(100dvh - 3.5rem - 88px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    min-height: 420px;
+  }
+  .venue-page {
+    margin-bottom: -8rem;
+  }
+  @media (min-width: 1024px) {
+    .venue-stage {
+      height: 78vh;
+    }
+    .venue-page {
+      margin-bottom: 0;
+      padding-bottom: 1.5rem;
+    }
+  }
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }

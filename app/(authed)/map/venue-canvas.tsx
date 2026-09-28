@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { ContactShadows, Html, OrbitControls, useTexture } from "@react-three/drei";
+import { OrbitControls, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import { STALLS, type Stall, type StallZone } from "@/lib/venue-3d";
+import { STALLS, type FloorKey, type Stall, type StallZone } from "@/lib/venue-3d";
 import { SCENE, SEATS } from "@/lib/venue-3d-scene";
 
 /* ------------------------------------------------------------------ */
@@ -20,25 +20,34 @@ export const ZONE_COLOR: Record<StallZone, string> = {
   "prefunction-2": "#8B5CF6",
 };
 
-/** Rooms by what they are for, pale enough that the stalls stay the loudest thing. */
-const ROOM_COLOR: Record<string, string> = {
-  service: "#CDD3DC",
-  toilet: "#CFE0F1",
-  lounge: "#DDD5F3",
-  green: "#D2EAD9",
-  office: "#E8DFCF",
-  circulation: "#C3CBD7",
-  kitchen: "#F2DFC6",
+/** Room floors by what the room is for: tints, so the rooms read as rooms and not as paint. */
+const ROOM_FLOOR: Record<string, string> = {
+  service: "#D8DCE2",
+  toilet: "#D3E5F4",
+  lounge: "#E6DDF5",
+  green: "#D5ECDB",
+  office: "#EEE4D2",
+  circulation: "#CDD4DE",
+  kitchen: "#F2E1C9",
+  meeting: "#D9E8F6",
+  activity: "#E5EFDC",
+  suite: "#F1E1E8",
+  dining: "#F5E4D4",
+  arrival: "#DAE7F7",
 };
 
+const STONE = "#EBE7E0";
+const WALL_PAINT = "#F6F5F2";
+const HALL_WALL = "#DDE2EA";
+const GLASS = "#9FD4F1";
+const COLUMN = "#E4E6EA";
 const INK = "#1E2433";
-const WALL = "#E4E8EF";
-const HALL_WALL = "#B9C3D2";
-const COLUMN = "#D5DAE2";
 const STAGE_TOP = "#8A6039";
 const STAGE_SIDE = "#5E3F24";
-const CARPET = "#5C687E";
+const CARPET = "#566278";
 const SEAT = "#9C1C33";
+const TIMBER = "#7A5537";
+const CHAIR = "#343A46";
 const BOOTH_WALL = "#FFFFFF";
 const ENTRANCE = "#16A34A";
 const LOOP = "#059669";
@@ -46,13 +55,24 @@ const BLOCKED = "#DC2626";
 const BRAND = "#1B1464";
 const SELECTED = "#1B1464";
 
+const OUTSIDE: Record<FloorKey, string> = {
+  basement: "#2B2F36",
+  ground: "#CCDDC4",
+  first: "#CCDDC4",
+};
+
 const BOOTH_H = 2.5;
 const FASCIA_H = 0.55;
 const PANEL = 0.06;
+/** How far below the first floor the ground floor sits, seen through the hall's void. */
+const STOREY = 5.4;
 
 /* ------------------------------------------------------------------ */
 
 export interface CanvasProps {
+  floor: FloorKey;
+  /** Lay the architects' drawing over the floor. */
+  showPlan: boolean;
   /** Stall code to the name of whoever holds it. */
   occupied: Record<string, string>;
   selected: string | null;
@@ -61,6 +81,8 @@ export interface CanvasProps {
   focus: { code: string; nonce: number } | null;
   /** Bumped by the reset button. */
   resetNonce: number;
+  /** A DOM layer over the canvas for the floating labels. */
+  labelLayer: HTMLDivElement | null;
 }
 
 export default function VenueCanvas(props: CanvasProps) {
@@ -70,61 +92,121 @@ export default function VenueCanvas(props: CanvasProps) {
       // being looked at, and a phone should not be redrawing a still
       // building sixty times a second while it is.
       frameloop="demand"
+      shadows
       dpr={[1, 2]}
       camera={{ fov: 38, near: 0.5, far: 1200, position: [40, 70, 90] }}
       gl={{ antialias: true, powerPreference: "high-performance" }}
       onPointerMissed={() => props.onSelect(null)}
       className="touch-none"
     >
-      <color attach="background" args={["#E9EEF4"]} />
-      <hemisphereLight args={["#ffffff", "#8b96aa", 1.05]} />
-      <directionalLight position={[45, 90, 35]} intensity={1.55} />
-      <directionalLight position={[-60, 40, -50]} intensity={0.4} />
-
+      <color attach="background" args={[props.floor === "basement" ? "#22262C" : "#E6ECF3"]} />
+      <hemisphereLight args={["#ffffff", "#8e98a8", props.floor === "basement" ? 0.9 : 1.0]} />
+      <Sun />
       <Scene {...props} />
     </Canvas>
   );
 }
 
-function Scene({ occupied, selected, onSelect, focus, resetNonce }: CanvasProps) {
+/**
+ * The one light that casts shadows, from high in the south-east. The scene
+ * does not move, so its shadows are worked out once for each floor rather
+ * than on every frame — which is what lets a phone afford them at all.
+ */
+function Sun() {
+  const light = useRef<THREE.DirectionalLight>(null);
+  useLayoutEffect(() => {
+    const l = light.current;
+    if (!l) return;
+    const cam = l.shadow.camera as THREE.OrthographicCamera;
+    cam.left = -SCENE.extent.w / 2 - 6;
+    cam.right = SCENE.extent.w / 2 + 6;
+    cam.top = SCENE.extent.d / 2 + 6;
+    cam.bottom = -SCENE.extent.d / 2 - 6;
+    cam.near = 1;
+    cam.far = 220;
+    cam.updateProjectionMatrix();
+  }, []);
+  return (
+    <>
+      <directionalLight
+        ref={light}
+        position={[38, 80, 46]}
+        intensity={1.55}
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-bias={-0.0004}
+        shadow-normalBias={0.03}
+      />
+      <directionalLight position={[-60, 40, -50]} intensity={0.35} />
+    </>
+  );
+}
+
+function ShadowsOnce({ floor }: { floor: FloorKey }) {
+  const { gl, invalidate } = useThree();
+  useEffect(() => {
+    gl.shadowMap.autoUpdate = false;
+    gl.shadowMap.needsUpdate = true;
+    invalidate();
+    // Textures arrive a moment later; take the shadows once more when they have.
+    const t = window.setTimeout(() => {
+      gl.shadowMap.needsUpdate = true;
+      invalidate();
+    }, 900);
+    return () => window.clearTimeout(t);
+  }, [floor, gl, invalidate]);
+  return null;
+}
+
+function Scene({ floor, showPlan, occupied, selected, onSelect, focus, resetNonce, labelLayer }: CanvasProps) {
   const controls = useRef<OrbitControlsImpl | null>(null);
+  const data = SCENE.floors[floor];
 
   return (
     <>
-      <Ground />
-      <FloorPlan />
-      <Hall />
-      <Stage />
-      <Rooms />
-      <Ramp />
-      <Walls />
-      <Columns />
-      {STALLS.map((s) => (
-        <Booth
-          key={s.code}
-          stall={s}
-          holder={occupied[s.code] ?? null}
-          selected={selected === s.code}
-          onSelect={onSelect}
-        />
-      ))}
-      <Backdrops />
-      <OneWayLoop />
-      <Blocked />
-      <Entrances />
-      <FloorWords />
-      <Labels />
-      {/* Soft shadow under everything that stands up, drawn once: it is
-          what makes the building sit on the ground instead of float. */}
-      <ContactShadows
-        position={[0, 0.015, 0]}
-        scale={[SCENE.floor.w + 20, SCENE.floor.d + 20]}
-        resolution={1024}
-        blur={2.2}
-        far={6}
-        opacity={0.32}
-        frames={1}
-      />
+      <Outside floor={floor} />
+      <Slabs floor={floor} />
+      <Rooms floor={floor} />
+      {showPlan ? <PlanLayer floor={floor} /> : null}
+      <Walls floor={floor} />
+      <Columns floor={floor} />
+      <FloorWords floor={floor} />
+
+      {floor === "ground" ? (
+        <>
+          <Hall />
+          <Stage />
+          {STALLS.map((s) => (
+            <Booth
+              key={s.code}
+              stall={s}
+              holder={occupied[s.code] ?? null}
+              selected={selected === s.code}
+              onSelect={onSelect}
+            />
+          ))}
+          <Backdrops />
+          <OneWayLoop />
+          <Blocked />
+          <Entrances />
+        </>
+      ) : null}
+
+      {floor === "first" ? (
+        <>
+          <BoardRooms />
+          {/* The hall is double height: from the first floor you look down
+              through the void onto the seats and the stage below. */}
+          <group position={[0, -STOREY, 0]}>
+            <Hall />
+            <Stage />
+          </group>
+        </>
+      ) : null}
+
+      <Labels labels={data.labels} layer={labelLayer} />
+      <ShadowsOnce floor={floor} />
 
       <OrbitControls
         ref={controls}
@@ -144,32 +226,191 @@ function Scene({ occupied, selected, onSelect, focus, resetNonce }: CanvasProps)
 }
 
 /* ------------------------------------------------------------------ */
-/* Ground and floor                                                    */
+/* Ground, slabs, rooms, the drawing                                   */
 /* ------------------------------------------------------------------ */
 
-function Ground() {
+function Outside({ floor }: { floor: FloorKey }) {
   return (
-    <mesh rotation-x={-Math.PI / 2} position={[0, -0.03, 0]}>
-      <planeGeometry args={[420, 420]} />
-      <meshStandardMaterial color="#D9E3D6" roughness={1} />
+    <mesh rotation-x={-Math.PI / 2} position={[0, floor === "first" ? -STOREY - 0.05 : -0.32, 0]} receiveShadow>
+      <planeGeometry args={[480, 480]} />
+      <meshStandardMaterial color={OUTSIDE[floor]} roughness={1} />
     </mesh>
   );
 }
 
-/** The architects' own drawing, laid on the ground at true scale. */
-function FloorPlan() {
-  const tex = useTexture(SCENE.floor.texture);
+/** The floor itself: stone upstairs, painted asphalt in the car park. */
+function Slabs({ floor }: { floor: FloorKey }) {
+  const slabs = SCENE.floors[floor].slabs;
+  return (
+    <>
+      {slabs.map((s, i) => (
+        <mesh key={i} position={[s.x, -0.15, s.z]} receiveShadow>
+          <boxGeometry args={[s.w, 0.3, s.d]} />
+          <meshStandardMaterial color={floor === "basement" ? "#3F3C39" : STONE} roughness={0.95} />
+        </mesh>
+      ))}
+      {floor === "basement" ? <CarParkMarkings /> : null}
+    </>
+  );
+}
+
+function CarParkMarkings() {
+  const tex = useTexture(SCENE.floors.basement.live);
+  useMemo(() => {
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 8;
+  }, [tex]);
+  return (
+    <mesh rotation-x={-Math.PI / 2} position={[0, 0.004, 0]} receiveShadow>
+      <planeGeometry args={[SCENE.extent.w, SCENE.extent.d]} />
+      <meshStandardMaterial map={tex} roughness={0.95} />
+    </mesh>
+  );
+}
+
+/** The architects' drawing of this floor, laid over it at true scale. */
+function PlanLayer({ floor }: { floor: FloorKey }) {
+  const tex = useTexture(SCENE.floors[floor].plan);
   const { gl } = useThree();
   useMemo(() => {
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = Math.min(8, gl.capabilities.getMaxAnisotropy());
-    tex.needsUpdate = true;
   }, [tex, gl]);
   return (
-    <mesh rotation-x={-Math.PI / 2}>
-      <planeGeometry args={[SCENE.floor.w, SCENE.floor.d]} />
-      <meshStandardMaterial map={tex} roughness={1} />
+    <mesh rotation-x={-Math.PI / 2} position={[0, 0.02, 0]}>
+      <planeGeometry args={[SCENE.extent.w, SCENE.extent.d]} />
+      <meshBasicMaterial map={tex} transparent opacity={0.9} depthWrite={false} />
     </mesh>
+  );
+}
+
+function Rooms({ floor }: { floor: FloorKey }) {
+  const hatch = useHatch();
+  return (
+    <>
+      {SCENE.floors[floor].rooms.map((r, i) => (
+        <group key={i}>
+          <mesh rotation-x={-Math.PI / 2} position={[r.x, 0.01, r.z]} receiveShadow>
+            <planeGeometry args={[r.w, r.d]} />
+            {r.kind === "ramp" ? (
+              // Unlit: a painted marking should read the same in the car
+              // park's low light as upstairs, and lit it went black there.
+              <meshBasicMaterial map={hatch} />
+            ) : (
+              <meshStandardMaterial color={ROOM_FLOOR[r.kind] ?? ROOM_FLOOR.service} roughness={0.95} />
+            )}
+          </mesh>
+          {r.name ? (
+            <FlatText text={r.name} x={r.x} y={0.035} z={r.z} fit={Math.min(r.w, r.d)} />
+          ) : null}
+        </group>
+      ))}
+    </>
+  );
+}
+
+function useHatch() {
+  return useMemo(
+    () =>
+      canvasTexture(128, 512, (g, w, h) => {
+        g.fillStyle = "#B9C1CC";
+        g.fillRect(0, 0, w, h);
+        g.strokeStyle = "#8F99A8";
+        g.lineWidth = 6;
+        for (let y = -w; y < h; y += 28) {
+          g.beginPath();
+          g.moveTo(0, y + w);
+          g.lineTo(w / 2, y);
+          g.lineTo(w, y + w);
+          g.stroke();
+        }
+      }),
+    []
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Walls and columns, straight off the drawings                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Every wall on the floor, as the drawing has it — including its doorways,
+ * which are gaps in the drawing's walls and so gaps here. One instanced
+ * mesh per kind of wall: painted, the hall's taller walls, and the glass
+ * balustrade round the void upstairs.
+ */
+function Walls({ floor }: { floor: FloorKey }) {
+  const walls = SCENE.floors[floor].walls;
+  const groups = useMemo(() => {
+    const by: Record<string, typeof walls[number][]> = {};
+    for (const w of walls) (by[w.kind] ??= []).push(w);
+    return by;
+  }, [walls]);
+
+  return (
+    <>
+      {Object.entries(groups).map(([kind, list]) => (
+        <WallSet key={`${floor}-${kind}`} kind={kind} list={list} />
+      ))}
+    </>
+  );
+}
+
+function WallSet({
+  kind,
+  list,
+}: {
+  kind: string;
+  list: readonly { x: number; z: number; w: number; d: number; h: number }[];
+}) {
+  const ref = useRef<THREE.InstancedMesh>(null);
+  useLayoutEffect(() => {
+    const m = ref.current;
+    if (!m) return;
+    const o = new THREE.Object3D();
+    list.forEach((w, i) => {
+      o.position.set(w.x, w.h / 2, w.z);
+      o.scale.set(Math.max(w.w, 0.12), w.h, Math.max(w.d, 0.12));
+      o.updateMatrix();
+      m.setMatrixAt(i, o.matrix);
+    });
+    m.instanceMatrix.needsUpdate = true;
+    m.computeBoundingSphere();
+  }, [list]);
+  const glass = kind === "glass";
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, list.length]} castShadow={!glass} receiveShadow>
+      <boxGeometry args={[1, 1, 1]} />
+      {glass ? (
+        <meshStandardMaterial color={GLASS} transparent opacity={0.38} roughness={0.1} metalness={0.1} />
+      ) : (
+        <meshStandardMaterial color={kind === "tall" ? HALL_WALL : WALL_PAINT} roughness={0.92} />
+      )}
+    </instancedMesh>
+  );
+}
+
+function Columns({ floor }: { floor: FloorKey }) {
+  const ref = useRef<THREE.InstancedMesh>(null);
+  const cols = SCENE.floors[floor].columns;
+  const height = floor === "basement" ? 3.0 : 3.2;
+  useLayoutEffect(() => {
+    const m = ref.current;
+    if (!m) return;
+    const o = new THREE.Object3D();
+    cols.forEach(([x, z], i) => {
+      o.position.set(x, height / 2, z);
+      o.updateMatrix();
+      m.setMatrixAt(i, o.matrix);
+    });
+    m.instanceMatrix.needsUpdate = true;
+    m.computeBoundingSphere();
+  }, [cols, height]);
+  return (
+    <instancedMesh key={floor} ref={ref} args={[undefined, undefined, cols.length]} castShadow receiveShadow>
+      <boxGeometry args={[0.7, height, 0.7]} />
+      <meshStandardMaterial color={COLUMN} roughness={0.85} />
+    </instancedMesh>
   );
 }
 
@@ -178,9 +419,8 @@ function FloorPlan() {
 /* ------------------------------------------------------------------ */
 
 /**
- * Carpet and every seat in the hall. The seats come off the drawing one by
- * one — 1,515 of them — and are drawn as one instanced mesh, so they cost
- * the phone one draw call, not fifteen hundred.
+ * Carpet and every seat in the hall — 1,515 of them, each off the drawing —
+ * as one instanced mesh: one draw call on a phone, not fifteen hundred.
  */
 function Hall() {
   const seats = useRef<THREE.InstancedMesh>(null);
@@ -207,16 +447,17 @@ function Hall() {
       m.setMatrixAt(i, o.matrix);
     }
     m.instanceMatrix.needsUpdate = true;
+    m.computeBoundingSphere();
   }, [count]);
 
   const c = SCENE.hall.carpet;
   return (
     <group>
-      <mesh rotation-x={-Math.PI / 2} position={[c.x, 0.02, c.z]}>
+      <mesh rotation-x={-Math.PI / 2} position={[c.x, 0.02, c.z]} receiveShadow>
         <planeGeometry args={[c.w, c.d]} />
         <meshStandardMaterial color={CARPET} roughness={1} />
       </mesh>
-      <instancedMesh ref={seats} args={[chair, undefined, count]}>
+      <instancedMesh ref={seats} args={[chair, undefined, count]} castShadow receiveShadow>
         <meshStandardMaterial color={SEAT} roughness={0.75} />
       </instancedMesh>
     </group>
@@ -247,8 +488,7 @@ function Stage() {
 
   return (
     <group>
-      {/* platform: timber top, darker skirt */}
-      <mesh position={[platform.x, platform.h / 2, platform.z]}>
+      <mesh position={[platform.x, platform.h / 2, platform.z]} castShadow receiveShadow>
         <boxGeometry args={[platform.w, platform.h, platform.d]} />
         <meshStandardMaterial attach="material-0" color={STAGE_SIDE} />
         <meshStandardMaterial attach="material-1" color={STAGE_SIDE} />
@@ -257,8 +497,7 @@ function Stage() {
         <meshStandardMaterial attach="material-4" color={STAGE_SIDE} />
         <meshStandardMaterial attach="material-5" color={STAGE_SIDE} />
       </mesh>
-      {/* the LED wall, facing the audience to the east */}
-      <mesh position={[screen.x + 0.2, platform.h + screen.h / 2, screen.z]}>
+      <mesh position={[screen.x + 0.2, platform.h + screen.h / 2, screen.z]} castShadow>
         <boxGeometry args={[0.3, screen.h, screen.d]} />
         <meshBasicMaterial attach="material-0" map={led} />
         <meshStandardMaterial attach="material-1" color="#20242E" />
@@ -267,22 +506,22 @@ function Stage() {
         <meshStandardMaterial attach="material-4" color="#20242E" />
         <meshStandardMaterial attach="material-5" color="#20242E" />
       </mesh>
-      {/* lectern */}
-      <mesh position={[lectern.x, platform.h + 0.58, lectern.z]}>
+      <mesh position={[lectern.x, platform.h + 0.58, lectern.z]} castShadow>
         <boxGeometry args={[0.55, 1.16, 0.6]} />
         <meshStandardMaterial color="#3A2A1C" roughness={0.5} />
       </mesh>
-      {/* three steps up at each end */}
       {steps.map((s, i) =>
         [0, 1, 2].map((k) => {
           const h = ((k + 1) / 3) * platform.h;
-          // Lowest step furthest from the stage: the north flight climbs south, the south one north.
-          const fromHall = i === 0 ? -1 : 1;
+          // Lowest step furthest from the stage.
+          const toward = i === 0 ? -1 : 1;
           const depth = s.d / 3;
           return (
             <mesh
               key={`${i}-${k}`}
-              position={[s.x, h / 2, s.z + fromHall * (s.d / 2 - depth / 2 - k * depth)]}
+              position={[s.x, h / 2, s.z + toward * (s.d / 2 - depth / 2 - k * depth)]}
+              castShadow
+              receiveShadow
             >
               <boxGeometry args={[s.w, h, depth]} />
               <meshStandardMaterial color={k === 2 ? STAGE_TOP : STAGE_SIDE} />
@@ -295,103 +534,65 @@ function Stage() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Rooms, ramp, walls, columns                                         */
+/* First floor furniture                                               */
 /* ------------------------------------------------------------------ */
 
-function Rooms() {
-  return (
-    <>
-      {SCENE.rooms.map((r, i) => (
-        <group key={i}>
-          <mesh position={[r.x, r.h / 2, r.z]}>
-            <boxGeometry args={[r.w, r.h, r.d]} />
-            <meshStandardMaterial color={ROOM_COLOR[r.kind] ?? ROOM_COLOR.service} roughness={0.9} />
-          </mesh>
-          {r.name ? (
-            <FlatText text={r.name} x={r.x} y={r.h + 0.02} z={r.z} fit={Math.min(r.w, r.d)} />
-          ) : null}
-        </group>
-      ))}
-    </>
-  );
-}
+/** Each board room: one long timber table and its 27 chairs. */
+function BoardRooms() {
+  const chairs = useRef<THREE.InstancedMesh>(null);
+  const rooms = SCENE.boardRooms;
+  const layout = useMemo(() => {
+    const out: [number, number][] = [];
+    for (const r of rooms) {
+      const len = r.w * 0.78;
+      const per = 13;
+      for (let i = 0; i < per; i++) {
+        const x = r.x - len / 2 + (len / (per - 1)) * i;
+        out.push([x, r.z - 1.05], [x, r.z + 1.05]);
+      }
+      out.push([r.x - len / 2 - 0.9, r.z]); // at the head
+    }
+    return out;
+  }, [rooms]);
 
-/** The ramp down to the basement car park: a hatched slab, falling away. */
-function Ramp() {
-  const r = SCENE.ramp;
-  const hatch = useMemo(
-    () =>
-      canvasTexture(128, 512, (g, w, h) => {
-        g.fillStyle = "#BAC2CE";
-        g.fillRect(0, 0, w, h);
-        g.strokeStyle = "#8E98A8";
-        g.lineWidth = 6;
-        for (let y = -w; y < h; y += 28) {
-          g.beginPath();
-          g.moveTo(0, y + w);
-          g.lineTo(w / 2, y);
-          g.lineTo(w, y + w);
-          g.stroke();
-        }
-      }),
-    []
-  );
-  return (
-    <group>
-      <mesh rotation-x={-Math.PI / 2} position={[r.x, 0.03, r.z]}>
-        <planeGeometry args={[r.w, r.d]} />
-        <meshStandardMaterial map={hatch} roughness={1} />
-      </mesh>
-      <FlatText text={r.name} x={r.x} y={0.06} z={r.z} fit={Math.min(r.w, r.d)} />
-    </group>
-  );
-}
-
-function Walls() {
-  return (
-    <>
-      {SCENE.walls.map((w, i) => (
-        <mesh key={i} position={[w.x, w.h / 2, w.z]}>
-          <boxGeometry args={[w.w, w.h, w.d]} />
-          <meshStandardMaterial color={w.kind === "hall-wall" ? HALL_WALL : WALL} roughness={0.9} />
-        </mesh>
-      ))}
-    </>
-  );
-}
-
-/** The structural columns at the grid intersections, one draw call for all of them. */
-function Columns() {
-  const ref = useRef<THREE.InstancedMesh>(null);
-  const n = SCENE.columns.length;
   useLayoutEffect(() => {
-    const m = ref.current;
+    const m = chairs.current;
     if (!m) return;
     const o = new THREE.Object3D();
-    SCENE.columns.forEach(([x, z], i) => {
-      o.position.set(x, 1.75, z);
+    layout.forEach(([x, z], i) => {
+      o.position.set(x, 0.45, z);
       o.updateMatrix();
       m.setMatrixAt(i, o.matrix);
     });
     m.instanceMatrix.needsUpdate = true;
-  }, []);
+    m.computeBoundingSphere();
+  }, [layout]);
+
   return (
-    <instancedMesh ref={ref} args={[undefined, undefined, n]}>
-      <boxGeometry args={[0.7, 3.5, 0.7]} />
-      <meshStandardMaterial color={COLUMN} roughness={0.8} />
-    </instancedMesh>
+    <>
+      {rooms.map((r, i) => (
+        <mesh key={i} position={[r.x, 0.38, r.z]} castShadow receiveShadow>
+          <boxGeometry args={[r.w * 0.8, 0.76, 1.5]} />
+          <meshStandardMaterial color={TIMBER} roughness={0.55} />
+        </mesh>
+      ))}
+      <instancedMesh ref={chairs} args={[undefined, undefined, layout.length]} castShadow>
+        <boxGeometry args={[0.5, 0.9, 0.5]} />
+        <meshStandardMaterial color={CHAIR} roughness={0.7} />
+      </instancedMesh>
+    </>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Words laid flat — on roofs and floors                               */
+/* Words laid flat                                                     */
 /* ------------------------------------------------------------------ */
 
 /**
  * Text lying flat, turning about the vertical as the camera orbits so it
  * always reads upright, the way the names on a map stay upright when you
- * turn the map. `fit` is the room it has: the text is sized so that it
- * stays inside that width whichever way it has turned.
+ * turn the map. `fit` is the room it has; the text stays inside it
+ * whichever way it has turned.
  */
 function FlatText({
   text,
@@ -413,24 +614,19 @@ function FlatText({
 
   const { tex, w, h } = useMemo(() => {
     const px = 64;
-    const c = document.createElement("canvas");
-    const g = c.getContext("2d")!;
-    g.font = `700 ${px}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
-    const tw = Math.ceil(g.measureText(text).width) + 24;
-    c.width = tw;
-    c.height = px + 20;
-    const g2 = c.getContext("2d")!;
-    g2.font = `700 ${px}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
-    g2.fillStyle = INK;
-    g2.textAlign = "center";
-    g2.textBaseline = "middle";
-    g2.fillText(text, c.width / 2, c.height / 2 + 2);
-    const t = new THREE.CanvasTexture(c);
-    t.colorSpace = THREE.SRGBColorSpace;
-    t.anisotropy = 4;
-    // Height first, then shrink until the diagonal fits the room it is on.
+    const probe = document.createElement("canvas").getContext("2d")!;
+    probe.font = `700 ${px}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+    const cw = Math.ceil(probe.measureText(text).width) + 24;
+    const ch = px + 20;
+    const t = canvasTexture(cw, ch, (g2) => {
+      g2.font = `700 ${px}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+      g2.fillStyle = INK;
+      g2.textAlign = "center";
+      g2.textBaseline = "middle";
+      g2.fillText(text, cw / 2, ch / 2 + 2);
+    });
     let hh = Math.min(size, fit * 0.3);
-    let ww = hh * (c.width / c.height);
+    let ww = hh * (cw / ch);
     const diag = Math.hypot(ww, hh);
     if (diag > fit * 0.92) {
       const k = (fit * 0.92) / diag;
@@ -444,9 +640,7 @@ function FlatText({
     const gr = group.current;
     if (!gr) return;
     const t = controls?.target;
-    const ax = camera.position.x - (t?.x ?? 0);
-    const az = camera.position.z - (t?.z ?? 0);
-    gr.rotation.y = Math.atan2(ax, az);
+    gr.rotation.y = Math.atan2(camera.position.x - (t?.x ?? 0), camera.position.z - (t?.z ?? 0));
   });
 
   return (
@@ -459,11 +653,11 @@ function FlatText({
   );
 }
 
-function FloorWords() {
+function FloorWords({ floor }: { floor: FloorKey }) {
   return (
     <>
-      {SCENE.floorWords.map((f, i) => (
-        <FlatText key={i} text={f.text} x={f.x} y={0.04} z={f.z} fit={f.size} size={0.8} />
+      {SCENE.floors[floor].floorWords.map((f, i) => (
+        <FlatText key={`${floor}-${i}`} text={f.text} x={f.x} y={0.04} z={f.z} fit={f.size} size={0.8} />
       ))}
     </>
   );
@@ -473,14 +667,13 @@ function FloorWords() {
 /* Stalls                                                              */
 /* ------------------------------------------------------------------ */
 
-/** Mixes a colour toward white; 0 is the colour, 1 is white. */
 function tint(hex: string, amount: number): string {
   const c = new THREE.Color(hex);
   c.lerp(new THREE.Color("#FFFFFF"), amount);
   return `#${c.getHexString()}`;
 }
 
-/** A booth: carpet, back wall, two side walls and a lit fascia with its number. */
+/** A booth: carpet, back wall, two side walls and a fascia with its number. */
 function Booth({
   stall,
   holder,
@@ -493,13 +686,9 @@ function Booth({
   onSelect: (code: string | null) => void;
 }) {
   const colour = ZONE_COLOR[stall.zone];
-  // The plan and the stall itself say "S14"; the area is what the colour is for.
   const fascia = useFasciaTexture(stall.label, holder, colour);
   const tag = useTagTexture(stall.label, colour, selected);
 
-  // Work in the booth's own frame: "width" runs along the open front,
-  // "depth" runs back from it. A booth facing east or west is the same
-  // booth turned a quarter.
   const along = stall.facing === "north" || stall.facing === "south";
   const width = along ? stall.w : stall.d;
   const depth = along ? stall.d : stall.w;
@@ -521,19 +710,17 @@ function Booth({
 
   return (
     <group position={[stall.x, 0, stall.z]} rotation-y={rotation} onClick={click}>
-      <mesh position={[0, 0.04, 0]}>
+      <mesh position={[0, 0.04, 0]} receiveShadow>
         <boxGeometry args={[width - 0.04, 0.08, depth - 0.04]} />
         <meshStandardMaterial
           color={selected ? SELECTED : holder ? colour : tint(colour, 0.45)}
           roughness={1}
         />
       </mesh>
-      {/* its number on a tag that always turns to face you */}
       <sprite position={[0, BOOTH_H + FASCIA_H + 0.85, 0]} scale={[2.4, 1.05, 1]}>
         <spriteMaterial map={tag} transparent depthWrite={false} />
       </sprite>
-      {/* back wall: white inside, the area's colour outside and along the top */}
-      <mesh position={[0, BOOTH_H / 2, depth / 2 - PANEL / 2]}>
+      <mesh position={[0, BOOTH_H / 2, depth / 2 - PANEL / 2]} castShadow>
         <boxGeometry args={[width, BOOTH_H, PANEL]} />
         <meshStandardMaterial attach="material-0" color={colour} />
         <meshStandardMaterial attach="material-1" color={colour} />
@@ -543,7 +730,7 @@ function Booth({
         <meshStandardMaterial attach="material-5" color={BOOTH_WALL} roughness={0.9} />
       </mesh>
       {[-1, 1].map((side) => (
-        <mesh key={side} position={[(side * (width - PANEL)) / 2, BOOTH_H / 2, depth * 0.1]}>
+        <mesh key={side} position={[(side * (width - PANEL)) / 2, BOOTH_H / 2, depth * 0.1]} castShadow>
           <boxGeometry args={[PANEL, BOOTH_H, depth * 0.8]} />
           <meshStandardMaterial color={BOOTH_WALL} roughness={0.9} />
         </mesh>
@@ -552,7 +739,6 @@ function Booth({
         <boxGeometry args={[width - PANEL * 2, 0.24, 0.02]} />
         <meshStandardMaterial color={colour} roughness={0.7} />
       </mesh>
-      {/* fascia over the open front */}
       <mesh position={[0, BOOTH_H + FASCIA_H / 2, -depth / 2 + 0.03]}>
         <boxGeometry args={[width, FASCIA_H, 0.05]} />
         <meshBasicMaterial attach="material-0" color={colour} />
@@ -568,8 +754,7 @@ function Booth({
           <meshStandardMaterial color="#CBD5E1" roughness={0.6} />
         </mesh>
       ))}
-      {/* a counter at the front corner, so an empty booth still looks like one */}
-      <mesh position={[width / 2 - 0.65, 0.5, -depth / 2 + 0.45]}>
+      <mesh position={[width / 2 - 0.65, 0.5, -depth / 2 + 0.45]} castShadow>
         <boxGeometry args={[1.0, 0.92, 0.5]} />
         <meshStandardMaterial color={selected ? SELECTED : "#F8FAFC"} roughness={0.8} />
       </mesh>
@@ -605,7 +790,6 @@ function useFasciaTexture(label: string, holder: string | null, colour: string) 
   );
 }
 
-/** The floating tag: a white pill edged in the area's colour, navy when chosen. */
 function useTagTexture(label: string, colour: string, selected: boolean) {
   return useMemo(
     () =>
@@ -637,7 +821,6 @@ function useTagTexture(label: string, colour: string, selected: boolean) {
 /* Backdrops, the one-way loop, doors                                   */
 /* ------------------------------------------------------------------ */
 
-/** The two 6 m backdrops in the entrance lobby, printed side toward the main doors. */
 function Backdrops() {
   const checks = useMemo(
     () =>
@@ -667,28 +850,23 @@ function Backdrops() {
       }),
     []
   );
-
   return (
     <>
-      {SCENE.backdrops.map((b) => {
-        const face = b.kind === "checkered" ? checks : media;
-        return (
-          <mesh key={b.kind} position={[b.x, 1.6, b.z]}>
-            <boxGeometry args={[0.25, 3.2, b.d]} />
-            <meshStandardMaterial attach="material-0" color="#2B2F3A" />
-            <meshBasicMaterial attach="material-1" map={face} />
-            <meshStandardMaterial attach="material-2" color="#2B2F3A" />
-            <meshStandardMaterial attach="material-3" color="#2B2F3A" />
-            <meshStandardMaterial attach="material-4" color="#2B2F3A" />
-            <meshStandardMaterial attach="material-5" color="#2B2F3A" />
-          </mesh>
-        );
-      })}
+      {SCENE.backdrops.map((b) => (
+        <mesh key={b.kind} position={[b.x, 1.6, b.z]} castShadow>
+          <boxGeometry args={[0.25, 3.2, b.d]} />
+          <meshStandardMaterial attach="material-0" color="#2B2F3A" />
+          <meshBasicMaterial attach="material-1" map={b.kind === "checkered" ? checks : media} />
+          <meshStandardMaterial attach="material-2" color="#2B2F3A" />
+          <meshStandardMaterial attach="material-3" color="#2B2F3A" />
+          <meshStandardMaterial attach="material-4" color="#2B2F3A" />
+          <meshStandardMaterial attach="material-5" color="#2B2F3A" />
+        </mesh>
+      ))}
     </>
   );
 }
 
-/** The exhibition's one-way loop: in along the south row from S1, back along the north row. */
 function OneWayLoop() {
   const shape = useMemo(() => arrowShape(), []);
   const start = SCENE.loopStart;
@@ -713,7 +891,6 @@ function OneWayLoop() {
   );
 }
 
-/** The doorway the drawing marks as blocked, with stall bays over it. */
 function Blocked() {
   return (
     <>
@@ -729,7 +906,6 @@ function Blocked() {
 
 const TURN: Record<string, number> = { north: 0, east: -Math.PI / 2, south: Math.PI, west: Math.PI / 2 };
 
-/** An arch over each way in, and an arrow on the ground pointing inside. */
 function Entrances() {
   const shape = useMemo(() => arrowShape(), []);
   return (
@@ -737,12 +913,12 @@ function Entrances() {
       {SCENE.entrances.map((e) => (
         <group key={e.name} position={[e.x, 0, e.z]} rotation-y={TURN[e.facing] + Math.PI}>
           {[-1, 1].map((side) => (
-            <mesh key={side} position={[(side * e.w) / 2, 2.0, 0]}>
+            <mesh key={side} position={[(side * e.w) / 2, 2.0, 0]} castShadow>
               <boxGeometry args={[0.35, 4.0, 0.35]} />
               <meshStandardMaterial color={ENTRANCE} />
             </mesh>
           ))}
-          <mesh position={[0, 4.1, 0]}>
+          <mesh position={[0, 4.1, 0]} castShadow>
             <boxGeometry args={[e.w + 0.35, 0.5, 0.4]} />
             <meshStandardMaterial color={ENTRANCE} />
           </mesh>
@@ -788,111 +964,83 @@ function canvasTexture(
 /* Floating labels                                                     */
 /* ------------------------------------------------------------------ */
 
-function Labels() {
-  const near = useIsNear(45);
-  const shown = useUncrowdedLabels();
-  if (near) return null;
-  return (
-    <>
-      {SCENE.labels
-        .filter((l) => shown.has(l.title))
-        .map((l) => (
-          <Html
-            key={l.title}
-            position={[l.x, 6.5, l.z]}
-            center
-            zIndexRange={[10, 0]}
-            style={{ pointerEvents: "none" }}
-          >
-            {/* A fixed size on screen, like the names on a street map. */}
-            <div className="whitespace-nowrap rounded-full bg-white/95 px-2 py-0.5 text-center shadow-[0_1px_6px_rgba(15,23,42,0.18)] ring-1 ring-black/5">
-              <p className="text-[10.5px] font-semibold leading-tight text-[#1B1464]">{l.title}</p>
-              {l.sub ? (
-                <p className="text-[8.5px] font-medium leading-tight text-slate-500">{l.sub}</p>
-              ) : null}
-            </div>
-          </Html>
-        ))}
-    </>
-  );
+interface LabelData {
+  title: string;
+  sub: string | null;
+  x: number;
+  z: number;
 }
 
 /**
- * Which labels to draw so that none sits on another. Listed most important
- * first; each is kept only if its box on screen is clear of every label
- * already kept. Worked out again when the camera settles, not on every
- * frame of a drag.
+ * Floating labels, as plain elements in a layer over the canvas, placed
+ * from the camera on every frame the canvas draws.
+ *
+ * They used to be drei's <Html>, which gives every label a React root of its
+ * own; under React 19 those roots throw as they are torn down. Plain nodes
+ * have no roots to tear down, and placing them here costs a projection per
+ * label per frame — nothing, for a dozen.
+ *
+ * The rules are the ones they had: a fixed size on screen, like the names on
+ * a street map; listed most important first, a label that would overlap one
+ * already placed gives way; and all of them step aside when the camera is
+ * close enough to read the stalls themselves.
  */
-function useUncrowdedLabels() {
-  const { camera, controls, size } = useThree() as unknown as {
-    camera: THREE.Camera;
-    controls: OrbitControlsImpl | null;
-    size: { width: number; height: number };
-  };
-  const all = useMemo(() => new Set(SCENE.labels.map((l) => l.title)), []);
-  const [shown, setShown] = useState<Set<string>>(all);
-  const invalidate = useThree((st) => st.invalidate);
-  useEffect(() => invalidate(), [shown, invalidate]);
+function Labels({ labels, layer }: { labels: readonly LabelData[]; layer: HTMLDivElement | null }) {
+  const nodes = useRef<HTMLDivElement[]>([]);
+  const invalidate = useThree((s) => s.invalidate);
+  const controls = useThree((s) => s.controls) as OrbitControlsImpl | null;
 
   useEffect(() => {
-    if (!controls) return;
-    let raf = 0;
-    const place = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const kept: { x0: number; y0: number; x1: number; y1: number }[] = [];
-        const next = new Set<string>();
-        const v = new THREE.Vector3();
-        for (const l of SCENE.labels) {
-          v.set(l.x, 6.5, l.z).project(camera);
-          if (v.z > 1) continue;
-          const x = (v.x * 0.5 + 0.5) * size.width;
-          const y = (-v.y * 0.5 + 0.5) * size.height;
-          const chars = Math.max(l.title.length, l.sub ? l.sub.length * 0.8 : 0);
-          const w = chars * 6.2 + 18;
-          const h = l.sub ? 30 : 20;
-          const b = { x0: x - w / 2 - 3, y0: y - h / 2 - 3, x1: x + w / 2 + 3, y1: y + h / 2 + 3 };
-          if (!kept.some((k) => b.x0 < k.x1 && k.x0 < b.x1 && b.y0 < k.y1 && k.y0 < b.y1)) {
-            kept.push(b);
-            next.add(l.title);
-          }
-        }
-        setShown((prev) =>
-          prev.size === next.size && [...next].every((t) => prev.has(t)) ? prev : next
-        );
-      });
-    };
-    place();
-    controls.addEventListener("end", place);
-    const settle = window.setInterval(place, 900);
+    if (!layer) return;
+    nodes.current = labels.map((l) => {
+      const el = document.createElement("div");
+      el.className =
+        "pointer-events-none absolute left-0 top-0 whitespace-nowrap rounded-full bg-white/95 px-2 py-0.5 text-center shadow-[0_1px_6px_rgba(15,23,42,0.18)] ring-1 ring-black/5 transition-opacity duration-150";
+      el.style.opacity = "0";
+      const t = document.createElement("p");
+      t.className = "text-[10.5px] font-semibold leading-tight text-[#1B1464]";
+      t.textContent = l.title;
+      el.appendChild(t);
+      if (l.sub) {
+        const s = document.createElement("p");
+        s.className = "text-[8.5px] font-medium leading-tight text-slate-500";
+        s.textContent = l.sub;
+        el.appendChild(s);
+      }
+      layer.appendChild(el);
+      return el;
+    });
+    invalidate();
     return () => {
-      cancelAnimationFrame(raf);
-      window.clearInterval(settle);
-      controls.removeEventListener("end", place);
+      for (const el of nodes.current) el.remove();
+      nodes.current = [];
     };
-  }, [camera, controls, size.width, size.height]);
+  }, [labels, layer, invalidate]);
 
-  return shown;
-}
+  const v = useMemo(() => new THREE.Vector3(), []);
+  useFrame(({ camera, size }) => {
+    const els = nodes.current;
+    if (!els.length) return;
+    const near = controls ? camera.position.distanceTo(controls.target) < 45 : false;
+    const kept: { x0: number; y0: number; x1: number; y1: number }[] = [];
+    labels.forEach((l, i) => {
+      const el = els[i];
+      if (!el) return;
+      v.set(l.x, 6.5, l.z).project(camera);
+      const x = (v.x * 0.5 + 0.5) * size.width;
+      const y = (-v.y * 0.5 + 0.5) * size.height;
+      const w = el.offsetWidth || 80;
+      const h = el.offsetHeight || 22;
+      const b = { x0: x - w / 2 - 3, y0: y - h / 2 - 3, x1: x + w / 2 + 3, y1: y + h / 2 + 3 };
+      const clear =
+        !near && v.z < 1 && !kept.some((k) => b.x0 < k.x1 && k.x0 < b.x1 && b.y0 < k.y1 && k.y0 < b.y1);
+      if (clear) kept.push(b);
+      el.style.transform = `translate(${Math.round(x - w / 2)}px, ${Math.round(y - h / 2)}px)`;
+      el.style.opacity = clear ? "1" : "0";
+    });
+  });
 
-/** Whether the camera is within `distance` metres of what it is looking at. */
-function useIsNear(distance: number) {
-  const { camera, controls } = useThree() as unknown as {
-    camera: THREE.Camera;
-    controls: OrbitControlsImpl | null;
-  };
-  const [near, setNear] = useState(false);
-  useEffect(() => {
-    if (!controls) return;
-    const check = () => {
-      const d = camera.position.distanceTo(controls.target);
-      setNear((was) => (was !== d < distance ? d < distance : was));
-    };
-    check();
-    controls.addEventListener("change", check);
-    return () => controls.removeEventListener("change", check);
-  }, [camera, controls, distance]);
-  return near;
+  return null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -901,16 +1049,11 @@ function useIsNear(distance: number) {
 
 const STALL_BY_CODE: Record<string, Stall> = Object.fromEntries(STALLS.map((s) => [s.code, s]));
 
-/** The building's extent, which the opening view is fitted to. */
 const BOUNDS = new THREE.Box3(
-  new THREE.Vector3(-SCENE.floor.w / 2, 0, -SCENE.floor.d / 2),
-  new THREE.Vector3(SCENE.floor.w / 2, 6, SCENE.floor.d / 2)
+  new THREE.Vector3(-SCENE.extent.w / 2, 0, -SCENE.extent.d / 2),
+  new THREE.Vector3(SCENE.extent.w / 2, 6, SCENE.extent.d / 2)
 );
 
-/**
- * Places the camera so the whole building fits the canvas, whatever its
- * shape, and flies to a stall when asked.
- */
 function CameraRig({
   controls,
   focus,
@@ -933,9 +1076,8 @@ function CameraRig({
   function fly(toPos: THREE.Vector3, toTarget: THREE.Vector3, keep = true) {
     const c = controls.current;
     if (!c) return;
-    // Flying somewhere on purpose counts as moving the camera: a resize
-    // afterwards must not throw it back to the overview. (Opening the stall
-    // sheet is such a resize — the page makes room for the scrollbar.)
+    // A flight on purpose counts as moving the camera: a resize afterwards
+    // (the stall sheet opening is one) must not throw it back to the overview.
     userMoved.current = keep;
     flight.current = {
       fromPos: camera.position.clone(),
@@ -949,13 +1091,11 @@ function CameraRig({
 
   function overview(): [THREE.Vector3, THREE.Vector3] {
     const cam = camera as THREE.PerspectiveCamera;
-    const target = new THREE.Vector3(0, 0, 2);
-    // Seen corner-on, a long rectangle becomes a diamond with empty space
-    // above and below it. On a phone held upright the building is swung
-    // round nearly end-on instead, so its long side runs up the screen and
-    // it fills the frame.
+    const target = new THREE.Vector3(0, 0, 0);
+    // On a phone held upright the building is swung nearly end-on, so its
+    // long side runs up the screen and fills it.
     const portrait = size.width / size.height < 1;
-    const azimuth = portrait ? 1.45 : 0.42;
+    const azimuth = portrait ? 1.5 : 0.42;
     const elevation = portrait ? 1.02 : 0.88;
     const dir = new THREE.Vector3(
       Math.sin(azimuth) * Math.cos(elevation),
@@ -982,7 +1122,7 @@ function CameraRig({
       probe.updateMatrixWorld();
       const fits = corners.every((p) => {
         const v = p.clone().project(probe);
-        return Math.abs(v.x) < 0.96 && Math.abs(v.y) < 0.94 && v.z < 1;
+        return Math.abs(v.x) < 0.985 && Math.abs(v.y) < 0.94 && v.z < 1;
       });
       if (fits) hi = mid;
       else lo = mid;
@@ -1030,7 +1170,19 @@ function CameraRig({
           : s.facing === "east"
             ? new THREE.Vector3(1, 0, 0)
             : new THREE.Vector3(-1, 0, 0);
-    const pos = target.clone().addScaledVector(front, 9).add(new THREE.Vector3(0, 7.5, 0));
+    // Far enough back to see the stall with a neighbour or two either side,
+    // some 12 m across the narrower way of the screen: on a phone held
+    // upright that is its width, and a fixed distance there left one tag
+    // filling the whole view. Steep enough, at 55 degrees, to see over the
+    // 4.5 m hall wall across a corridor into the stall's front.
+    const cam = camera as THREE.PerspectiveCamera;
+    const halfH = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
+    const halfW = halfH * (size.width / size.height);
+    const dist = Math.max(12, 6 / Math.min(halfW, halfH));
+    const pos = target
+      .clone()
+      .addScaledVector(front, dist * Math.cos(0.96))
+      .add(new THREE.Vector3(0, dist * Math.sin(0.96), 0));
     fly(pos, target);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focus?.nonce]);
@@ -1052,4 +1204,3 @@ function CameraRig({
 
   return null;
 }
-

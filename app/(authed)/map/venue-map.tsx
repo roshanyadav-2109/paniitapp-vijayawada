@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { Layers, RotateCcw } from "lucide-react";
 import { Loader2, MapPin, Search } from "@/components/icons";
 import {
   Sheet,
@@ -13,7 +13,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { STALLS, ZONE_NAMES, type StallZone } from "@/lib/venue-3d";
+import {
+  FLOOR_NAMES,
+  FLOOR_ORDER,
+  STALLS,
+  ZONE_NAMES,
+  type FloorKey,
+  type StallZone,
+} from "@/lib/venue-3d";
 
 // three.js is most of a megabyte. It loads on this page and nowhere else,
 // and only in the browser — there is nothing to render on the server.
@@ -70,6 +77,11 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
   const [focus, setFocus] = useState<{ code: string; nonce: number } | null>(null);
   const [resetNonce, setResetNonce] = useState(0);
   const [query, setQuery] = useState("");
+  const [floor, setFloor] = useState<FloorKey>("ground");
+  const [showPlan, setShowPlan] = useState(false);
+  // The layer the canvas draws its floating labels into. A state, not a
+  // ref, so the canvas hears about it once it exists.
+  const [labelLayer, setLabelLayer] = useState<HTMLDivElement | null>(null);
 
   const byCode = useMemo(() => {
     const m: Record<string, Occupant> = {};
@@ -84,8 +96,6 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
     () => Object.fromEntries(Object.values(byCode).map((o) => [o.code, o.name])),
     [byCode]
   );
-
-  const booked = Object.keys(occupied).length;
 
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -110,6 +120,8 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
 
   function go(code: string) {
     setQuery("");
+    // Every stall is on the ground floor; a search from upstairs comes down.
+    setFloor("ground");
     setSelected(code);
     setFocus({ code, nonce: Date.now() });
   }
@@ -122,17 +134,21 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
     // building gets the whole width, and the controls sit on the canvas
     // rather than above it.
     <div className="-mx-3 -mt-2 sm:-mx-5 lg:mx-0 lg:mt-0">
-      <div className="relative h-[74dvh] min-h-[440px] w-full overflow-hidden bg-[#EAF0F7] lg:h-[78vh] lg:rounded-lg lg:ring-1 lg:ring-rule">
+      <div className="venue-stage relative w-full overflow-hidden bg-[#EAF0F7] lg:rounded-lg lg:ring-1 lg:ring-rule">
         <VenueCanvas
+          floor={floor}
+          showPlan={showPlan}
           occupied={occupied}
           selected={selected}
           onSelect={setSelected}
           focus={focus}
           resetNonce={resetNonce}
+          labelLayer={labelLayer}
         />
+        <div ref={setLabelLayer} className="pointer-events-none absolute inset-0 z-[5] overflow-hidden" />
 
         {/* search */}
-        <div className="absolute inset-x-3 top-3 z-10 flex gap-2 sm:left-4 sm:right-auto sm:w-[340px]">
+        <div className="absolute inset-x-3 top-3 z-20 flex gap-2 sm:left-4 sm:right-auto sm:w-[340px]">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-brand-900/45" />
             <input
@@ -175,36 +191,82 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
           </button>
         </div>
 
-        {/* legend */}
-        <div className="no-scrollbar absolute inset-x-0 bottom-2 z-10 flex gap-1.5 overflow-x-auto px-3">
-          {(Object.keys(ZONE_COLOR) as StallZone[]).map((z) => (
-            <span
-              key={z}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold text-brand-900 shadow-sm"
-            >
-              <span className="size-2.5 rounded-sm" style={{ background: ZONE_COLOR[z] }} />
-              {ZONE_SHORT[z]}
-            </span>
-          ))}
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold text-brand-900 shadow-sm">
-            <span className="size-2.5 rounded-sm bg-[#16A34A]" /> Entrance
-          </span>
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold text-brand-900 shadow-sm">
-            <span className="size-2.5 rounded-sm bg-[#059669]" /> One-way loop
-          </span>
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold text-brand-900 shadow-sm">
-            <span className="size-2.5 rounded-sm bg-[#1B1464]" /> Backdrop
-          </span>
+        {/* Floors, top to bottom as a lift panel reads, and the drawing
+            behind them as a layer to switch on. */}
+        <div className="absolute right-3 top-16 z-10 flex flex-col items-center gap-2">
+          <div className="flex flex-col overflow-hidden rounded-2xl border border-white/70 bg-white/95 shadow-[0_4px_14px_rgba(15,23,42,0.12)]">
+            {[...FLOOR_ORDER].reverse().map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => {
+                  setFloor(f);
+                  setSelected(null);
+                }}
+                aria-label={`${FLOOR_NAMES[f]} floor`}
+                aria-pressed={floor === f}
+                className={
+                  floor === f
+                    ? "grid size-10 place-items-center bg-brand-800 text-[13px] font-bold text-white"
+                    : "grid size-10 place-items-center text-[13px] font-bold text-brand-900 hover:bg-paper"
+                }
+              >
+                {f === "basement" ? "B" : f === "ground" ? "G" : "1"}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowPlan((v) => !v)}
+            aria-label={showPlan ? "Hide the floor plan" : "Show the floor plan"}
+            aria-pressed={showPlan}
+            className={
+              showPlan
+                ? "grid size-10 place-items-center rounded-full bg-brand-800 text-white shadow-[0_4px_14px_rgba(15,23,42,0.12)]"
+                : "grid size-10 place-items-center rounded-full border border-white/70 bg-white/95 text-brand-800 shadow-[0_4px_14px_rgba(15,23,42,0.12)]"
+            }
+          >
+            <Layers className="size-4" strokeWidth={1.8} />
+          </button>
         </div>
+
+        {/* which floor this is, where a lift would say it */}
+        <p className="pointer-events-none absolute left-3 top-16 z-10 rounded-full bg-white/95 px-3 py-1 text-[12px] font-semibold text-brand-900 shadow-sm">
+          {FLOOR_NAMES[floor]} floor
+        </p>
+
+        {/* legend */}
+        {floor === "ground" ? (
+          <div className="no-scrollbar absolute inset-x-0 bottom-2 z-10 flex gap-1.5 overflow-x-auto px-3">
+            {(Object.keys(ZONE_COLOR) as StallZone[]).map((z) => (
+              <span
+                key={z}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold text-brand-900 shadow-sm"
+              >
+                <span className="size-2.5 rounded-sm" style={{ background: ZONE_COLOR[z] }} />
+                {ZONE_SHORT[z]}
+              </span>
+            ))}
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold text-brand-900 shadow-sm">
+              <span className="size-2.5 rounded-sm bg-[#16A34A]" /> Entrance
+            </span>
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold text-brand-900 shadow-sm">
+              <span className="size-2.5 rounded-sm bg-[#059669]" /> One-way loop
+            </span>
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold text-brand-900 shadow-sm">
+              <span className="size-2.5 rounded-sm bg-[#1B1464]" /> Backdrop
+            </span>
+          </div>
+        ) : null}
       </div>
 
-      <p className="px-3 pt-2 text-[12px] leading-5 text-brand-900/60 sm:px-5 lg:px-0">
-        {STALLS.length} stalls, 3 m × 2 m · {booked} allocated. Drag to turn, pinch to zoom,
-        tap a stall to see who is in it.
-      </p>
-
       <Sheet open={!!stall} onOpenChange={(o) => !o && setSelected(null)}>
-        <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
+        <SheetContent
+          side="bottom"
+          className="max-h-[70vh] overflow-y-auto"
+          // The stall the sheet describes stays in sight above it.
+          overlayClassName="bg-brand-950/10 backdrop-blur-none"
+        >
           {stall ? (
             <>
               <SheetHeader>
@@ -219,7 +281,7 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
                 </SheetTitle>
                 <SheetDescription className="flex items-center gap-1.5">
                   <MapPin className="size-3.5" strokeWidth={1.8} />
-                  {ZONE_NAMES[stall.zone]} · 3 m × 2 m · {stall.code}
+                  {ZONE_NAMES[stall.zone]}
                 </SheetDescription>
               </SheetHeader>
 
