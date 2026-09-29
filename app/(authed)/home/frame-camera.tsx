@@ -39,7 +39,7 @@ interface Frame {
   win: { x: number; y: number; w: number; h: number };
 }
 
-type Shape = "landscape" | "portrait" | "tall";
+type Shape = "landscape" | "portrait";
 
 const FRAMES: Record<Shape, Frame> = {
   landscape: {
@@ -54,20 +54,11 @@ const FRAMES: Record<Shape, Frame> = {
     h: 1254,
     win: { x: 269, y: 238, w: 708, h: 704 },
   },
-  tall: {
-    src: "/ui/frame/summit-frame-tall.webp",
-    w: 941,
-    h: 1672,
-    win: { x: 214, y: 266, w: 513, h: 1136 },
-  },
 };
 
-/** Tall pictures go in the tall frame, near-square ones in the square frame, wide ones in the
+/** Upright and square pictures go in the square frame, wide ones in the
  *  wide frame. */
 function shapeOf(w: number, h: number): Shape {
-  // A phone held upright films 9:16 and photographs 3:4; the tall frame is
-  // for those, the square one for what is nearly square.
-  if (h / w >= 1.25) return "tall";
   return h >= w ? "portrait" : "landscape";
 }
 
@@ -259,7 +250,7 @@ function FrameCamera({ onClose }: { onClose: () => void }) {
   // The live picture's shape picks the frame round it. Until the camera
   // says, the way the screen is held is the best guess.
   const [camShape, setCamShape] = useState<Shape>(() =>
-    window.innerHeight > window.innerWidth ? "tall" : "landscape"
+    window.innerHeight > window.innerWidth ? "portrait" : "landscape"
   );
   const [facing, setFacing] = useState<"user" | "environment">("user");
   const [live, setLive] = useState(false);
