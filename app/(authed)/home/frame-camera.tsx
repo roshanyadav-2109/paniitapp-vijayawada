@@ -24,8 +24,8 @@ import { EVENT_TAGLINE } from "@/lib/event-config";
  * cover the box.
  *
  * Nothing leaves the phone: the camera, the photo and the picture made from
- * it stay in the browser until the person shares or saves it. Sharing asks
- * for a login; saving it to the phone does not.
+ * it stay in the browser until the person shares or saves it. Neither asks
+ * for a login.
  */
 interface Frame {
   src: string;
@@ -92,9 +92,6 @@ const POST_TO = {
   linkedin: `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(SHARE_TEXT)}`,
   x: `https://x.com/intent/post?text=${encodeURIComponent(SHARE_TEXT)}`,
 } as const;
-/** Where a finished picture waits while its maker goes to log in to share
- *  it, so they come back to it rather than to an empty camera. */
-const PENDING_KEY = "summit-frame-pending";
 
 interface Photo {
   url: string;
@@ -182,29 +179,8 @@ function download(file: File) {
 
 // ---------------------------------------------------------------------------
 
-export function FrameCta({ signedIn }: { signedIn: boolean }) {
+export function FrameCta() {
   const [open, setOpen] = useState(false);
-  const [restored, setRestored] = useState<File | null>(null);
-
-  // Back from logging in to share: the picture they made is waiting, and
-  // opens where they left it. Shown once, then let go.
-  useEffect(() => {
-    let data: string | null = null;
-    try {
-      data = sessionStorage.getItem(PENDING_KEY);
-      sessionStorage.removeItem(PENDING_KEY);
-    } catch {
-      return;
-    }
-    if (!data) return;
-    fetch(data)
-      .then((r) => r.blob())
-      .then((b) => {
-        setRestored(new File([b], FILE_NAME, { type: "image/jpeg" }));
-        setOpen(true);
-      })
-      .catch(() => {});
-  }, []);
 
   return (
     <>
@@ -215,10 +191,7 @@ export function FrameCta({ signedIn }: { signedIn: boolean }) {
           among the navy tiles is what this replaced. */}
       <button
         type="button"
-        onClick={() => {
-          setRestored(null);
-          setOpen(true);
-        }}
+        onClick={() => setOpen(true)}
         className="flex w-full items-center gap-4 overflow-hidden rounded-lg border border-[#F0DDB3] bg-[#FFF7E6] p-4 text-left transition-colors hover:bg-[#FFF2D9] sm:gap-6 sm:p-5"
       >
         <span className="min-w-0 flex-1">
@@ -246,7 +219,7 @@ export function FrameCta({ signedIn }: { signedIn: boolean }) {
       </button>
 
       {open ? (
-        <FrameCamera signedIn={signedIn} restored={restored} onClose={() => setOpen(false)} />
+        <FrameCamera onClose={() => setOpen(false)} />
       ) : null}
     </>
   );
@@ -263,17 +236,8 @@ const STEP_TITLE: Record<Exclude<Step, "result">, string> = {
   adjust: "Drag to move, pinch to zoom",
 };
 
-function FrameCamera({
-  signedIn,
-  restored,
-  onClose,
-}: {
-  signedIn: boolean;
-  /** A finished picture to open on, kept through a login. */
-  restored: File | null;
-  onClose: () => void;
-}) {
-  const [step, setStep] = useState<Step>(restored ? "result" : "camera");
+function FrameCamera({ onClose }: { onClose: () => void }) {
+  const [step, setStep] = useState<Step>("camera");
   // The live picture's shape picks the frame round it. Until the camera
   // says, the way the screen is held is the best guess.
   const [camShape, setCamShape] = useState<Shape>(() =>
@@ -379,8 +343,7 @@ function FrameCamera({
   // on the way out.
   useEffect(() => {
     mounted.current = true;
-    if (restored) setResult({ file: restored, url: URL.createObjectURL(restored) });
-    else void startCamera("user");
+    void startCamera("user");
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     try {
@@ -563,23 +526,6 @@ function FrameCamera({
     setHint("Your photo is saved and the caption copied. Add the photo to the post.");
   }
 
-  /** Keep the picture for after the login, then go and log in. */
-  async function logInToShare() {
-    if (!result) return;
-    try {
-      const data = await new Promise<string>((resolve, reject) => {
-        const fr = new FileReader();
-        fr.onload = () => resolve(String(fr.result));
-        fr.onerror = () => reject(fr.error);
-        fr.readAsDataURL(result.file);
-      });
-      sessionStorage.setItem(PENDING_KEY, data);
-    } catch {
-      // too big for this browser's storage: they log in and take it again
-    }
-    window.location.assign("/login?redirect=%2Fhome");
-  }
-
   function takeAnother() {
     if (resultRef.current) URL.revokeObjectURL(resultRef.current.url);
     setResult(null);
@@ -605,9 +551,6 @@ function FrameCamera({
       <input ref={shootRef} type="file" accept="image/*" capture="user" hidden onChange={onFile("review")} />
     </>
   );
-
-  // Opening on a picture kept through a login: nothing to show until it is read.
-  if (step === "result" && !result) return null;
 
   if (step === "result" && result) {
     // Over the home screen, which stays in sight behind a blur: the picture
@@ -640,44 +583,31 @@ function FrameCamera({
               Share it and let others know you&rsquo;re at {EVENT_TAGLINE}.
             </p>
             <div className="mt-4 grid gap-2">
-              {/* Sharing is for the signed in; saving it is for anyone. */}
-              {!signedIn ? (
+              {canShare ? (
                 <button
                   type="button"
-                  onClick={logInToShare}
+                  onClick={share}
                   className="h-11 rounded-md bg-brand-800 text-[14px] font-medium text-white transition-colors hover:bg-brand-900"
                 >
-                  Log in to share
+                  Share
                 </button>
-              ) : (
-                <>
-                  {canShare ? (
-                    <button
-                      type="button"
-                      onClick={share}
-                      className="h-11 rounded-md bg-brand-800 text-[14px] font-medium text-white transition-colors hover:bg-brand-900"
-                    >
-                      Share
-                    </button>
-                  ) : null}
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => postTo("linkedin")}
-                      className="h-11 rounded-md border border-rule bg-white text-[14px] text-brand-900 transition-colors hover:bg-paper"
-                    >
-                      LinkedIn
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => postTo("x")}
-                      className="h-11 rounded-md border border-rule bg-white text-[14px] text-brand-900 transition-colors hover:bg-paper"
-                    >
-                      X (Twitter)
-                    </button>
-                  </div>
-                </>
-              )}
+              ) : null}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => postTo("linkedin")}
+                  className="h-11 rounded-md border border-rule bg-white text-[14px] text-brand-900 transition-colors hover:bg-paper"
+                >
+                  LinkedIn
+                </button>
+                <button
+                  type="button"
+                  onClick={() => postTo("x")}
+                  className="h-11 rounded-md border border-rule bg-white text-[14px] text-brand-900 transition-colors hover:bg-paper"
+                >
+                  X (Twitter)
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={() => download(result.file)}

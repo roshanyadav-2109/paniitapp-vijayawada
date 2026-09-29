@@ -19,7 +19,6 @@ import {
   EVENT_DATE_LABEL,
   EVENT_MAPS_URL,
   EVENT_NAME,
-  EVENT_ID,
   EVENT_SCALE,
   EVENT_SCALE_EXHIBITOR_ICON,
   EVENT_SCALE_STANDIN,
@@ -38,6 +37,7 @@ import { IitMarquee } from "./iit-marquee";
 import { EventScale } from "@/components/features/event-scale";
 import { GatePassBanner } from "./gate-pass-banner";
 import { FrameCta } from "./frame-camera";
+import { TicketsBanner } from "./tickets-banner";
 import { AppPromptBanner } from "@/components/features/app-prompt-banner";
 import {
   getPublicExhibitorCount,
@@ -63,7 +63,7 @@ const SPONSOR_TIER_FOLDERS = [
 export const dynamic = "force-dynamic";
 
 interface CalendarItem {
-  kind: "meeting" | "session";
+  kind: "session";
   start: string;
   end: string;
   title: string;
@@ -112,9 +112,9 @@ export default async function HomePage() {
     // trips one after another — the page could not start rendering until the
     // last of them came back, which is what left the splash screen up.
     // Three of them are the same for every visitor and come from the shared
-    // cache (lib/public-data.ts); only the role, the meetings and the
-    // bookmarks are this person's.
-    const [roleRes, exhibitors, kp, tiers, meetingsRes, bookmarkRes] =
+    // cache (lib/public-data.ts); only the role and the bookmarks are this
+    // person's.
+    const [roleRes, exhibitors, kp, tiers, bookmarkRes] =
       await Promise.all([
         user
           ? supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
@@ -126,16 +126,6 @@ export default async function HomePage() {
           LOGO_BUCKET,
           EVENT_STORAGE_PREFIX
         ),
-        user
-          ? supabase
-              .from("meetings")
-              .select(
-                "id, requester_id, invitee_id, accepted_slot, status, requester:requester_id(id, full_name), invitee:invitee_id(id, full_name)",
-              )
-              .eq("event_id", EVENT_ID)
-              .or(`requester_id.eq.${user.id},invitee_id.eq.${user.id}`)
-              .eq("status", "accepted")
-          : Promise.resolve({ data: [] as unknown[] }),
         user
           ? supabase
               .from("session_bookmarks")
@@ -150,15 +140,6 @@ export default async function HomePage() {
     exhibitorCount = exhibitors ?? null;
     keyPeople = kp as unknown as KeyPerson[];
     sponsorTiers = tiers as unknown as SponsorTier[];
-
-    const acceptedMeetings = (meetingsRes.data ?? []) as Array<{
-      id: string;
-      requester_id: string;
-      invitee_id: string;
-      accepted_slot: { start: string; end: string } | null;
-      requester: { id: string; full_name: string | null } | null;
-      invitee: { id: string; full_name: string | null } | null;
-    }>;
 
     type BookmarkedSession = {
       id: string;
@@ -193,20 +174,6 @@ export default async function HomePage() {
     }
 
     calendar = [
-      ...acceptedMeetings.flatMap((m) => {
-        if (!m.accepted_slot || !user) return [];
-        const other = m.requester_id === user.id ? m.invitee : m.requester;
-        return [
-          {
-            kind: "meeting" as const,
-            start: m.accepted_slot.start,
-            end: m.accepted_slot.end,
-            title: "1:1 Meeting",
-            presenter: other?.full_name ?? null,
-            href: `/meetings/${m.id}`,
-          },
-        ];
-      }),
       ...bookmarks.map((b) => ({
         kind: "session" as const,
         start: b.start_at,
@@ -349,11 +316,16 @@ export default async function HomePage() {
         </div>
       </SafeSection>
 
+      {/* Registration, straight under the card that says when and where. */}
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
+        <TicketsBanner />
+      </SafeSection>
+
       {/* A photo in the summit frame, above the tiles, in a row of its own
           with the room round it every section has: pressed onto the tiles it
           read as a fifth one of them. */}
       <SafeSection className="px-3 sm:px-5 lg:px-6">
-        <FrameCta signedIn={signedIn} />
+        <FrameCta />
       </SafeSection>
 
       {/* The four things you actually do in the app — badge, scanner,
@@ -438,8 +410,7 @@ export default async function HomePage() {
         <SectionHead title="Today’s calendar" />
         {calendar.length === 0 ? (
           <p className="mt-4 max-w-prose text-[14px] leading-7 text-brand-900/70">
-            Your day is open. Bookmark sessions in Agenda and accept meeting
-            requests to fill this in.
+            Your day is open. Bookmark sessions in Agenda to fill this in.
           </p>
         ) : (
           <ul className="list-ruled mt-1">
@@ -457,7 +428,7 @@ export default async function HomePage() {
                       {e.title}
                     </span>
                     <span className="mt-0.5 block text-[12.5px] text-brand-900/60">
-                      {e.kind === "meeting" ? "1:1 meeting" : "Session"}
+                      Session
                       {e.presenter ? <> | {e.presenter}</> : null}
                     </span>
                   </span>

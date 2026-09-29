@@ -36,7 +36,7 @@ export default async function AdminPage() {
     allowed = me?.role === "organizer" || me?.role === "admin";
     if (!allowed) return <Forbidden message="Admins only." />;
 
-    const [{ count: registered }, { count: checkedIn }, { count: meetingsCount }, { count: acceptedCount }, ts, tq] = await Promise.all([
+    const [{ count: registered }, { count: checkedIn }, ts, tq] = await Promise.all([
       // "Registered" counts this summit's participants, not every profile in
       // the shared project.
       supabase
@@ -46,15 +46,6 @@ export default async function AdminPage() {
       supabase
         .from("session_checkins")
         .select("user_id", { count: "exact", head: true }),
-      supabase
-        .from("meetings")
-        .select("id", { count: "exact", head: true })
-        .eq("event_id", EVENT_ID),
-      supabase
-        .from("meetings")
-        .select("id", { count: "exact", head: true })
-        .eq("event_id", EVENT_ID)
-        .eq("status", "accepted"),
       supabase
         .from("sessions")
         .select("id, title, current_checkins")
@@ -72,8 +63,6 @@ export default async function AdminPage() {
     stats = [
       { label: "Registered", value: registered ?? 0 },
       { label: "Checked in", value: checkedIn ?? 0 },
-      { label: "Meetings", value: meetingsCount ?? 0 },
-      { label: "Accepted", value: acceptedCount ?? 0 },
     ];
     topSessions = (ts.data as typeof topSessions | null) ?? [];
     topQuestions = (tq.data as typeof topQuestions | null) ?? [];

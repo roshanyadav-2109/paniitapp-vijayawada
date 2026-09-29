@@ -679,12 +679,24 @@ function AskBar({
         style={{ bottom: lift }}
         className="fixed inset-x-0 z-[45] mx-auto max-w-2xl px-3"
       >
+        {/* Asking needs a name to ask under. A guest used to get the whole
+            form and a Post button that stayed greyed out, with nothing to
+            say why; this is where they are asked to sign in instead, and
+            brought back to the session after. */}
         <button
           type="button"
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            if (!userId) {
+              window.location.assign(
+                `/login?redirect=${encodeURIComponent(window.location.pathname)}`
+              );
+              return;
+            }
+            setOpen(true);
+          }}
           className="flex h-12 w-full items-center justify-center rounded-md bg-brand-800 text-[14px] font-normal tracking-tight text-white shadow-[0_8px_24px_-12px_rgba(13,9,48,0.5)] transition-colors hover:bg-brand-900"
         >
-          Ask a question
+          {userId ? "Ask a question" : "Log in to ask a question"}
         </button>
       </div>
 

@@ -81,6 +81,16 @@
     overscroll-behavior-y: none;
     -webkit-text-size-adjust: 100%;
   }
+  /* Except the pull-down reload, in a browser tab. Installed, the app has
+     no address bar and nothing to reload from; in Chrome's own tab, pulling
+     down for the round spinner is how people expect to refresh a page, and
+     without it the page just stopped at the top. */
+  @media (display-mode: browser) {
+    html,
+    body {
+      overscroll-behavior-y: auto;
+    }
+  }
   /* Chrome, not content: the programme, a message and a bio all stay
      selectable, because copying them is a thing people do. */
   button,

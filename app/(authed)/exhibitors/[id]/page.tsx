@@ -5,7 +5,6 @@ import { Store, ExternalLink, MapPin } from "@/components/icons";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EVENT_ID } from "@/lib/event-config";
-import { ScheduleMeetingButton } from "@/components/features/schedule-meeting-button";
 import { GmailIcon, LinkedInIcon } from "@/components/features/social-icons";
 import { initials } from "@/lib/utils";
 
@@ -237,9 +236,6 @@ function TeamRow({ t }: { t: TeamRow }) {
         {identity}
       </Link>
       {socials}
-      <div className="hidden sm:block">
-        <ScheduleMeetingButton inviteeId={t.profile_id} />
-      </div>
     </div>
   ) : (
     <div className="flex items-center gap-3 rounded-xl border border-rule bg-white p-3">

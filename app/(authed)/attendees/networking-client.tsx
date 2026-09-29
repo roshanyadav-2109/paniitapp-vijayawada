@@ -644,19 +644,6 @@ function FilterFields({
         </div>
       </FilterGroup>
 
-      <label className="flex cursor-pointer items-center justify-between rounded-md border border-rule px-3 py-2.5">
-        <span className="text-sm font-medium text-brand-900">
-          Available for meetings
-        </span>
-        <input
-          type="checkbox"
-          checked={value.availableOnly}
-          onChange={(e) =>
-            onChange({ ...value, availableOnly: e.target.checked })
-          }
-          className="size-4 accent-brand-800"
-        />
-      </label>
     </div>
   );
 }

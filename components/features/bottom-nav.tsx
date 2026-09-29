@@ -16,7 +16,6 @@ const TABS = [
   { href: "/attendees", label: "Network", icon: "/ui/nav-network.webp" },
   { href: "/discuss", label: "Discuss", icon: "/ui/nav-discuss.webp" },
   { href: "/exhibitors", label: "Expo", icon: "/ui/nav-expo.webp" },
-  { href: "/meetings", label: "Meetings", icon: "/ui/nav-meetings.webp" },
 ] as const;
 
 export function BottomNav() {
@@ -37,7 +36,7 @@ export function BottomNav() {
       data-bottom-nav
       className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-rule bg-white shadow-[0_-8px_24px_-18px_rgba(13,9,48,0.18)] lg:hidden"
     >
-      <ul className="mx-auto grid h-[88px] w-full max-w-2xl grid-cols-6">
+      <ul className="mx-auto grid h-[88px] w-full max-w-2xl grid-cols-5">
         {TABS.map(({ href, label, icon }) => {
           const active =
             shown === href || (href !== "/home" && shown.startsWith(`${href}/`));

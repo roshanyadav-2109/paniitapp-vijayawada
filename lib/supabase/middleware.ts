@@ -14,7 +14,6 @@ const SIGNED_IN_ONLY = [
   "/admin",
   "/onboarding",
   "/chat/",
-  "/meetings/",
 ];
 
 // The allow-list this file used to keep is gone with the wall: everything
