@@ -8,7 +8,9 @@ import { EVENT_ID } from "@/lib/event-config";
 export type ActionResult = { ok: true } | { error: string };
 
 const PostSchema = z.object({
-  body: z.string().trim().min(1).max(2000),
+  // May be empty when a photo or video carries the post (0026); checked
+  // against that below, as the rule depends on the attachment.
+  body: z.string().trim().max(2000),
   // A poll needs at least two distinct options to be a poll.
   options: z.array(z.string().trim().min(1).max(120)).max(4).optional(),
   // The upload already happened in the browser; what arrives here is the
@@ -33,6 +35,8 @@ export async function createPost(
     const onMedia = parsed.error.issues.some((i) => i.path[0] === "media");
     return { error: onMedia ? "That attachment was rejected." : "Write something first." };
   }
+  if (!parsed.data.body && !parsed.data.media) return { error: "Write something, or add a photo or video." };
+  if (cleaned.length >= 2 && !parsed.data.body) return { error: "Write the poll's question." };
   if (cleaned.length === 1) return { error: "A poll needs at least two options." };
   if (new Set(cleaned).size !== cleaned.length)
     return { error: "Poll options must be different." };

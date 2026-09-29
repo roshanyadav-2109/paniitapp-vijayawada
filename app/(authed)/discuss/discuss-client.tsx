@@ -23,8 +23,10 @@ import {
   X,
 } from "@/components/icons";
 import {
-  MEDIA_ACCEPT,
+  IMAGE_ACCEPT,
+  VIDEO_ACCEPT,
   cloudinaryConfigured,
+  deliverUrl,
   uploadToCloudinary,
   type UploadedMedia,
 } from "@/lib/cloudinary";
@@ -184,19 +186,30 @@ function Composer() {
   const [pending, startTransition] = useTransition();
   const [media, setMedia] = useState<UploadedMedia | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const canAttach = cloudinaryConfigured();
 
+  // Words, a photo or a video, any of them on their own; a poll needs its
+  // question and two answers.
   const canSubmit =
-    body.trim().length > 0 &&
+    (body.trim().length > 0 || !!media) &&
     !uploading &&
-    (!isPoll || options.filter((o) => o.trim()).length >= 2);
+    (!isPoll || (body.trim().length > 0 && options.filter((o) => o.trim()).length >= 2));
+
+  function pick(accept: string) {
+    const input = fileRef.current;
+    if (!input) return;
+    input.accept = accept;
+    input.click();
+  }
 
   async function attach(file: File | undefined) {
     if (!file) return;
     setUploading(true);
+    setProgress(0);
     try {
-      setMedia(await uploadToCloudinary(file));
+      setMedia(await uploadToCloudinary(file, setProgress));
     } catch (err) {
       toast({
         title: "Could not attach that",
@@ -236,7 +249,7 @@ function Composer() {
         value={body}
         onChange={(e) => setBody(e.target.value.slice(0, MAX_BODY))}
         rows={isPoll ? 2 : 3}
-        placeholder="Share something with the room…"
+        placeholder={isPoll ? "Ask the room a question…" : "Share something with the room…"}
         className="w-full resize-none rounded-md border border-rule bg-white px-3 py-2 text-[14px] leading-6 text-brand-950 outline-none placeholder:text-brand-900/40 focus:border-brand-300"
       />
 
@@ -284,7 +297,7 @@ function Composer() {
         <div className="relative mt-2.5 w-[132px]">
           {media.type === "video" ? (
             <video
-              src={media.url}
+              src={deliverUrl(media.url, "video")}
               controls
               playsInline
               className="aspect-square w-full rounded-md bg-black object-cover"
@@ -312,38 +325,54 @@ function Composer() {
         <input
           ref={fileRef}
           type="file"
-          accept={MEDIA_ACCEPT}
+          accept={IMAGE_ACCEPT}
           className="hidden"
           onChange={(e) => attach(e.target.files?.[0])}
         />
-        {canAttach ? (
+        {/* Photo, Video and Poll, each its own button: one "photo or clip"
+            button hid that a video could be posted at all. */}
+        <div className="flex items-center gap-0.5">
+          {canAttach ? (
+            uploading ? (
+              <span className="inline-flex h-8 items-center gap-1.5 px-2.5 text-[12px] font-medium text-brand-800">
+                <Loader2 className="size-3.5 animate-spin" />
+                Uploading {Math.round(progress * 100)}%
+              </span>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => pick(IMAGE_ACCEPT)}
+                  disabled={!!media}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium text-brand-800 transition-colors hover:bg-paper-deep disabled:opacity-50"
+                >
+                  <Camera className="size-3.5" strokeWidth={1.8} />
+                  Photo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => pick(VIDEO_ACCEPT)}
+                  disabled={!!media}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium text-brand-800 transition-colors hover:bg-paper-deep disabled:opacity-50"
+                >
+                  <VideoGlyph className="size-3.5" />
+                  Video
+                </button>
+              </>
+            )
+          ) : null}
           <button
             type="button"
-            onClick={() => fileRef.current?.click()}
-            disabled={uploading || !!media}
-            className="mr-2 inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium text-brand-800 transition-colors hover:bg-paper-deep disabled:opacity-50"
-          >
-            {uploading ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <Camera className="size-3.5" strokeWidth={1.8} />
+            onClick={() => setIsPoll((v) => !v)}
+            className={cn(
+              "inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium transition-colors",
+              isPoll ? "bg-brand-800 text-white" : "text-brand-800 hover:bg-paper-deep"
             )}
-            {uploading ? "Uploading" : "Photo or clip"}
+          >
+            <SlidersHorizontal className="size-3.5" strokeWidth={1.8} />
+            Poll
           </button>
-        ) : null}
-        <button
-          type="button"
-          onClick={() => setIsPoll((v) => !v)}
-          className={cn(
-            "inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium transition-colors",
-            isPoll
-              ? "bg-brand-800 text-white"
-              : "text-brand-800 hover:bg-paper-deep"
-          )}
-        >
-          <SlidersHorizontal className="size-3.5" strokeWidth={1.8} />
-          {isPoll ? "Poll" : "Add poll"}
-        </button>
+        </div>
         <Button size="sm" onClick={submit} disabled={!canSubmit || pending}>
           {/* The word alone. A paper-plane beside "Post" says nothing the
               word does not, on the one button whose label is unambiguous. */}
@@ -464,31 +493,36 @@ function PostCard({
         ) : null}
       </div>
 
-      <p className="mt-2 whitespace-pre-wrap text-[14px] leading-6 text-brand-950">
-        {post.body}
-      </p>
+      {post.body.trim() ? (
+        <p className="mt-2 whitespace-pre-wrap text-[14px] leading-6 text-brand-950">
+          {post.body}
+        </p>
+      ) : null}
 
       {/* Attachment in a square, capped so one photo cannot take the whole
           screen. A clip carries controls and no autoplay — a feed that starts
           playing at you is a feed people leave. */}
+      {/* The picture in its own shape and the card's width, as tall as
+          480 px: a square crop cut people out of group photos. Sent at a
+          phone's width and in the lightest format the browser reads. */}
       {post.media_url ? (
-        <div className="mt-2.5 max-w-[280px]">
+        <div className="mt-2.5 overflow-hidden rounded-md bg-paper">
           {post.media_type === "video" ? (
             <video
-              src={post.media_url}
+              src={deliverUrl(post.media_url, "video")}
               controls
               playsInline
               preload="metadata"
-              className="aspect-square w-full rounded-md bg-black object-cover"
+              className="max-h-[480px] w-full bg-black"
             />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={post.media_url}
+              src={deliverUrl(post.media_url, "image")}
               alt=""
               loading="lazy"
               decoding="async"
-              className="aspect-square w-full rounded-md object-cover"
+              className="max-h-[480px] w-full object-contain"
             />
           )}
         </div>
@@ -802,5 +836,15 @@ function Comments({ postId }: { postId: string }) {
         </button>
       </div>
     </div>
+  );
+}
+
+/** A video camera, drawn to sit with the Solar set's linear icons. */
+function VideoGlyph({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className={className} aria-hidden="true">
+      <rect x="2" y="6" width="14" height="12" rx="3" />
+      <path strokeLinejoin="round" d="M16 10.5l5-3v9l-5-3z" />
+    </svg>
   );
 }
