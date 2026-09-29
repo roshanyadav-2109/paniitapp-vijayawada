@@ -167,6 +167,10 @@ export default async function MePage() {
           icon="privacy"
           label="Privacy & Notifications"
         />
+        {/* Only for the people it opens for. */}
+        {profile?.role === "admin" || profile?.role === "organizer" ? (
+          <Row href="/admin" icon="admin" label="Admin Panel" />
+        ) : null}
 
         <form action="/api/auth/signout" method="post">
           <button
@@ -243,7 +247,7 @@ function ChipBlock({ label, items }: { label: string; items: string[] }) {
 }
 
 /** The drawn row icons, cut from the supplied sheet and sized as a set. */
-type RowIconName = "connections" | "qr-badge" | "privacy" | "logout";
+type RowIconName = "connections" | "qr-badge" | "privacy" | "admin" | "logout";
 
 function RowIcon({ name }: { name: RowIconName }) {
   return (

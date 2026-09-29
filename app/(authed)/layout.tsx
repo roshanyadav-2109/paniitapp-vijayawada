@@ -71,7 +71,7 @@ async function Shell({ children }: { children: React.ReactNode }) {
       <main className="mx-auto w-full max-w-screen-2xl px-3 pb-32 sm:px-5 lg:px-6 lg:pb-12">
         {children}
       </main>
-      <BottomNav />
+      <BottomNav isAdmin={viewer.isAdmin} />
       {/* Slides up a few seconds in, at most once a visit: install the app,
           then — once installed — turn notifications on. The public VAPID key
           is public by definition; the private half stays on the server. */}

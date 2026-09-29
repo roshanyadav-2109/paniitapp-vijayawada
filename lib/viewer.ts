@@ -7,6 +7,7 @@ export interface MyProfile {
   designation: string | null;
   company: string | null;
   push_subscription: unknown;
+  role: string | null;
 }
 
 /**
@@ -20,7 +21,7 @@ export const getMyProfile = cache(async (userId: string): Promise<MyProfile | nu
   const supabase = await createClient();
   const { data } = await supabase
     .from("profiles")
-    .select("full_name, designation, company, push_subscription")
+    .select("full_name, designation, company, push_subscription, role")
     .eq("id", userId)
     .maybeSingle();
   return (data as MyProfile | null) ?? null;
@@ -57,6 +58,8 @@ export interface Viewer {
   userId: string | null;
   /** Whether THIS account has a push subscription stored against it. */
   pushRegistered: boolean;
+  /** Organisers and admins: the people the admin panel opens for. */
+  isAdmin: boolean;
 }
 
 /**
@@ -74,7 +77,7 @@ export const getViewer = cache(async function getViewer(): Promise<Viewer> {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return { signedIn: false, userId: null, pushRegistered: false };
+    if (!user) return { signedIn: false, userId: null, pushRegistered: false, isAdmin: false };
 
     const me = await getMyProfile(user.id);
 
@@ -82,9 +85,10 @@ export const getViewer = cache(async function getViewer(): Promise<Viewer> {
       signedIn: true,
       userId: user.id,
       pushRegistered: !!me?.push_subscription,
+      isAdmin: me?.role === "admin" || me?.role === "organizer",
     };
   } catch (err) {
     rethrowIfRedirect(err);
-    return { signedIn: false, userId: null, pushRegistered: false };
+    return { signedIn: false, userId: null, pushRegistered: false, isAdmin: false };
   }
 });
