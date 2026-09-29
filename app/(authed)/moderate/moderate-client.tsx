@@ -43,12 +43,21 @@ function tabOf(q: ModQuestion): Tab {
   return "open";
 }
 
-/** The session on now, or else the next one, or else the first. */
-function defaultSession(sessions: ModSession[]): string {
+/** Where to open: a session with questions waiting (the one on now if it is
+ *  one), else the one on now, else the next, else the first. Opening on a
+ *  session with nothing in it made the page look empty when questions
+ *  were waiting in another. */
+function defaultSession(sessions: ModSession[], questions: ModQuestion[]): string {
   const now = Date.now();
-  const on = sessions.find((s) => Date.parse(s.start_at) <= now && now < Date.parse(s.end_at));
+  const waiting = new Set(
+    questions.filter((q) => tabOf(q) === "open" || tabOf(q) === "pinned").map((q) => q.session_id)
+  );
+  const withWaiting = sessions.filter((s) => waiting.has(s.id));
+  const on = (list: ModSession[]) =>
+    list.find((s) => Date.parse(s.start_at) <= now && now < Date.parse(s.end_at));
+  if (withWaiting.length) return (on(withWaiting) ?? withWaiting[0]).id;
   const next = sessions.find((s) => Date.parse(s.start_at) > now);
-  return (on ?? next ?? sessions[0]).id;
+  return (on(sessions) ?? next ?? sessions[0]).id;
 }
 
 export function ModerateClient({
@@ -62,7 +71,7 @@ export function ModerateClient({
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [questions, setQuestions] = useState<ModQuestion[]>(initialQuestions);
-  const [active, setActive] = useState<string>(initialSession ?? defaultSession(sessions));
+  const [active, setActive] = useState<string>(initialSession ?? defaultSession(sessions, initialQuestions));
   const [tab, setTab] = useState<Tab>("open");
   const [fresh, setFresh] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
