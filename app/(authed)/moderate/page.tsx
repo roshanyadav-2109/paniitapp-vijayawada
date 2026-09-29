@@ -42,7 +42,7 @@ export default async function ModeratePage({
 
     let sq = supabase
       .from("sessions")
-      .select("id, title, start_at, end_at, venues:venue_id(name)")
+      .select("id, title, start_at, end_at, venues(name)")
       .eq("event_id", EVENT_ID)
       .order("start_at", { ascending: true });
     if (!organizer) {
