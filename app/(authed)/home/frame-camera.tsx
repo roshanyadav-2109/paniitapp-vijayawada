@@ -88,7 +88,7 @@ const FILE_NAME = "paniit-ap-summit-2026.jpg";
 /** What goes with the picture wherever it is shared. */
 const SHARE_TEXT = [
   `I'm at the PanIIT Andhra Pradesh Summit 2026 — ${EVENT_TAGLINE}.`,
-  "Join us in building Andhra's deeptech future.",
+  "Join us in building Andhra's deeptech future: andhra.paniit.space",
   `I'm coming to the summit, are you? Register here: ${TICKETS_URL}`,
 ].join("\n\n");
 
@@ -511,10 +511,16 @@ function FrameCamera({ onClose }: { onClose: () => void }) {
     void navigator.clipboard?.writeText(SHARE_TEXT).catch(() => {});
   }
 
-  async function share() {
+  /** The phone's share sheet, photo attached: the one way a picture goes
+   *  from a web page straight into a LinkedIn, X or Instagram post. */
+  async function share(app?: string) {
     if (!result) return;
     copyCaption();
-    setHint("The caption is copied too, to paste if the app leaves it out.");
+    setHint(
+      app
+        ? `Pick ${app} in the list: the photo goes straight into the post. The caption is copied too, to paste if ${app} leaves it out.`
+        : "The caption is copied too, to paste if the app leaves it out."
+    );
     try {
       await navigator.share({ files: [result.file], text: SHARE_TEXT });
     } catch (err) {
@@ -524,9 +530,18 @@ function FrameCamera({ onClose }: { onClose: () => void }) {
     }
   }
 
-  /** Straight to a LinkedIn or X post, with the photo saved to add to it. */
+  /**
+   * To a LinkedIn or X post. On a phone that is the share sheet with the
+   * photo in it, since neither site will take a picture from a web page.
+   * Only where there is no such sheet (a desktop browser) does it open the
+   * site's post box with the caption and save the photo to add by hand.
+   */
   function postTo(site: keyof typeof POST_TO) {
     if (!result) return;
+    if (canShare) {
+      void share(site === "x" ? "X" : "LinkedIn");
+      return;
+    }
     // Opened before anything else, while it still counts as the tap: a
     // window opened later is a popup, and gets blocked.
     window.open(POST_TO[site], "_blank", "noopener,noreferrer");
@@ -543,7 +558,7 @@ function FrameCamera({ onClose }: { onClose: () => void }) {
   function toInstagram() {
     if (!result) return;
     if (canShare) {
-      void share();
+      void share("Instagram");
       return;
     }
     window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
@@ -612,7 +627,7 @@ function FrameCamera({ onClose }: { onClose: () => void }) {
               {canShare ? (
                 <button
                   type="button"
-                  onClick={share}
+                  onClick={() => void share()}
                   className="h-11 rounded-md bg-brand-800 text-[14px] font-medium text-white transition-colors hover:bg-brand-900"
                 >
                   Share
