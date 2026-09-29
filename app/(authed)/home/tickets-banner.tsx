@@ -30,7 +30,7 @@ export function TicketsBanner() {
   }
 
   return (
-    <div className="flex items-center gap-4 overflow-hidden rounded-lg border border-[#CFE0F7] bg-[#EAF2FD] p-4 sm:gap-6 sm:p-5">
+    <div className="flex items-center gap-4 overflow-hidden rounded-lg border border-rule bg-white shadow-[0_6px_18px_-14px_rgba(13,9,48,0.4)] p-4 sm:gap-6 sm:p-5">
       <div className="min-w-0 flex-1">
         <p className="font-display text-[17px] font-semibold leading-snug text-brand-950 sm:text-[19px]">
           Get your tickets
@@ -41,7 +41,7 @@ export function TicketsBanner() {
             type="button"
             onClick={copyCode}
             aria-label={`Copy the code ${TICKETS_CODE}`}
-            className="mx-0.5 inline-flex items-center rounded border border-dashed border-brand-800/40 bg-white px-1.5 py-px font-semibold tracking-wide text-brand-800"
+            className="mx-0.5 inline-flex items-center rounded border border-dashed border-brand-800/40 bg-paper px-1.5 py-px font-semibold tracking-wide text-brand-800"
           >
             {TICKETS_CODE}
           </button>{" "}
@@ -53,7 +53,7 @@ export function TicketsBanner() {
             target="_blank"
             rel="noopener noreferrer"
             onClick={copyCode}
-            className="inline-flex h-9 items-center rounded-md bg-brand-800 px-4 text-[13px] font-medium text-white transition-colors hover:bg-brand-900"
+            className="inline-flex h-10 items-center whitespace-nowrap rounded-md bg-[#FFC93C] px-5 text-[13.5px] font-semibold text-brand-950 transition-colors hover:bg-[#F5BB1F]"
           >
             Get tickets
           </a>
