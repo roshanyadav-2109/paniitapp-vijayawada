@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 
 export const TICKETS_URL = "https://www.paniit.org/events/tickets/21873";
@@ -64,32 +65,14 @@ export function TicketsBanner() {
           </span>
         </div>
       </div>
-      <TicketArt />
-    </div>
-  );
-}
-
-/** A ticket, drawn: the stand-in until the summit's own ticket artwork. */
-function TicketArt() {
-  return (
-    <svg
-      viewBox="0 0 120 80"
-      aria-hidden="true"
-      className="h-[76px] w-auto shrink-0 -rotate-6 drop-shadow-[0_8px_14px_rgba(13,9,48,0.25)] sm:h-[92px]"
-    >
-      <path
-        d="M8 4h104a4 4 0 0 1 4 4v18a10 10 0 0 0 0 20v26a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V46a10 10 0 0 0 0-20V8a4 4 0 0 1 4-4Z"
-        fill="#fff"
-        stroke="#1B1464"
-        strokeWidth="2.5"
+      <Image
+        src="/ui/admin/tickets.webp"
+        alt=""
+        width={512}
+        height={512}
+        sizes="96px"
+        className="size-[84px] shrink-0 sm:size-24"
       />
-      <path d="M84 10v60" stroke="#1B1464" strokeWidth="2" strokeDasharray="4 4" />
-      <rect x="16" y="20" width="52" height="7" rx="3.5" fill="#1B1464" />
-      <rect x="16" y="34" width="38" height="5" rx="2.5" fill="#1B1464" opacity=".35" />
-      <rect x="16" y="45" width="44" height="5" rx="2.5" fill="#1B1464" opacity=".35" />
-      <text x="100" y="45" textAnchor="middle" fontSize="11" fontWeight="700" fill="#1B1464" transform="rotate(-90 100 41)">
-        ADMIT
-      </text>
-    </svg>
+    </div>
   );
 }
