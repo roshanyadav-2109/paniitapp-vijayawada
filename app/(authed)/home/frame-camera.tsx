@@ -39,28 +39,24 @@ interface Frame {
   win: { x: number; y: number; w: number; h: number };
 }
 
-type Shape = "landscape" | "portrait";
+type FrameKey = "campuses" | "leaders";
 
-const SQUARE: Frame = {
-  src: "/ui/frame/summit-frame-square-2.webp",
-  w: 1254,
-  h: 1254,
-  win: { x: 269, y: 238, w: 708, h: 704 },
+/** The frames to choose from, in the order they are offered. */
+const FRAMES: Record<FrameKey, Frame> = {
+  campuses: {
+    src: "/ui/frame/summit-frame-square-2.webp",
+    w: 1254,
+    h: 1254,
+    win: { x: 269, y: 238, w: 708, h: 704 },
+  },
+  leaders: {
+    src: "/ui/frame/summit-frame-wide.webp",
+    w: 1536,
+    h: 1024,
+    win: { x: 240, y: 183, w: 1066, h: 602 },
+  },
 };
-
-/** One frame for every shape: a wide or a tall photo is cropped to its
- *  square window, and can be moved and zoomed to choose the crop. */
-const FRAMES: Record<Shape, Frame> = { landscape: SQUARE, portrait: SQUARE };
-
-/** Which of the frames a picture takes: today both shapes take the one
- *  frame. */
-function shapeOf(w: number, h: number): Shape {
-  return h >= w ? "portrait" : "landscape";
-}
-
-function frameFor(p: { w: number; h: number }) {
-  return FRAMES[shapeOf(p.w, p.h)];
-}
+const FRAME_KEYS: FrameKey[] = ["campuses", "leaders"];
 
 /** A frame's window as percentages of the frame, for laying things out in it. */
 function winStyle(f: Frame): React.CSSProperties {
@@ -114,16 +110,15 @@ interface View {
 
 const FIT: View = { zoom: 1, x: 0, y: 0 };
 
-function cover(p: { w: number; h: number }) {
-  const { win } = frameFor(p);
-  return Math.max(win.w / p.w, win.h / p.h);
+function cover(p: { w: number; h: number }, f: Frame) {
+  return Math.max(f.win.w / p.w, f.win.h / p.h);
 }
 
 /** Never let the photo slide or shrink so far that the window shows a gap. */
-function clampView(v: View, p: Photo): View {
-  const { win } = frameFor(p);
+function clampView(v: View, p: Photo, f: Frame): View {
+  const { win } = f;
   const zoom = Math.min(MAX_ZOOM, Math.max(1, v.zoom));
-  const s = cover(p) * zoom;
+  const s = cover(p, f) * zoom;
   const mx = Math.max(0, (p.w * s - win.w) / 2);
   const my = Math.max(0, (p.h * s - win.h) / 2);
   return {
@@ -142,8 +137,7 @@ function loadImage(src: string) {
   });
 }
 
-async function compose(photo: Photo, view: View): Promise<File> {
-  const f = frameFor(photo);
+async function compose(photo: Photo, view: View, f: Frame): Promise<File> {
   const { x: cx, y: cy } = centre(f);
   const [frame, img] = await Promise.all([loadImage(f.src), loadImage(photo.url)]);
   const c = document.createElement("canvas");
@@ -155,7 +149,7 @@ async function compose(photo: Photo, view: View): Promise<File> {
   ctx.imageSmoothingQuality = "high";
   ctx.fillStyle = "#0d0930";
   ctx.fillRect(0, 0, c.width, c.height);
-  const s = cover(photo) * view.zoom;
+  const s = cover(photo, f) * view.zoom;
   const pw = photo.w * s;
   const ph = photo.h * s;
   ctx.drawImage(
@@ -215,11 +209,11 @@ export function FrameCta() {
         <span className="relative aspect-square w-[104px] shrink-0 rotate-[3deg] overflow-hidden rounded-md bg-brand-950 shadow-[0_10px_22px_-10px_rgba(13,9,48,0.5)] ring-2 ring-white sm:w-[128px]">
           <span
             className="absolute grid place-items-center bg-gradient-to-br from-brand-700 to-brand-500"
-            style={winStyle(FRAMES.landscape)}
+            style={winStyle(FRAMES.campuses)}
           >
             <Camera className="size-5 text-white/85" strokeWidth={1.5} />
           </span>
-          <Image src={FRAMES.landscape.src} alt="" fill sizes="170px" className="object-cover" />
+          <Image src={FRAMES.campuses.src} alt="" fill sizes="170px" className="object-cover" />
         </span>
       </button>
 
@@ -243,10 +237,10 @@ const STEP_TITLE: Record<Exclude<Step, "result">, string> = {
 
 function FrameCamera({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState<Step>("camera");
-  // The live picture's shape picks the frame round it. Until the camera
-  // says, the way the screen is held is the best guess.
-  const [camShape, setCamShape] = useState<Shape>(() =>
-    window.innerHeight > window.innerWidth ? "portrait" : "landscape"
+  // Which frame is round the picture. It starts on the one that suits the
+  // way the phone is held, and the person can change it at any point.
+  const [frameKey, setFrameKey] = useState<FrameKey>(() =>
+    window.innerHeight > window.innerWidth ? "campuses" : "leaders"
   );
   const [facing, setFacing] = useState<"user" | "environment">("user");
   const [live, setLive] = useState(false);
@@ -273,10 +267,9 @@ function FrameCamera({ onClose }: { onClose: () => void }) {
   photoRef.current = photo;
   resultRef.current = result;
 
-  // A photo sits in the frame its own shape picks; the camera, in the one
-  // the live picture's shape picks.
-  const frame =
-    photo && (step === "review" || step === "adjust") ? frameFor(photo) : FRAMES[camShape];
+  const frame = FRAMES[frameKey];
+  const frameRef = useRef(frame);
+  frameRef.current = frame;
   const { x: cx, y: cy } = centre(frame);
   const k = stageW / frame.w;
 
@@ -429,7 +422,7 @@ function FrameCamera({ onClose }: { onClose: () => void }) {
       const zoom = Math.min(MAX_ZOOM, Math.max(1, v.zoom * factor));
       const r = zoom / v.zoom;
       // keep the point under the fingers where it is
-      return clampView({ zoom, x: fx + (v.x - fx) * r, y: fy + (v.y - fy) * r }, p);
+      return clampView({ zoom, x: fx + (v.x - fx) * r, y: fy + (v.y - fy) * r }, p, frameRef.current);
     });
   }, []);
 
@@ -470,7 +463,7 @@ function FrameCamera({ onClose }: { onClose: () => void }) {
     if (pts.size === 1) {
       const dx = (e.clientX - prev.x) / k;
       const dy = (e.clientY - prev.y) / k;
-      setView((v) => clampView({ ...v, x: v.x + dx, y: v.y + dy }, photo));
+      setView((v) => clampView({ ...v, x: v.x + dx, y: v.y + dy }, photo, frame));
     } else if (pts.size === 2) {
       const other = [...pts.entries()].find(([id]) => id !== e.pointerId)?.[1];
       if (other) {
@@ -479,7 +472,7 @@ function FrameCamera({ onClose }: { onClose: () => void }) {
         const mid = toWindow((e.clientX + other.x) / 2, (e.clientY + other.y) / 2);
         const dx = (e.clientX - prev.x) / 2 / k;
         const dy = (e.clientY - prev.y) / 2 / k;
-        setView((v) => clampView({ ...v, x: v.x + dx, y: v.y + dy }, photo));
+        setView((v) => clampView({ ...v, x: v.x + dx, y: v.y + dy }, photo, frame));
         if (before > 0) zoomAt(after / before, mid.x, mid.y);
       }
     }
@@ -495,7 +488,7 @@ function FrameCamera({ onClose }: { onClose: () => void }) {
     if (!photo) return;
     setBusy(true);
     try {
-      const file = await compose(photo, view);
+      const file = await compose(photo, view, frame);
       if (resultRef.current) URL.revokeObjectURL(resultRef.current.url);
       setResult({ file, url: URL.createObjectURL(file) });
       setStep("result");
@@ -574,10 +567,18 @@ function FrameCamera({ onClose }: { onClose: () => void }) {
     void startCamera(facing);
   }
 
+  /** A different frame has a different window, so the photo starts again
+   *  from its fit rather than from a position that suited the other. */
+  function chooseFrame(key: FrameKey) {
+    if (key === frameKey) return;
+    setFrameKey(key);
+    setView(FIT);
+  }
+
   // ---- layout ----
   let photoStyle: React.CSSProperties | undefined;
   if (photo && k) {
-    const s = cover(photo) * view.zoom * k;
+    const s = cover(photo, frame) * view.zoom * k;
     const w = photo.w * s;
     const h = photo.h * s;
     photoStyle = {
@@ -704,7 +705,7 @@ function FrameCamera({ onClose }: { onClose: () => void }) {
           }`}
           style={{
             aspectRatio: `${frame.w} / ${frame.h}`,
-            width: `min(100vw, calc((100dvh - 250px) * ${frame.w / frame.h}), 1100px)`,
+            width: `min(100vw, calc((100dvh - 330px) * ${frame.w / frame.h}), 1100px)`,
           }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
@@ -721,14 +722,6 @@ function FrameCamera({ onClose }: { onClose: () => void }) {
                 muted
                 autoPlay
                 onPlaying={() => setLive(true)}
-                onLoadedMetadata={(e) => {
-                  const v = e.currentTarget;
-                  if (v.videoWidth) setCamShape(shapeOf(v.videoWidth, v.videoHeight));
-                }}
-                onResize={(e) => {
-                  const v = e.currentTarget;
-                  if (v.videoWidth) setCamShape(shapeOf(v.videoWidth, v.videoHeight));
-                }}
                 className="absolute object-cover"
                 style={{ ...winStyle(frame), transform: facing === "user" ? "scaleX(-1)" : undefined }}
               />
@@ -772,6 +765,38 @@ function FrameCamera({ onClose }: { onClose: () => void }) {
 
       <div className="shrink-0 px-5 pb-6 pt-4">
         {error ? <p className="mb-3 text-center text-[12.5px] text-iit-300">{error}</p> : null}
+
+        {/* The frames to choose from, each as it will look: slide along them
+            and tap one. */}
+        {step === "camera" || step === "review" || step === "adjust" ? (
+          <div
+            role="radiogroup"
+            aria-label="Frame"
+            className="no-scrollbar -mx-5 mb-4 flex snap-x gap-3 overflow-x-auto px-5 [&>*:first-child]:ml-auto [&>*:last-child]:mr-auto"
+          >
+            {FRAME_KEYS.map((key) => {
+              const f = FRAMES[key];
+              const on = key === frameKey;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  aria-label={key === "campuses" ? "IIT campuses frame" : "Chief Minister and Minister frame"}
+                  onClick={() => chooseFrame(key)}
+                  className={`relative h-14 shrink-0 snap-center overflow-hidden rounded-lg bg-[#1B1464] transition-all ${
+                    on ? "opacity-100 ring-2 ring-white" : "opacity-55 ring-1 ring-white/20 hover:opacity-80"
+                  }`}
+                  style={{ aspectRatio: `${f.w} / ${f.h}` }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={f.src} alt="" draggable={false} className="h-full w-full" />
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
 
         {step === "camera" ? (
           <div className="mx-auto flex max-w-sm items-center justify-between">
