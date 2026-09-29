@@ -197,34 +197,40 @@ export function FrameCta({ signedIn }: { signedIn: boolean }) {
 
   return (
     <>
+      {/* Laid out as the gate pass banner is, words and a button on the
+          left and the thing itself on the right, on a warm cream that takes
+          its colour from the frame's golden edge: the blue belongs to the
+          pass and the green to the install banner, and a third dark block
+          among the navy tiles is what this replaced. */}
       <button
         type="button"
         onClick={() => {
           setRestored(null);
           setOpen(true);
         }}
-        className="flex w-full items-center gap-3 overflow-hidden rounded-lg bg-gradient-to-r from-brand-900 to-brand-600 p-2.5 pr-3 text-left text-white shadow-[0_8px_20px_-12px_rgba(13,9,48,0.6)] transition-transform active:scale-[0.99]"
+        className="flex w-full items-center gap-4 overflow-hidden rounded-lg border border-[#F0DDB3] bg-[#FFF7E6] p-4 text-left transition-colors hover:bg-[#FFF2D9] sm:gap-6 sm:p-5"
       >
-        {/* The frame itself, small, over the navy the camera opens on. */}
-        <span className="relative aspect-[3/2] w-[78px] shrink-0 overflow-hidden rounded-md bg-brand-950 ring-1 ring-white/25">
+        <span className="min-w-0 flex-1">
+          <span className="block text-balance font-display text-[17px] font-semibold leading-snug text-brand-950 sm:text-[19px]">
+            Let others know you&rsquo;re here
+          </span>
+          <span className="mt-1 block text-[12.5px] leading-5 text-brand-950/70">
+            Take a photo in the Andhra&rsquo;s Resilient Deeptech Decade frame and share it.
+          </span>
+          <span className="mt-3 inline-flex h-9 items-center rounded-md bg-brand-800 px-4 text-[13px] font-medium text-white">
+            Open camera
+          </span>
+        </span>
+        {/* The frame itself, tipped a little like a print, over the navy
+            the camera opens on. */}
+        <span className="relative aspect-[3/2] w-[128px] shrink-0 rotate-[3deg] overflow-hidden rounded-md bg-brand-950 shadow-[0_10px_22px_-10px_rgba(13,9,48,0.5)] ring-2 ring-white sm:w-[168px]">
           <span
             className="absolute grid place-items-center bg-gradient-to-br from-brand-700 to-brand-500"
             style={winStyle(FRAMES.landscape)}
           >
-            <Camera className="size-3.5 text-white/85" strokeWidth={1.6} />
+            <Camera className="size-5 text-white/85" strokeWidth={1.5} />
           </span>
-          <Image src={FRAMES.landscape.src} alt="" fill sizes="80px" className="object-cover" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block font-display text-[15px] font-semibold leading-snug">
-            Let others know you&rsquo;re here
-          </span>
-          <span className="mt-0.5 block text-[11.5px] leading-4 text-white/75">
-            Take a photo in the Andhra&rsquo;s Resilient Deeptech Decade frame
-          </span>
-        </span>
-        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white text-brand-800">
-          <Camera className="size-5" />
+          <Image src={FRAMES.landscape.src} alt="" fill sizes="170px" className="object-cover" />
         </span>
       </button>
 

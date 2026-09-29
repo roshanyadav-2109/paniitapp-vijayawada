@@ -349,15 +349,17 @@ export default async function HomePage() {
         </div>
       </SafeSection>
 
+      {/* A photo in the summit frame, above the tiles, in a row of its own
+          with the room round it every section has: pressed onto the tiles it
+          read as a fifth one of them. */}
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
+        <FrameCta signedIn={signedIn} />
+      </SafeSection>
+
       {/* The four things you actually do in the app — badge, scanner,
           secretariat, programme — directly under the masthead. Someone
           opening this at the door wants a QR code, not a photograph. */}
       <SafeSection className="px-3 sm:px-5 lg:px-6">
-        {/* A photo in the summit frame, above the tiles: the one thing
-            here people do to tell others they came. */}
-        <div className="mb-2">
-          <FrameCta signedIn={signedIn} />
-        </div>
         <QuickActions role={role} />
       </SafeSection>
 
