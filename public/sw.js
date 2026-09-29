@@ -15,7 +15,7 @@ const CACHE_NAME = `${CACHE_VERSION}-static`;
 const PRECACHE_URLS = ["/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 // Screens that belong to one person. Nothing here is ever stored.
-const PRIVATE_PATHS = ["/me", "/chat", "/meetings", "/recap", "/scan", "/admin", "/onboarding", "/api"];
+const PRIVATE_PATHS = ["/me", "/chat", "/recap", "/scan", "/admin", "/onboarding", "/api"];
 
 // Files that are replaced by writing a new name, never edited in place.
 const STATIC_PREFIXES = [

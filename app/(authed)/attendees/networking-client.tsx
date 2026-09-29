@@ -50,7 +50,6 @@ interface Filters {
   yearMin: number;
   yearMax: number;
   interests: string[];
-  availableOnly: boolean;
 }
 
 const PAGE_SIZE = 50;
@@ -65,7 +64,6 @@ function emptyFilters(): Filters {
     yearMin: YEAR_MIN,
     yearMax: YEAR_MAX,
     interests: [],
-    availableOnly: false,
   };
 }
 
@@ -74,8 +72,7 @@ function activeExtraCount(f: Filters): number {
     f.campuses.length +
     f.interests.length +
     (f.yearMin > YEAR_MIN ? 1 : 0) +
-    (f.yearMax < YEAR_MAX ? 1 : 0) +
-    (f.availableOnly ? 1 : 0)
+    (f.yearMax < YEAR_MAX ? 1 : 0)
   );
 }
 
@@ -161,8 +158,6 @@ export function NetworkingClient({
       if (f.yearMin > YEAR_MIN) q = q.gte("graduation_year", f.yearMin);
       if (f.yearMax < YEAR_MAX) q = q.lte("graduation_year", f.yearMax);
       if (f.interests.length > 0) q = q.overlaps("interests", f.interests);
-      if (f.availableOnly)
-        q = q.or("available_for_meetings.eq.true,office_hours_enabled.eq.true");
 
       const { data, count } = await q;
       return {
