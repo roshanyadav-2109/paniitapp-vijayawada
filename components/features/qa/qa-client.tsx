@@ -38,7 +38,6 @@ export function QaClient({
   const supabase = useMemo(() => createClient(), []);
   const [mine, setMine] = useState<MyQuestion[]>(initialMine);
   const [body, setBody] = useState("");
-  const [anon, setAnon] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -74,7 +73,7 @@ export function QaClient({
     startTransition(async () => {
       const { data, error: err } = await supabase
         .from("session_questions")
-        .insert({ session_id: sessionId, user_id: userId, question: text, is_anonymous: anon })
+        .insert({ session_id: sessionId, user_id: userId, question: text })
         .select("id, question, status, is_answered, is_anonymous, created_at")
         .single();
       if (err || !data) {
@@ -83,7 +82,6 @@ export function QaClient({
       }
       setMine((list) => [data as MyQuestion, ...list.filter((q) => q.id !== data.id)]);
       setBody("");
-      setAnon(false);
       setSent(true);
       setTimeout(() => setSent(false), 4000);
     });
@@ -103,8 +101,8 @@ export function QaClient({
       {userId ? (
         <div>
           <p className="text-[13px] leading-5 text-brand-900/70">
-            Your question goes to the session&rsquo;s moderator, who puts questions to the
-            panel. Only they see it.
+            Your question goes to the session&rsquo;s moderator with your name, and they put
+            questions to the panel. Only they see it.
           </p>
           <Textarea
             value={body}
@@ -113,16 +111,9 @@ export function QaClient({
             rows={3}
             className="mt-2.5 rounded-md border-rule text-[14px]"
           />
-          <div className="mt-2 flex items-center justify-between text-[12px] text-brand-900/70">
-            <label className="inline-flex items-center gap-1.5">
-              <input
-                type="checkbox"
-                checked={anon}
-                onChange={(e) => setAnon(e.target.checked)}
-                className="size-4 accent-brand-800"
-              />
-              Ask anonymously
-            </label>
+          {/* Always under the asker's name: a moderator choosing what to put
+              to the panel needs to know who is asking. */}
+          <div className="mt-2 flex items-center justify-end text-[12px] text-brand-900/70">
             <span className="tabular-nums text-brand-900/50">
               {body.length} / {MAX}
             </span>
@@ -167,7 +158,6 @@ export function QaClient({
                   <p className="text-[14px] leading-5 text-brand-950">{q.question}</p>
                   <p className="mt-1 flex items-center gap-2 text-[11.5px] text-brand-900/55">
                     <span>{timeIST(q.created_at)}</span>
-                    {q.is_anonymous ? <span>· anonymous</span> : null}
                     <span
                       className={
                         answered
