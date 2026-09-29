@@ -92,7 +92,7 @@ export function QuickActions({ role }: Props) {
 
       {canAnnounce ? (
         <Link
-          href="/admin#announce"
+          href="/admin/announce"
           className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-brand-800 bg-white px-4 py-3.5 text-[13px] font-semibold text-brand-800 transition-colors hover:bg-paper-deep"
         >
           <TileIcon src="/ui/post-announcement.webp" size={20} />
