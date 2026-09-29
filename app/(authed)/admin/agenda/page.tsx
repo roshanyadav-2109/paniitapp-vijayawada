@@ -33,10 +33,6 @@ export default async function AdminAgendaPage() {
         &larr; Admin
       </Link>
       <h1 className="mt-2 font-display text-2xl font-semibold text-brand-950">Agenda &amp; moderators</h1>
-      <p className="mt-1 text-[13px] leading-5 text-brand-900/70">
-        Add, change or remove sessions, and choose who moderates each one&rsquo;s questions by
-        their email. A moderator can be added before they have ever signed in.
-      </p>
       <AgendaAdmin sessions={sessions} venues={(v.data as AdminVenue[] | null) ?? []} />
     </div>
   );
