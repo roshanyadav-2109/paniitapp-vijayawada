@@ -31,7 +31,7 @@ type Tab = "open" | "pinned" | "answered" | "dismissed";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "open", label: "Waiting" },
-  { key: "pinned", label: "Up next" },
+  { key: "pinned", label: "Priority" },
   { key: "answered", label: "Answered" },
   { key: "dismissed", label: "Dismissed" },
 ];
@@ -175,18 +175,21 @@ export function ModerateClient({
         })}
       </div>
 
-      <div className="mt-4 grid grid-cols-4 gap-1.5">
+      {/* Four tabs do not fit one phone row with their counts: they scroll
+          sideways instead, each as wide as its own words. */}
+      <div className="no-scrollbar -mx-3 mt-4 flex gap-1.5 overflow-x-auto px-3">
         {TABS.map((t) => (
           <button
             key={t.key}
             type="button"
             onClick={() => setTab(t.key)}
             className={cn(
-              "h-9 rounded-md text-[12.5px] transition-colors",
+              "inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 text-[13px] transition-colors",
               tab === t.key ? "bg-brand-950 font-medium text-white" : "bg-white text-brand-900 ring-1 ring-rule hover:bg-paper"
             )}
           >
-            {t.label} {counts[t.key] ? <span className="tabular-nums opacity-70">{counts[t.key]}</span> : null}
+            {t.label}
+            {counts[t.key] ? <span className="tabular-nums opacity-70">{counts[t.key]}</span> : null}
           </button>
         ))}
       </div>
@@ -219,7 +222,7 @@ export function ModerateClient({
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {t === "open" ? (
-                    <ActionButton onClick={() => update(q, { is_pinned: true })}>Up next</ActionButton>
+                    <ActionButton onClick={() => update(q, { is_pinned: true })}>Mark priority</ActionButton>
                   ) : null}
                   {t === "open" || t === "pinned" ? (
                     <>
