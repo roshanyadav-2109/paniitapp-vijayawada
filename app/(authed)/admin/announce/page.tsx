@@ -18,9 +18,6 @@ export default async function AdminAnnouncePage() {
         <Image src="/ui/admin/announce.webp" alt="" width={512} height={512} sizes="64px" className="size-16" />
         <div>
           <h1 className="font-display text-2xl font-semibold text-brand-950">Announcements</h1>
-          <p className="text-[13px] leading-5 text-brand-900/70">
-            Tell everyone at once: it appears under the bell at the top of the app.
-          </p>
         </div>
       </div>
       <div className="mt-5">
