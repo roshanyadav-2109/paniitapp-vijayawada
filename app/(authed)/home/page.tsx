@@ -317,15 +317,10 @@ export default async function HomePage() {
         </div>
       </SafeSection>
 
-      {/* Registration, straight under the card that says when and where. */}
-      <SafeSection className="px-3 sm:px-5 lg:px-6">
+      {/* Registration and the summit photo, close together: two calls to
+          act, one under the other, rather than two sections. */}
+      <SafeSection className="space-y-3 px-3 sm:px-5 lg:px-6">
         <TicketsBanner />
-      </SafeSection>
-
-      {/* A photo in the summit frame, above the tiles, in a row of its own
-          with the room round it every section has: pressed onto the tiles it
-          read as a fifth one of them. */}
-      <SafeSection className="px-3 sm:px-5 lg:px-6">
         <FrameCta />
       </SafeSection>
 
