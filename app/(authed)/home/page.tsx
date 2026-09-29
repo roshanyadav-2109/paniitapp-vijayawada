@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { LoginCta } from "@/components/features/login-cta";
+import { SafeSection } from "@/components/features/safe-section";
 import { getViewer } from "@/lib/viewer";
 import Link from "next/link";
 import { emptied } from "@/lib/dev-empty";
@@ -36,6 +37,7 @@ import { QuickActions } from "./quick-actions";
 import { IitMarquee } from "./iit-marquee";
 import { EventScale } from "@/components/features/event-scale";
 import { GatePassBanner } from "./gate-pass-banner";
+import { FrameCta } from "./frame-camera";
 import { AppPromptBanner } from "@/components/features/app-prompt-banner";
 import {
   getPublicExhibitorCount,
@@ -255,7 +257,7 @@ export default async function HomePage() {
           purple-to-navy gradient card, then a flat navy one, then nothing at
           all on a white page, which left it with no edges. White again, and
           the cool ground is what gives it its edge. */}
-      <section className="px-3 sm:px-5 lg:px-6">
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
         <div className="overflow-hidden rounded-lg bg-paper-raised">
           {/* A little card showing around the picture on three sides. Flush
               to the edges, the photograph was the card's own boundary and
@@ -345,24 +347,29 @@ export default async function HomePage() {
         <div className="mt-3">
           <EventScale stats={scaleStats} />
         </div>
-      </section>
+      </SafeSection>
 
       {/* The four things you actually do in the app — badge, scanner,
           secretariat, programme — directly under the masthead. Someone
           opening this at the door wants a QR code, not a photograph. */}
-      <section className="px-3 sm:px-5 lg:px-6">
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
+        {/* A photo in the summit frame, above the tiles: the one thing
+            here people do to tell others they came. */}
+        <div className="mb-2">
+          <FrameCta signedIn={signedIn} />
+        </div>
         <QuickActions role={role} />
-      </section>
+      </SafeSection>
 
       {/* The pass, under the four tiles: it is what you open at the door,
           and the tiles are what you open before you get there. */}
-      <section className="px-3 sm:px-5 lg:px-6">
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
         <GatePassBanner signedIn={signedIn} />
-      </section>
+      </SafeSection>
 
       {/* Key guests & speakers */}
       {keyPeople.length > 0 ? (
-        <section>
+        <SafeSection>
           <div className="px-3 sm:px-5 lg:px-6">
             <SectionHead title="Key guests & speakers" />
           </div>
@@ -379,34 +386,34 @@ export default async function HomePage() {
               View all
             </Link>
           </div>
-        </section>
+        </SafeSection>
       ) : null}
 
       {/* The sectors the summit's sessions cover, on a white panel of their
           own. The card's padding is the page gutter, so the marquee's own
           full-bleed lands exactly on the card's edges rather than
           overshooting them. */}
-      <section className="px-3 sm:px-5 lg:px-6">
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
         <div className="rounded-lg bg-paper-raised px-3 py-4 sm:px-5 sm:py-5 lg:px-6">
           <SectionHead title="Focussed Sectors" />
           <div className="mt-4">
             <SectorMarquee />
           </div>
         </div>
-      </section>
+      </SafeSection>
 
       {/* Below the sectors, where a guest has just seen what the summit is
           about and has a reason to want the rest. */}
       {!signedIn ? (
-        <section className="px-3 sm:px-5 lg:px-6">
+        <SafeSection className="px-3 sm:px-5 lg:px-6">
           <LoginCta next="/home" />
-        </section>
+        </SafeSection>
       ) : null}
 
       {/* The two leaders the summit is held under, above the day. Full
           bleed to the card's edges and 2:1, the ratio it was made at, so the
           faces are never cropped out of it on a narrow screen. */}
-      <section className="px-3 sm:px-5 lg:px-6">
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
         <div className="overflow-hidden rounded-lg">
           <Image
             src="/ui/leadership-banner.webp"
@@ -417,7 +424,7 @@ export default async function HomePage() {
             className="h-auto w-full"
           />
         </div>
-      </section>
+      </SafeSection>
 
       {/*
         Today's calendar. Was a white card containing a stack of smaller white
@@ -425,7 +432,7 @@ export default async function HomePage() {
         the section rule separates it from what is above and hairlines separate
         the rows, so the timetable reads as a timetable.
       */}
-      <section className="px-3 sm:px-5 lg:px-6">
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
         <SectionHead title="Today’s calendar" />
         {calendar.length === 0 ? (
           <p className="mt-4 max-w-prose text-[14px] leading-7 text-brand-900/70">
@@ -458,10 +465,10 @@ export default async function HomePage() {
             ))}
           </ul>
         )}
-      </section>
+      </SafeSection>
 
       {/* About */}
-      <section className="px-3 sm:px-5 lg:px-6">
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
         <SectionHead title="About the summit" />
         <p className="mt-4 max-w-[62ch] text-[15px] leading-[1.75] text-brand-900/85">
           The {EVENT_NAME} brings together {EVENT_ATTENDEE_COUNT} delegates —
@@ -479,10 +486,10 @@ export default async function HomePage() {
           />
         </Link>
         <IitMarquee />
-      </section>
+      </SafeSection>
 
       {/* Video — a live stream on the day, a recording before it. */}
-      <section className="px-3 sm:px-5 lg:px-6">
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
         <SectionHead
           title={EVENT_VIDEO_EMBED.heading}
           meta={EVENT_VIDEO_EMBED.isLive ? "Live" : undefined}
@@ -514,18 +521,18 @@ export default async function HomePage() {
         <div className="mt-3">
           <PostStrip />
         </div>
-      </section>
+      </SafeSection>
 
       {/* Previous editions. "Legacy" and "Past" are doing the work in the
           two titles — these are not this summit's line-up or its sponsors. */}
-      <section className="px-3 sm:px-5 lg:px-6">
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
         <SectionHead title="Legacy of eminent speakers" />
         <div className="mt-5">
           <LegacySpeakers />
         </div>
-      </section>
+      </SafeSection>
 
-      <section className="px-3 sm:px-5 lg:px-6">
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
         <SectionHead title="Past sponsors" />
         {/* On a white panel, not on the ground: twelve of these seventeen
             logos are published with an opaque white panel baked into the
@@ -534,17 +541,17 @@ export default async function HomePage() {
         <div className="mt-5 rounded-lg bg-paper-raised p-5 sm:p-6">
           <PastSponsors />
         </div>
-      </section>
+      </SafeSection>
 
       {/* Sponsors */}
       {sponsorTiers.length > 0 ? (
-        <section className="px-3 sm:px-5 lg:px-6">
+        <SafeSection className="px-3 sm:px-5 lg:px-6">
           <SponsorsBoard tiers={sponsorTiers} />
-        </section>
+        </SafeSection>
       ) : null}
 
       {/* Connect */}
-      <section className="px-3 sm:px-5 lg:px-6">
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
         <SectionHead title="Connect with us" />
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
           {EVENT_SOCIALS.map((s) => (
@@ -561,7 +568,7 @@ export default async function HomePage() {
             </a>
           ))}
         </div>
-      </section>
+      </SafeSection>
 
       {/* The skyline closes the page and stays its last element — anything
           added later goes above this, never below it. Full-bleed and flush
