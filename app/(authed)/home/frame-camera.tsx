@@ -80,7 +80,18 @@ const MAX_ZOOM = 4;
  *  the file still sends quickly on a phone connection. */
 const OUT_SCALE = 1.5;
 const FILE_NAME = "paniit-ap-summit-2026.jpg";
-const SHARE_TEXT = `I'm at ${EVENT_TAGLINE}. andhra.paniit.space`;
+/** What goes with the picture wherever it is shared. */
+const SHARE_TEXT = `I'm at the PanIIT Andhra Pradesh Summit 2026 — ${EVENT_TAGLINE}. Join us in building Andhra's deeptech future. andhra.paniit.space`;
+
+/**
+ * Where LinkedIn and X take a post from a web page. Neither will take a
+ * picture that way, only words: the caption goes in, and the photo is saved
+ * to the phone first for the person to add.
+ */
+const POST_TO = {
+  linkedin: `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(SHARE_TEXT)}`,
+  x: `https://x.com/intent/post?text=${encodeURIComponent(SHARE_TEXT)}`,
+} as const;
 /** Where a finished picture waits while its maker goes to log in to share
  *  it, so they come back to it rather than to an empty camera. */
 const PENDING_KEY = "summit-frame-pending";
@@ -280,6 +291,7 @@ function FrameCamera({
   // Whether this browser can hand a picture to the share sheet. Asked after
   // mounting, as the server has no navigator to ask.
   const [canShare, setCanShare] = useState(false);
+  const [hint, setHint] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -521,8 +533,16 @@ function FrameCamera({
     }
   }
 
+  /** The caption on the clipboard as well: several apps take the picture
+   *  from the share sheet and leave its words behind. */
+  function copyCaption() {
+    void navigator.clipboard?.writeText(SHARE_TEXT).catch(() => {});
+  }
+
   async function share() {
     if (!result) return;
+    copyCaption();
+    setHint("The caption is copied too, to paste if the app leaves it out.");
     try {
       await navigator.share({ files: [result.file], text: SHARE_TEXT });
     } catch (err) {
@@ -530,6 +550,17 @@ function FrameCamera({
       // The sheet would not open here: saving it is the next best thing.
       download(result.file);
     }
+  }
+
+  /** Straight to a LinkedIn or X post, with the photo saved to add to it. */
+  function postTo(site: keyof typeof POST_TO) {
+    if (!result) return;
+    // Opened before anything else, while it still counts as the tap: a
+    // window opened later is a popup, and gets blocked.
+    window.open(POST_TO[site], "_blank", "noopener,noreferrer");
+    download(result.file);
+    copyCaption();
+    setHint("Your photo is saved and the caption copied. Add the photo to the post.");
   }
 
   /** Keep the picture for after the login, then go and log in. */
@@ -609,23 +640,48 @@ function FrameCamera({
               Share it and let others know you&rsquo;re at {EVENT_TAGLINE}.
             </p>
             <div className="mt-4 grid gap-2">
-              {canShare ? (
+              {/* Sharing is for the signed in; saving it is for anyone. */}
+              {!signedIn ? (
                 <button
                   type="button"
-                  onClick={signedIn ? share : logInToShare}
+                  onClick={logInToShare}
                   className="h-11 rounded-md bg-brand-800 text-[14px] font-medium text-white transition-colors hover:bg-brand-900"
                 >
-                  {signedIn ? "Share" : "Log in to share"}
+                  Log in to share
                 </button>
-              ) : null}
+              ) : (
+                <>
+                  {canShare ? (
+                    <button
+                      type="button"
+                      onClick={share}
+                      className="h-11 rounded-md bg-brand-800 text-[14px] font-medium text-white transition-colors hover:bg-brand-900"
+                    >
+                      Share
+                    </button>
+                  ) : null}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => postTo("linkedin")}
+                      className="h-11 rounded-md border border-rule bg-white text-[14px] text-brand-900 transition-colors hover:bg-paper"
+                    >
+                      LinkedIn
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => postTo("x")}
+                      className="h-11 rounded-md border border-rule bg-white text-[14px] text-brand-900 transition-colors hover:bg-paper"
+                    >
+                      X (Twitter)
+                    </button>
+                  </div>
+                </>
+              )}
               <button
                 type="button"
                 onClick={() => download(result.file)}
-                className={
-                  canShare
-                    ? "h-11 rounded-md border border-rule bg-white text-[14px] text-brand-900 transition-colors hover:bg-paper"
-                    : "h-11 rounded-md bg-brand-800 text-[14px] font-medium text-white transition-colors hover:bg-brand-900"
-                }
+                className="h-11 rounded-md border border-rule bg-white text-[14px] text-brand-900 transition-colors hover:bg-paper"
               >
                 Download
               </button>
@@ -637,6 +693,9 @@ function FrameCamera({
                 Take another
               </button>
             </div>
+            {hint ? (
+              <p className="mt-1 text-center text-[12px] leading-5 text-brand-900/60">{hint}</p>
+            ) : null}
           </div>
         </div>
         {inputs}
