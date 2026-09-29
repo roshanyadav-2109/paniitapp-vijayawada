@@ -41,23 +41,19 @@ interface Frame {
 
 type Shape = "landscape" | "portrait";
 
-const FRAMES: Record<Shape, Frame> = {
-  landscape: {
-    src: "/ui/frame/summit-frame.webp",
-    w: 1536,
-    h: 1024,
-    win: { x: 240, y: 183, w: 1066, h: 602 },
-  },
-  portrait: {
-    src: "/ui/frame/summit-frame-square-2.webp",
-    w: 1254,
-    h: 1254,
-    win: { x: 269, y: 238, w: 708, h: 704 },
-  },
+const SQUARE: Frame = {
+  src: "/ui/frame/summit-frame-square-2.webp",
+  w: 1254,
+  h: 1254,
+  win: { x: 269, y: 238, w: 708, h: 704 },
 };
 
-/** Upright and square pictures go in the square frame, wide ones in the
- *  wide frame. */
+/** One frame for every shape: a wide or a tall photo is cropped to its
+ *  square window, and can be moved and zoomed to choose the crop. */
+const FRAMES: Record<Shape, Frame> = { landscape: SQUARE, portrait: SQUARE };
+
+/** Which of the frames a picture takes: today both shapes take the one
+ *  frame. */
 function shapeOf(w: number, h: number): Shape {
   return h >= w ? "portrait" : "landscape";
 }
@@ -216,7 +212,7 @@ export function FrameCta() {
         </span>
         {/* The frame itself, tipped a little like a print, over the navy
             the camera opens on. */}
-        <span className="relative aspect-[3/2] w-[128px] shrink-0 rotate-[3deg] overflow-hidden rounded-md bg-brand-950 shadow-[0_10px_22px_-10px_rgba(13,9,48,0.5)] ring-2 ring-white sm:w-[168px]">
+        <span className="relative aspect-square w-[104px] shrink-0 rotate-[3deg] overflow-hidden rounded-md bg-brand-950 shadow-[0_10px_22px_-10px_rgba(13,9,48,0.5)] ring-2 ring-white sm:w-[128px]">
           <span
             className="absolute grid place-items-center bg-gradient-to-br from-brand-700 to-brand-500"
             style={winStyle(FRAMES.landscape)}
