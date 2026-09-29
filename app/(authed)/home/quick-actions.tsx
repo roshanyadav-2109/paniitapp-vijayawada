@@ -49,7 +49,8 @@ interface Props {
 
 export function QuickActions({ role }: Props) {
   const [qrOpen, setQrOpen] = useState(false);
-  const canVerify = role === "volunteer" || role === "admin";
+  // Verify Attendee is hidden for now: entry is the gate pass alone.
+  const canVerify = false as boolean;
   const canAnnounce = role === "organizer" || role === "admin";
 
   return (

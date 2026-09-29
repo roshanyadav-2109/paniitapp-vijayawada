@@ -11,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookmarkButton } from "@/components/features/bookmark-button";
 import { QaSection } from "@/components/features/qa/qa-section";
 import { SessionDiscussion } from "@/components/features/session-discussion";
-import { CheckInButton } from "./check-in-button";
 import { TRACK_LABELS, TRACK_TO_INTERESTS } from "@/lib/constants";
 import { rangeIST } from "@/lib/date";
 import { initials } from "@/lib/utils";
@@ -88,7 +87,6 @@ export default async function SessionDetailPage({
   let session: SessionRow | null = null;
   let speakers: SpeakerRow[] = [];
   let bookmarked = false;
-  let checkedIn = false;
   let userInterests: string[] = [];
 
   try {
@@ -178,7 +176,7 @@ export default async function SessionDetailPage({
           .maybeSingle(),
       ]);
       bookmarked = !!bm.data;
-      checkedIn = !!ci.data;
+      void ci; // check-in is hidden for now
       userInterests =
         ((prof.data as { interests: string[] | null } | null)?.interests) ?? [];
     }
@@ -278,12 +276,7 @@ export default async function SessionDetailPage({
               withLabel
               size="md"
             />
-            <CheckInButton
-              sessionId={session.id}
-              startsAtIso={session.start_at}
-              endsAtIso={session.end_at}
-              initialCheckedIn={checkedIn}
-            />
+            {/* Session check-in is hidden for now: entry is the gate pass. */}
           </div>
 
           {sessionInterests.length > 0 ? (
