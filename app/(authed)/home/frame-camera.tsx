@@ -383,10 +383,15 @@ function FrameCamera({ onClose }: { onClose: () => void }) {
     c.height = v.videoHeight;
     const ctx = c.getContext("2d");
     if (!ctx) return;
-    // The front camera is shown mirrored, as a mirror is what people expect
-    // to look into, but the picture is kept the right way round, as a
-    // phone's own camera keeps it: at the summit the backdrop behind them
-    // is lettered, and a shared photo should not have it backwards.
+    // The picture is what the preview showed. The front camera is shown
+    // mirrored, as a mirror is what people expect to look into, and it was
+    // saved the other way round so lettering behind them would read; the
+    // photo flipped the moment it was taken, which looked like a fault.
+    // Kept as seen now, mirror and all.
+    if (facing === "user") {
+      ctx.translate(c.width, 0);
+      ctx.scale(-1, 1);
+    }
     ctx.drawImage(v, 0, 0);
     c.toBlob((b) => b && acceptPhoto(b, "review"), "image/jpeg", 0.95);
     stopCamera();
