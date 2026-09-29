@@ -52,7 +52,7 @@ const FRAMES: Record<Shape, Frame> = {
     src: "/ui/frame/summit-frame-square.webp",
     w: 1254,
     h: 1254,
-    win: { x: 185, y: 186, w: 915, h: 775 },
+    win: { x: 269, y: 238, w: 708, h: 704 },
   },
 };
 
