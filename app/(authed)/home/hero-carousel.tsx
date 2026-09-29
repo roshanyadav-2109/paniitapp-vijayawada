@@ -48,6 +48,18 @@ export function HeroCarousel() {
   const busyRef = useRef(false);
   const idleTimer = useRef<number | null>(null);
 
+  /** A finger arriving: stop whatever the strip was doing on its own. The
+   *  automatic slide is a smooth scroll held under a lock, and a swipe that
+   *  began while it ran was fought by the script and did not take. */
+  function grab() {
+    const el = scrollerRef.current;
+    if (el && lockRef.current) {
+      lockRef.current = false;
+      el.scrollTo({ left: el.scrollLeft, behavior: "auto" });
+    }
+    markBusy();
+  }
+
   function markBusy() {
     busyRef.current = true;
     if (idleTimer.current) window.clearTimeout(idleTimer.current);
@@ -141,12 +153,12 @@ export function HeroCarousel() {
       <div
         ref={scrollerRef}
         onScroll={onScroll}
-        onPointerDown={markBusy}
-        onTouchStart={markBusy}
+        onPointerDown={grab}
+        onTouchStart={grab}
         // items-center, not the default stretch: slides now differ in height,
         // and a short one left top-aligned hangs in a gap instead of sitting
         // in its own space.
-        className="no-scrollbar flex snap-x snap-mandatory items-center gap-3 overflow-x-auto scroll-smooth"
+        className="no-scrollbar flex snap-x snap-mandatory items-center gap-3 overflow-x-auto [touch-action:pan-x_pan-y]"
       >
         {rendered.map((s, i) => (
           <article
