@@ -92,19 +92,40 @@ export default async function AdminPage() {
         ))}
       </section>
 
-      {/* The questions sent to every session, where moderators work. */}
-      <Link
-        href="/moderate"
-        className="flex items-center justify-between rounded-lg border border-rule bg-white p-4 transition-colors hover:bg-paper"
-      >
-        <span>
-          <span className="block text-[15px] font-medium text-brand-950">Session questions</span>
-          <span className="mt-0.5 block text-[12.5px] text-brand-900/60">
-            Every question sent to every session, as the moderators see them.
-          </span>
-        </span>
-        <span aria-hidden className="text-brand-800">&rarr;</span>
-      </Link>
+      {/* What an organiser runs from here. */}
+      <nav className="grid gap-2">
+        {[
+          {
+            href: "/admin/agenda",
+            title: "Agenda & moderators",
+            sub: "Add, change or remove sessions, and assign each one's moderators by email.",
+          },
+          {
+            href: "/moderate",
+            title: "Session questions",
+            sub: "Every question sent to every session, as the moderators see them.",
+          },
+          {
+            href: "/admin/expo",
+            title: "Expo stalls",
+            sub: "Add exhibitors, their stall numbers and logos, and choose which show.",
+          },
+        ].map((l) => (
+          <Link
+            key={l.href}
+            href={l.href}
+            className="flex items-center justify-between gap-3 rounded-lg border border-rule bg-white p-4 transition-colors hover:bg-paper"
+          >
+            <span>
+              <span className="block text-[15px] font-medium text-brand-950">{l.title}</span>
+              <span className="mt-0.5 block text-[12.5px] text-brand-900/60">{l.sub}</span>
+            </span>
+            <span aria-hidden className="text-brand-800">
+              &rarr;
+            </span>
+          </Link>
+        ))}
+      </nav>
 
       <AnnouncementComposer />
 
