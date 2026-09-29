@@ -21,8 +21,19 @@ const TABS = [
 /** A sixth tab for organisers and admins, and nobody else. */
 const ADMIN_TAB = { href: "/admin", label: "Admin", icon: "/ui/nav-admin.webp" };
 
-export function BottomNav({ isAdmin = false }: { isAdmin?: boolean }) {
-  const tabs = isAdmin ? [...TABS, ADMIN_TAB] : TABS;
+/** For session moderators: the questions sent to their sessions. An
+ *  organiser who also moderates has the admin tab, which leads there too. */
+const MODERATE_TAB = { href: "/moderate", label: "Questions", icon: "/ui/nav-moderate.webp" };
+
+export function BottomNav({
+  isAdmin = false,
+  isModerator = false,
+}: {
+  isAdmin?: boolean;
+  isModerator?: boolean;
+}) {
+  const extra = isAdmin ? ADMIN_TAB : isModerator ? MODERATE_TAB : null;
+  const tabs = extra ? [...TABS, extra] : TABS;
   const pathname = usePathname();
   // A tap has to look answered before the page it asks for exists. The tab
   // you pressed lights up immediately and stays lit until the route it
@@ -43,7 +54,7 @@ export function BottomNav({ isAdmin = false }: { isAdmin?: boolean }) {
       <ul
         className={cn(
           "mx-auto grid h-[88px] w-full max-w-2xl",
-          isAdmin ? "grid-cols-6" : "grid-cols-5"
+          extra ? "grid-cols-6" : "grid-cols-5"
         )}
       >
         {tabs.map(({ href, label, icon }) => {

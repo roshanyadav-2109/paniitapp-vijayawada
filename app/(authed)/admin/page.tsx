@@ -92,6 +92,20 @@ export default async function AdminPage() {
         ))}
       </section>
 
+      {/* The questions sent to every session, where moderators work. */}
+      <Link
+        href="/moderate"
+        className="flex items-center justify-between rounded-lg border border-rule bg-white p-4 transition-colors hover:bg-paper"
+      >
+        <span>
+          <span className="block text-[15px] font-medium text-brand-950">Session questions</span>
+          <span className="mt-0.5 block text-[12.5px] text-brand-900/60">
+            Every question sent to every session, as the moderators see them.
+          </span>
+        </span>
+        <span aria-hidden className="text-brand-800">&rarr;</span>
+      </Link>
+
       <AnnouncementComposer />
 
       <section className="rounded-lg border border-rule bg-white p-4">

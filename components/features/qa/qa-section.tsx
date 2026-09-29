@@ -1,104 +1,60 @@
 import { createClient } from "@/lib/supabase/server";
 import { rethrowIfRedirect } from "@/lib/redirect";
-import { QaClient, type QuestionRow, type ReplyRow } from "./qa-client";
+import { QaClient, type MyQuestion } from "./qa-client";
 
+/**
+ * A session's questions, from the side of the person asking.
+ *
+ * Questions go to the session's moderators, who choose what to put to the
+ * panel; nobody else reads them (see 0024_session_moderators.sql). So this
+ * is somewhere to ask and a list of what you asked, with whether it was
+ * answered, and for a moderator of this session, the way to the questions.
+ */
 export async function QaSection({ sessionId }: { sessionId: string }) {
-  let user: { id: string } | null = null;
-  let questions: QuestionRow[] = [];
-  let replies: ReplyRow[] = [];
-  let myQUpvotes: { question_id: string }[] = [];
-  let myRUpvotes: { reply_id: string }[] = [];
-  let isSpeaker = false;
-  let isMod = false;
+  let userId: string | null = null;
+  let mine: MyQuestion[] = [];
+  let canModerate = false;
 
   try {
     const supabase = await createClient();
-    const auth = await supabase.auth.getUser();
-    user = auth.data.user ?? null;
-
-    // session_questions has: question, upvotes, is_answered (boolean). The
-    // status/is_anonymous/is_pinned/answered_by/answered_at columns come from
-    // 0003_qa_replies.sql; if it hasn't run yet, we degrade gracefully.
-    const qRes = await supabase
-      .from("session_questions")
-      .select("*, profiles:user_id(id, full_name, photo_url, role)")
-      .eq("session_id", sessionId)
-      .order("upvotes", { ascending: false })
-      .order("created_at", { ascending: false });
-    questions = (qRes.data as QuestionRow[] | null) ?? [];
-
-    const questionIds = questions.map((q) => q.id);
-
-    if (questionIds.length) {
-      const rRes = await supabase
-        .from("question_replies")
-        .select(
-          "id, question_id, user_id, body, is_official, upvotes, created_at, profiles:user_id(id, full_name, photo_url, role)"
-        )
-        .in("question_id", questionIds)
-        .order("is_official", { ascending: false })
-        .order("upvotes", { ascending: false })
-        .order("created_at", { ascending: true });
-      replies = (rRes.data as ReplyRow[] | null) ?? [];
-    }
-
-    if (user && questionIds.length) {
-      const upRes = await supabase
-        .from("question_upvotes")
-        .select("question_id")
-        .eq("user_id", user.id)
-        .in("question_id", questionIds);
-      myQUpvotes = (upRes.data as { question_id: string }[] | null) ?? [];
-    }
-
-    const replyIds = replies.map((r) => r.id);
-    if (user && replyIds.length) {
-      const ruRes = await supabase
-        .from("reply_upvotes")
-        .select("reply_id")
-        .eq("user_id", user.id)
-        .in("reply_id", replyIds);
-      myRUpvotes = (ruRes.data as { reply_id: string }[] | null) ?? [];
-    }
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    userId = user?.id ?? null;
 
     if (user) {
-      const spk = await supabase
-        .from("session_speakers")
-        .select("speaker_id")
-        .eq("session_id", sessionId)
-        .eq("speaker_id", user.id)
-        .maybeSingle();
-      isSpeaker = !!spk.data;
-
-      const prof = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .maybeSingle();
-      const r = (prof.data as { role: string | null } | null)?.role;
-      isMod = r === "organizer" || r === "admin";
+      const email = (user.email ?? "").toLowerCase();
+      const [q, mod, me] = await Promise.all([
+        supabase
+          .from("session_questions")
+          .select("id, question, status, is_answered, is_anonymous, created_at")
+          .eq("session_id", sessionId)
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("session_moderators")
+          .select("session_id")
+          .eq("session_id", sessionId)
+          .eq("email", email)
+          .maybeSingle(),
+        supabase.from("profiles").select("role").eq("id", user.id).maybeSingle(),
+      ]);
+      mine = (q.data as MyQuestion[] | null) ?? [];
+      const role = (me.data as { role: string | null } | null)?.role;
+      canModerate = !!mod.data || role === "organizer" || role === "admin";
     }
   } catch (err) {
-    // Re-throw Next's internal NOT_FOUND / REDIRECT signals — silently
-    // swallowing them surfaces as the generic "Server Components render
-    // error" overlay further up the tree.
     rethrowIfRedirect(err);
     // eslint-disable-next-line no-console
     console.error("[qa section] data fetch failed", err);
-    // Otherwise degrade: render the QA UI in its empty state rather than
-    // tearing down the whole session detail page.
   }
 
   return (
     <QaClient
       sessionId={sessionId}
-      userId={user?.id ?? null}
-      isSpeakerHere={isSpeaker}
-      isModerator={isMod}
-      initialQuestions={questions}
-      initialReplies={replies}
-      initialMyQuestionUpvotes={myQUpvotes.map((r) => r.question_id)}
-      initialMyReplyUpvotes={myRUpvotes.map((r) => r.reply_id)}
+      userId={userId}
+      canModerate={canModerate}
+      initialMine={mine}
     />
   );
 }

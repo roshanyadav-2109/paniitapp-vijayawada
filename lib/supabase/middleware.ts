@@ -14,6 +14,7 @@ const SIGNED_IN_ONLY = [
   "/admin",
   "/onboarding",
   "/chat/",
+  "/moderate",
 ];
 
 /**

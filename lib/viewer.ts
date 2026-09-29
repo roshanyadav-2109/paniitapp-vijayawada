@@ -60,6 +60,8 @@ export interface Viewer {
   pushRegistered: boolean;
   /** Organisers and admins: the people the admin panel opens for. */
   isAdmin: boolean;
+  /** Assigned by email to moderate at least one session's questions. */
+  isModerator: boolean;
 }
 
 /**
@@ -77,18 +79,27 @@ export const getViewer = cache(async function getViewer(): Promise<Viewer> {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return { signedIn: false, userId: null, pushRegistered: false, isAdmin: false };
+    if (!user)
+      return { signedIn: false, userId: null, pushRegistered: false, isAdmin: false, isModerator: false };
 
-    const me = await getMyProfile(user.id);
+    // Side by side, so asking whether they moderate anything costs no time.
+    const [me, moderating] = await Promise.all([
+      getMyProfile(user.id),
+      supabase
+        .from("session_moderators")
+        .select("session_id", { count: "exact", head: true })
+        .eq("email", (user.email ?? "").toLowerCase()),
+    ]);
 
     return {
       signedIn: true,
       userId: user.id,
       pushRegistered: !!me?.push_subscription,
       isAdmin: me?.role === "admin" || me?.role === "organizer",
+      isModerator: (moderating.count ?? 0) > 0,
     };
   } catch (err) {
     rethrowIfRedirect(err);
-    return { signedIn: false, userId: null, pushRegistered: false, isAdmin: false };
+    return { signedIn: false, userId: null, pushRegistered: false, isAdmin: false, isModerator: false };
   }
 });

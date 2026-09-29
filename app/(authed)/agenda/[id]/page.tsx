@@ -355,7 +355,7 @@ export default async function SessionDetailPage({
       <Card className="border-rule">
         <CardHeader className="px-3.5 pb-2 pt-3.5">
           <CardTitle className="text-[16px] font-bold text-brand-950">
-            Q&amp;A discussion
+            Ask the panel
           </CardTitle>
         </CardHeader>
         <CardContent className="px-3.5 pb-3.5 pt-0">
