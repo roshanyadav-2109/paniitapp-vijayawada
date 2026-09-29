@@ -49,7 +49,7 @@ const FRAMES: Record<Shape, Frame> = {
     win: { x: 240, y: 183, w: 1066, h: 602 },
   },
   portrait: {
-    src: "/ui/frame/summit-frame-square.webp",
+    src: "/ui/frame/summit-frame-square-2.webp",
     w: 1254,
     h: 1254,
     win: { x: 269, y: 238, w: 708, h: 704 },
