@@ -5,6 +5,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Camera, RefreshCw, X } from "@/components/icons";
 import { EVENT_TAGLINE } from "@/lib/event-config";
+import { TICKETS_URL } from "./tickets-banner";
+import { InstagramLogo, LinkedInLogo, XLogo } from "@/components/features/brand-logos";
+
+const SOCIAL_BUTTON =
+  "inline-flex h-11 items-center justify-center gap-1.5 rounded-md border border-rule bg-white px-1 text-[13px] text-brand-900 transition-colors hover:bg-paper";
 
 /**
  * "Let others know you're here": a photo in the summit frame.
@@ -83,8 +88,8 @@ const FILE_NAME = "paniit-ap-summit-2026.jpg";
 /** What goes with the picture wherever it is shared. */
 const SHARE_TEXT = [
   `I'm at the PanIIT Andhra Pradesh Summit 2026 — ${EVENT_TAGLINE}.`,
-  "Join us in building Andhra's deeptech future: andhra.paniit.space",
-  "I'm coming to the summit, are you?",
+  "Join us in building Andhra's deeptech future.",
+  `I'm coming to the summit, are you? Register here: ${TICKETS_URL}`,
 ].join("\n\n");
 
 /**
@@ -530,6 +535,23 @@ function FrameCamera({ onClose }: { onClose: () => void }) {
     setHint("Your photo is saved and the caption copied. Add the photo to the post.");
   }
 
+  /**
+   * Instagram takes nothing from a web page, not even words. On a phone the
+   * share sheet is the way in, and Instagram is in it; elsewhere the photo is
+   * saved and Instagram opened, to post it from there.
+   */
+  function toInstagram() {
+    if (!result) return;
+    if (canShare) {
+      void share();
+      return;
+    }
+    window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+    download(result.file);
+    copyCaption();
+    setHint("Your photo is saved and the caption copied. Post it from Instagram.");
+  }
+
   function takeAnother() {
     if (resultRef.current) URL.revokeObjectURL(resultRef.current.url);
     setResult(null);
@@ -596,20 +618,19 @@ function FrameCamera({ onClose }: { onClose: () => void }) {
                   Share
                 </button>
               ) : null}
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => postTo("linkedin")}
-                  className="h-11 rounded-md border border-rule bg-white text-[14px] text-brand-900 transition-colors hover:bg-paper"
-                >
+              {/* Each network by its own mark and its name. */}
+              <div className="grid grid-cols-3 gap-2">
+                <button type="button" onClick={() => postTo("linkedin")} className={SOCIAL_BUTTON}>
+                  <LinkedInLogo className="size-4 shrink-0" />
                   LinkedIn
                 </button>
-                <button
-                  type="button"
-                  onClick={() => postTo("x")}
-                  className="h-11 rounded-md border border-rule bg-white text-[14px] text-brand-900 transition-colors hover:bg-paper"
-                >
+                <button type="button" onClick={() => postTo("x")} className={SOCIAL_BUTTON}>
+                  <XLogo className="size-4 shrink-0" />
                   X (Twitter)
+                </button>
+                <button type="button" onClick={toInstagram} className={SOCIAL_BUTTON}>
+                  <InstagramLogo className="size-4 shrink-0" />
+                  Instagram
                 </button>
               </div>
               <button
