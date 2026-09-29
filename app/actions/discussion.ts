@@ -27,8 +27,10 @@ const PostSchema = z.object({
 export async function createPost(
   body: string,
   options?: string[],
-  media?: { url: string; type: "image" | "video" }
+  media?: { url: string; type: "image" | "video" },
+  sessionId?: string
 ): Promise<ActionResult> {
+  if (sessionId && !z.string().uuid().safeParse(sessionId).success) return { error: "invalid" };
   const cleaned = (options ?? []).map((o) => o.trim()).filter(Boolean);
   const parsed = PostSchema.safeParse({ body, options: cleaned, media });
   if (!parsed.success) {
@@ -62,6 +64,7 @@ export async function createPost(
     author_id: user.id,
     body: parsed.data.body,
     kind: isPoll ? "poll" : "text",
+    ...(sessionId ? { session_id: sessionId } : {}),
     ...(attachment
       ? { media_url: attachment.url, media_type: attachment.type }
       : {}),
@@ -91,7 +94,7 @@ export async function createPost(
     }
   }
 
-  revalidatePath("/discuss");
+  revalidatePath(sessionId ? `/agenda/${sessionId}` : "/discuss");
   return { ok: true };
 }
 

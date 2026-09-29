@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookmarkButton } from "@/components/features/bookmark-button";
 import { QaSection } from "@/components/features/qa/qa-section";
+import { SessionDiscussion } from "@/components/features/session-discussion";
 import { CheckInButton } from "./check-in-button";
 import { TRACK_LABELS, TRACK_TO_INTERESTS } from "@/lib/constants";
 import { rangeIST } from "@/lib/date";
@@ -360,6 +361,17 @@ export default async function SessionDetailPage({
         </CardHeader>
         <CardContent className="px-3.5 pb-3.5 pt-0">
           <QaSection sessionId={session.id} />
+        </CardContent>
+      </Card>
+
+      {/* The open conversation about the session, beside the private
+          questions: what people want to say to each other, not to the panel. */}
+      <Card className="border-rule">
+        <CardHeader className="px-3.5 pb-2 pt-3.5">
+          <CardTitle className="text-[16px] font-bold text-brand-950">Discussion</CardTitle>
+        </CardHeader>
+        <CardContent className="px-3.5 pb-3.5 pt-0">
+          <SessionDiscussion sessionId={session.id} />
         </CardContent>
       </Card>
     </div>

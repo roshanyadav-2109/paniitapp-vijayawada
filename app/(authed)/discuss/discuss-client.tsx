@@ -128,18 +128,35 @@ export function DiscussClient({
   myVotes,
   userId,
   errored,
+  sessionId,
 }: {
   posts: PostRow[];
   likedIds: string[];
   myVotes: Record<string, string>;
   userId: string | null;
   errored: boolean;
+  /** A session's own discussion, on its page; none for the Discuss feed. */
+  sessionId?: string;
 }) {
   const liked = useMemo(() => new Set(likedIds), [likedIds]);
 
   return (
     <div className="space-y-4">
-      <Composer />
+      {/* On a session's page a guest gets the way in instead of a box that
+          would only refuse them; the Discuss feed has its own prompt. */}
+      {sessionId && !userId ? (
+        <button
+          type="button"
+          onClick={() =>
+            window.location.assign(`/login?redirect=${encodeURIComponent(window.location.pathname)}`)
+          }
+          className="flex h-11 w-full items-center justify-center rounded-md border border-brand-800 bg-white text-[14px] font-medium text-brand-800 transition-colors hover:bg-paper"
+        >
+          Log in to join the discussion
+        </button>
+      ) : (
+        <Composer sessionId={sessionId} />
+      )}
 
       {errored ? (
         <p className="rounded-lg border border-iit-200 bg-iit-50 p-3 text-[13px] text-iit-700">
@@ -153,7 +170,7 @@ export function DiscussClient({
             <EmptyMedia className="mb-1">
               <EmptyArt name="empty-discussion" />
             </EmptyMedia>
-            <EmptyTitle>Nothing here yet</EmptyTitle>
+            <EmptyTitle>{sessionId ? "No one has posted about this session yet" : "Nothing here yet"}</EmptyTitle>
           </EmptyHeader>
         </Empty>
       ) : (
@@ -177,7 +194,7 @@ export function DiscussClient({
 /* Composer                                                            */
 /* ------------------------------------------------------------------ */
 
-function Composer() {
+function Composer({ sessionId }: { sessionId?: string }) {
   const router = useRouter();
   const { toast } = useToast();
   const [body, setBody] = useState("");
@@ -229,7 +246,8 @@ function Composer() {
       const res = await createPost(
         body,
         isPoll ? options : undefined,
-        media ?? undefined
+        media ?? undefined,
+        sessionId
       );
       if ("error" in res) {
         toast({ title: "Could not post", description: res.error, variant: "destructive" });
@@ -249,7 +267,13 @@ function Composer() {
         value={body}
         onChange={(e) => setBody(e.target.value.slice(0, MAX_BODY))}
         rows={isPoll ? 2 : 3}
-        placeholder={isPoll ? "Ask the room a question…" : "Share something with the room…"}
+        placeholder={
+          isPoll
+            ? "Ask the room a question…"
+            : sessionId
+              ? "Say something about this session…"
+              : "Share something with the room…"
+        }
         className="w-full resize-none rounded-md border border-rule bg-white px-3 py-2 text-[14px] leading-6 text-brand-950 outline-none placeholder:text-brand-900/40 focus:border-brand-300"
       />
 
