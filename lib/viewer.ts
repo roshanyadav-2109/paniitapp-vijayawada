@@ -1,5 +1,30 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { rethrowIfRedirect } from "@/lib/redirect";
+
+export interface MyProfile {
+  full_name: string | null;
+  designation: string | null;
+  company: string | null;
+  push_subscription: unknown;
+}
+
+/**
+ * The signed-in person's own row, read once per request.
+ *
+ * The layout reads it to check the profile is finished and the viewer
+ * reads it for the push subscription; they were two queries to Tokyo, one
+ * after the other, on every screen. One query now, with both answers in it.
+ */
+export const getMyProfile = cache(async (userId: string): Promise<MyProfile | null> => {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("full_name, designation, company, push_subscription")
+    .eq("id", userId)
+    .maybeSingle();
+  return (data as MyProfile | null) ?? null;
+});
 
 /**
  * Is anyone signed in on this request?
@@ -11,7 +36,7 @@ import { rethrowIfRedirect } from "@/lib/redirect";
  * app can be reviewed without a login, and that is exactly the guest view
  * this returns — to see the signed-in version locally, sign in for real.
  */
-export async function isSignedIn(): Promise<boolean> {
+export const isSignedIn = cache(async function isSignedIn(): Promise<boolean> {
   try {
     const supabase = await createClient();
     const {
@@ -24,7 +49,7 @@ export async function isSignedIn(): Promise<boolean> {
     // the safe one to render, and it says how to fix it.
     return false;
   }
-}
+});
 
 export interface Viewer {
   signedIn: boolean;
@@ -43,7 +68,7 @@ export interface Viewer {
  * reports a subscription while their own account has none, and nothing sent
  * to them would ever arrive. This reads the account's own row.
  */
-export async function getViewer(): Promise<Viewer> {
+export const getViewer = cache(async function getViewer(): Promise<Viewer> {
   try {
     const supabase = await createClient();
     const {
@@ -51,20 +76,15 @@ export async function getViewer(): Promise<Viewer> {
     } = await supabase.auth.getUser();
     if (!user) return { signedIn: false, userId: null, pushRegistered: false };
 
-    const { data } = await supabase
-      .from("profiles")
-      .select("push_subscription")
-      .eq("id", user.id)
-      .maybeSingle();
+    const me = await getMyProfile(user.id);
 
     return {
       signedIn: true,
       userId: user.id,
-      pushRegistered: !!(data as { push_subscription: unknown } | null)
-        ?.push_subscription,
+      pushRegistered: !!me?.push_subscription,
     };
   } catch (err) {
     rethrowIfRedirect(err);
     return { signedIn: false, userId: null, pushRegistered: false };
   }
-}
+});

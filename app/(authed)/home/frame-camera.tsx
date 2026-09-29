@@ -81,7 +81,11 @@ const MAX_ZOOM = 4;
 const OUT_SCALE = 1.5;
 const FILE_NAME = "paniit-ap-summit-2026.jpg";
 /** What goes with the picture wherever it is shared. */
-const SHARE_TEXT = `I'm at the PanIIT Andhra Pradesh Summit 2026 — ${EVENT_TAGLINE}. Join us in building Andhra's deeptech future. andhra.paniit.space`;
+const SHARE_TEXT = [
+  `I'm at the PanIIT Andhra Pradesh Summit 2026 — ${EVENT_TAGLINE}.`,
+  "Join us in building Andhra's deeptech future: andhra.paniit.space",
+  "I'm coming to the summit, are you?",
+].join("\n\n");
 
 /**
  * Where LinkedIn and X take a post from a web page. Neither will take a
