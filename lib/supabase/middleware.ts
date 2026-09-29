@@ -16,6 +16,20 @@ const SIGNED_IN_ONLY = [
   "/chat/",
 ];
 
+/**
+ * Whether a path is one of the signed-in-only screens: the screen itself or
+ * anything under it, never merely a path that starts with the same letters.
+ * A bare prefix test had "/me" catching /meetings and /media, so a guest
+ * asking for a picture under /media was sent to the sign-in page instead.
+ */
+function needsSignIn(pathname: string): boolean {
+  return SIGNED_IN_ONLY.some((p) =>
+    p.endsWith("/")
+      ? pathname.startsWith(p)
+      : pathname === p || pathname.startsWith(`${p}/`)
+  );
+}
+
 // The allow-list this file used to keep is gone with the wall: everything
 // that is not in SIGNED_IN_ONLY is now public, so there is nothing left to
 // enumerate.
@@ -108,7 +122,7 @@ export async function updateSession(request: NextRequest) {
       url.pathname = "/home";
       return NextResponse.redirect(url);
     }
-    if (!signedIn && SIGNED_IN_ONLY.some((p) => pathname.startsWith(p))) {
+    if (!signedIn && needsSignIn(pathname)) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       url.searchParams.set("redirect", pathname);
@@ -155,7 +169,7 @@ export async function updateSession(request: NextRequest) {
     // asked to sign in where the screen needs to know who they are. The
     // screens that only make sense as somebody — your profile, your badge,
     // the organiser console — still bounce to the sign-in page.
-    if (!user && SIGNED_IN_ONLY.some((p) => pathname.startsWith(p))) {
+    if (!user && needsSignIn(pathname)) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       url.searchParams.set("redirect", pathname);
