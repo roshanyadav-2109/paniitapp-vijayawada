@@ -29,7 +29,7 @@ export function TicketsBanner() {
   }
 
   return (
-    <div className="flex items-center gap-4 overflow-hidden rounded-lg border border-[#F6CFD6] bg-[#FDEEF0] p-4 sm:gap-6 sm:p-5">
+    <div className="flex items-center gap-4 overflow-hidden rounded-lg border border-[#CFE0F7] bg-[#EAF2FD] p-4 sm:gap-6 sm:p-5">
       <div className="min-w-0 flex-1">
         <p className="font-display text-[17px] font-semibold leading-snug text-brand-950 sm:text-[19px]">
           Get your tickets
@@ -40,7 +40,7 @@ export function TicketsBanner() {
             type="button"
             onClick={copyCode}
             aria-label={`Copy the code ${TICKETS_CODE}`}
-            className="mx-0.5 inline-flex items-center rounded border border-dashed border-iit-500/60 bg-white px-1.5 py-px font-semibold tracking-wide text-iit-700"
+            className="mx-0.5 inline-flex items-center rounded border border-dashed border-brand-800/40 bg-white px-1.5 py-px font-semibold tracking-wide text-brand-800"
           >
             {TICKETS_CODE}
           </button>{" "}
@@ -80,14 +80,14 @@ function TicketArt() {
       <path
         d="M8 4h104a4 4 0 0 1 4 4v18a10 10 0 0 0 0 20v26a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V46a10 10 0 0 0 0-20V8a4 4 0 0 1 4-4Z"
         fill="#fff"
-        stroke="#DD002B"
+        stroke="#1B1464"
         strokeWidth="2.5"
       />
-      <path d="M84 10v60" stroke="#DD002B" strokeWidth="2" strokeDasharray="4 4" />
+      <path d="M84 10v60" stroke="#1B1464" strokeWidth="2" strokeDasharray="4 4" />
       <rect x="16" y="20" width="52" height="7" rx="3.5" fill="#1B1464" />
       <rect x="16" y="34" width="38" height="5" rx="2.5" fill="#1B1464" opacity=".35" />
       <rect x="16" y="45" width="44" height="5" rx="2.5" fill="#1B1464" opacity=".35" />
-      <text x="100" y="45" textAnchor="middle" fontSize="11" fontWeight="700" fill="#DD002B" transform="rotate(-90 100 41)">
+      <text x="100" y="45" textAnchor="middle" fontSize="11" fontWeight="700" fill="#1B1464" transform="rotate(-90 100 41)">
         ADMIT
       </text>
     </svg>
