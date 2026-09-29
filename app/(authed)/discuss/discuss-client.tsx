@@ -495,7 +495,7 @@ function PostCard({
       ) : null}
 
       {post.kind === "poll" && post.poll_options ? (
-        <Poll post={post} myVote={myVote} />
+        <Poll post={post} myVote={myVote} signedIn={userId != null} />
       ) : null}
 
       <div className="mt-2.5 flex items-center gap-1">
@@ -536,29 +536,91 @@ function PostCard({
 /* Poll                                                                */
 /* ------------------------------------------------------------------ */
 
-function Poll({ post, myVote }: { post: PostRow; myVote: string | null }) {
+function Poll({
+  post,
+  myVote,
+  signedIn,
+}: {
+  post: PostRow;
+  myVote: string | null;
+  signedIn: boolean;
+}) {
   const router = useRouter();
+  const supabase = useMemo(() => createClient(), []);
   const [pending, startTransition] = useTransition();
   const [voted, setVoted] = useState<string | null>(myVote);
   useEffect(() => setVoted(myVote), [myVote]);
 
+  // The counts as the server last sent them, kept live from there. The
+  // feed does re-fetch when anything moves, but only after it goes quiet
+  // for a second and a half, and a poll being answered by a room is never
+  // quiet: each option's own row is listened to instead, and its count
+  // taken as it arrives.
+  const fromServer = useMemo(
+    () => Object.fromEntries((post.poll_options ?? []).map((o) => [o.id, o.vote_count])),
+    [post.poll_options]
+  );
+  const [counts, setCounts] = useState<Record<string, number>>(fromServer);
+  useEffect(() => setCounts(fromServer), [fromServer]);
+
+  useEffect(() => {
+    const ch = supabase
+      .channel(`poll-${post.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "poll_options",
+          filter: `post_id=eq.${post.id}`,
+        },
+        (payload) => {
+          const row = payload.new as { id: string; vote_count: number };
+          setCounts((c) => ({ ...c, [row.id]: row.vote_count }));
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [post.id, supabase]);
+
   const options = [...(post.poll_options ?? [])].sort((a, b) => a.position - b.position);
-  const total = options.reduce((n, o) => n + o.vote_count, 0);
+  const countOf = (id: string) => Math.max(0, counts[id] ?? 0);
+  const total = options.reduce((n, o) => n + countOf(o.id), 0);
 
   function cast(optionId: string) {
+    if (!signedIn) {
+      router.push("/login?redirect=%2Fdiscuss");
+      return;
+    }
     if (pending || voted === optionId) return;
+    const before = voted;
+    // Your own vote shows at once, tick and bars both; the counts the
+    // table sends back afterwards are totals, so they replace these
+    // rather than add to them.
+    const move = (by: 1 | -1) =>
+      setCounts((c) => {
+        const next = { ...c, [optionId]: (c[optionId] ?? 0) + by };
+        if (before) next[before] = (c[before] ?? 0) - by;
+        return next;
+      });
     setVoted(optionId);
+    move(1);
     startTransition(async () => {
       const res = await votePoll(post.id, optionId);
-      if ("error" in res) setVoted(myVote);
-      router.refresh();
+      if ("error" in res) {
+        setVoted(before);
+        move(-1);
+        if (res.error === "unauth") router.push("/login?redirect=%2Fdiscuss");
+      }
     });
   }
 
   return (
     <div className="mt-2.5 space-y-1.5">
       {options.map((o) => {
-        const pct = total > 0 ? Math.round((o.vote_count / total) * 100) : 0;
+        const pct = total > 0 ? Math.round((countOf(o.id) / total) * 100) : 0;
         const mine = voted === o.id;
         return (
           <button
