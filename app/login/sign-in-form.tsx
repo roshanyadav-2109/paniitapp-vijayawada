@@ -51,6 +51,29 @@ function loadGis(): Promise<void> {
   });
 }
 
+/**
+ * What a failed sign-in says. The codes are the server's, and one of them,
+ * invalid_google_state, is what people were being shown word for word.
+ */
+function explain(code: string): string {
+  switch (code) {
+    case "invalid_google_state":
+    case "missing_google_nonce":
+      return "That sign-in timed out or was started on another screen. Tap Continue with Google again.";
+    case "missing_google_id_token":
+      return "Google did not finish signing you in. Tap Continue with Google again.";
+    case "no_email_from_provider":
+      return "Google did not share an email address for that account. Try another account.";
+    case "access_denied":
+      return "Sign-in was cancelled.";
+    default:
+      return "Could not sign you in. Tap Continue with Google again.";
+  }
+}
+
+/** A sign-in waits an hour on the server; well before that, fetch another. */
+const STALE_AFTER_MS = 40 * 60 * 1000;
+
 /** Where the visitor goes once they are in. */
 function nextPath(): string {
   const back = new URLSearchParams(window.location.search).get("redirect");
@@ -66,7 +89,11 @@ export function SignInForm() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const err = new URLSearchParams(window.location.search).get("error");
-    if (err) setOauthError(decodeURIComponent(err));
+    if (err) {
+      // eslint-disable-next-line no-console
+      console.warn("[sign-in]", err);
+      setOauthError(explain(decodeURIComponent(err)));
+    }
   }, []);
 
   // Google Identity Services: the token exchange happens in an overlay the
@@ -75,8 +102,9 @@ export function SignInForm() {
   // the credential goes back to the same endpoint the redirect flow posts to.
   useEffect(() => {
     let cancelled = false;
+    let issuedAt = 0;
 
-    async function boot() {
+    async function boot(first: boolean) {
       const slot = gisRef.current;
       if (!slot) return;
 
@@ -91,6 +119,7 @@ export function SignInForm() {
         hashedNonce: string;
       };
       if (cancelled) return;
+      issuedAt = Date.now();
 
       await loadGis();
       const google = (window as unknown as { google?: GoogleIdApi }).google;
@@ -116,8 +145,14 @@ export function SignInForm() {
         cancel_on_tap_outside: true,
         callback: ({ credential }) => {
           if (!credential) return;
+          setOauthError(null);
           void completeSignIn(credential, state).catch((e: unknown) => {
-            setOauthError(e instanceof Error ? e.message : "google_sign_in_failed");
+            const code = e instanceof Error ? e.message : "google_sign_in_failed";
+            // eslint-disable-next-line no-console
+            console.warn("[sign-in]", code);
+            setOauthError(explain(code));
+            // A fresh sign-in, so the next tap has one to match.
+            void boot(false).catch(() => {});
           });
         },
       });
@@ -138,14 +173,24 @@ export function SignInForm() {
       // why the button above stays — tapping that opens Google's own popup,
       // and there is no way around that one: Google refuses to authenticate
       // inside an embedded view, by policy.
-      google.accounts.id.prompt();
+      if (first) google.accounts.id.prompt();
     }
 
-    void boot().catch(() => {
+    void boot(true).catch(() => {
       /* leaves the redirect button showing */
     });
+
+    // A login screen left open goes stale. Coming back to it after a while,
+    // it fetches a fresh sign-in before anyone taps rather than after.
+    function onVisible() {
+      if (!document.hidden && issuedAt && Date.now() - issuedAt > STALE_AFTER_MS) {
+        void boot(false).catch(() => {});
+      }
+    }
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
 
