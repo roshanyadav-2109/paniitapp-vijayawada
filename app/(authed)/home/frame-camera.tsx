@@ -50,10 +50,10 @@ const FRAMES: Record<FrameKey, Frame> = {
     win: { x: 269, y: 238, w: 708, h: 704 },
   },
   leaders: {
-    src: "/ui/frame/summit-frame-wide.webp",
-    w: 1536,
-    h: 1024,
-    win: { x: 240, y: 183, w: 1066, h: 602 },
+    src: "/ui/frame/summit-frame-leaders-square.webp",
+    w: 1254,
+    h: 1254,
+    win: { x: 185, y: 186, w: 915, h: 775 },
   },
 };
 const FRAME_KEYS: FrameKey[] = ["campuses", "leaders"];
