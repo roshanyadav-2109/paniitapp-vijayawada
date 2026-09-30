@@ -375,7 +375,9 @@ export function NetworkingClient({
                   tab === "connections"
                     ? "empty-network"
                     : tab === "foryou"
-                      ? canMatch
+                      ? !userId
+                        ? "empty-profile"
+                        : canMatch
                         ? "empty-team"
                         : "empty-profile"
                       : "empty-search"
@@ -386,7 +388,9 @@ export function NetworkingClient({
               {tab === "connections"
                 ? "No connections yet"
                 : tab === "foryou"
-                  ? canMatch
+                  ? !userId
+                    ? "Please login to see recommendations"
+                    : canMatch
                     ? "No matches yet"
                     : "Tell us what you're after"
                   : "No matches"}
