@@ -39,10 +39,16 @@ interface Frame {
   win: { x: number; y: number; w: number; h: number };
 }
 
-type FrameKey = "campuses" | "leaders";
+type FrameKey = "deeptech" | "campuses" | "leaders";
 
 /** The frames to choose from, in the order they are offered. */
 const FRAMES: Record<FrameKey, Frame> = {
+  deeptech: {
+    src: "/ui/frame/summit-frame-deeptech.webp",
+    w: 1536,
+    h: 1024,
+    win: { x: 170, y: 215, w: 1195, h: 598 },
+  },
   campuses: {
     src: "/ui/frame/summit-frame-square-2.webp",
     w: 1254,
@@ -56,7 +62,12 @@ const FRAMES: Record<FrameKey, Frame> = {
     win: { x: 185, y: 186, w: 915, h: 775 },
   },
 };
-const FRAME_KEYS: FrameKey[] = ["campuses", "leaders"];
+const FRAME_NAMES: Record<FrameKey, string> = {
+  deeptech: "Deeptech Decade frame",
+  campuses: "IIT campuses frame",
+  leaders: "Chief Minister and Minister frame",
+};
+const FRAME_KEYS: FrameKey[] = ["deeptech", "campuses", "leaders"];
 
 /** A frame's window as percentages of the frame, for laying things out in it. */
 function winStyle(f: Frame): React.CSSProperties {
@@ -237,11 +248,9 @@ const STEP_TITLE: Record<Exclude<Step, "result">, string> = {
 
 function FrameCamera({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState<Step>("camera");
-  // Which frame is round the picture. It starts on the one that suits the
-  // way the phone is held, and the person can change it at any point.
-  const [frameKey, setFrameKey] = useState<FrameKey>(() =>
-    window.innerHeight > window.innerWidth ? "campuses" : "leaders"
-  );
+  // Which frame is round the picture: it opens on the first, and the
+  // person can change it at any point.
+  const [frameKey, setFrameKey] = useState<FrameKey>("deeptech");
   const [facing, setFacing] = useState<"user" | "environment">("user");
   const [live, setLive] = useState(false);
   const [streamId, setStreamId] = useState(0);
@@ -783,7 +792,7 @@ function FrameCamera({ onClose }: { onClose: () => void }) {
                   type="button"
                   role="radio"
                   aria-checked={on}
-                  aria-label={key === "campuses" ? "IIT campuses frame" : "Chief Minister and Minister frame"}
+                  aria-label={FRAME_NAMES[key]}
                   onClick={() => chooseFrame(key)}
                   className={`relative h-14 shrink-0 snap-center overflow-hidden rounded-lg bg-[#1B1464] transition-all ${
                     on ? "opacity-100 ring-2 ring-white" : "opacity-55 ring-1 ring-white/20 hover:opacity-80"
