@@ -39,7 +39,7 @@ interface Frame {
   win: { x: number; y: number; w: number; h: number };
 }
 
-type FrameKey = "deeptech" | "campuses" | "leaders";
+type FrameKey = "deeptech" | "campuses" | "leaders" | "summit";
 
 /** The frames to choose from, in the order they are offered. */
 const FRAMES: Record<FrameKey, Frame> = {
@@ -55,6 +55,12 @@ const FRAMES: Record<FrameKey, Frame> = {
     h: 1254,
     win: { x: 269, y: 238, w: 708, h: 704 },
   },
+  summit: {
+    src: "/ui/frame/summit-frame-blue.webp",
+    w: 1122,
+    h: 1402,
+    win: { x: 186, y: 368, w: 752, h: 640 },
+  },
   leaders: {
     src: "/ui/frame/summit-frame-leaders-square.webp",
     w: 1254,
@@ -66,8 +72,9 @@ const FRAME_NAMES: Record<FrameKey, string> = {
   deeptech: "Deeptech Decade frame",
   campuses: "IIT campuses frame",
   leaders: "Chief Minister and Minister frame",
+  summit: "PanIIT Andhra Pradesh Summit frame",
 };
-const FRAME_KEYS: FrameKey[] = ["deeptech", "campuses", "leaders"];
+const FRAME_KEYS: FrameKey[] = ["deeptech", "campuses", "leaders", "summit"];
 
 /** A frame's window as percentages of the frame, for laying things out in it. */
 function winStyle(f: Frame): React.CSSProperties {
