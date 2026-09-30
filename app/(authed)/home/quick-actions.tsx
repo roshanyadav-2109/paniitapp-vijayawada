@@ -55,7 +55,7 @@ export function QuickActions({ role }: Props) {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-3">
+      <div className="grid grid-cols-3 gap-2 lg:gap-3">
         <button
           type="button"
           onClick={() => setQrOpen(true)}
@@ -64,11 +64,6 @@ export function QuickActions({ role }: Props) {
           <TileIcon src="/ui/my-qr.webp" />
           <span className={TILE_LABEL}>My QR</span>
         </button>
-        <ActionLink
-          href="/scan"
-          icon={<TileIcon src="/ui/scan-qr.webp" />}
-          label="Scan QR"
-        />
         <ActionLink
           href="mailto:summit@paniit.org"
           icon={<TileIcon src="/ui/contact-us.webp" />}

@@ -36,7 +36,6 @@ import { SponsorsBoard, type SponsorTier } from "./sponsors-marquee";
 import { QuickActions } from "./quick-actions";
 import { IitMarquee } from "./iit-marquee";
 import { EventScale } from "@/components/features/event-scale";
-import { GatePassBanner } from "./gate-pass-banner";
 import { FrameCta } from "./frame-camera";
 import { TicketsBanner } from "./tickets-banner";
 import { AppPromptBanner } from "@/components/features/app-prompt-banner";
@@ -329,12 +328,6 @@ export default async function HomePage() {
           opening this at the door wants a QR code, not a photograph. */}
       <SafeSection className="px-3 sm:px-5 lg:px-6">
         <QuickActions role={role} />
-      </SafeSection>
-
-      {/* The pass, under the four tiles: it is what you open at the door,
-          and the tiles are what you open before you get there. */}
-      <SafeSection className="px-3 sm:px-5 lg:px-6">
-        <GatePassBanner signedIn={signedIn} />
       </SafeSection>
 
       {/* Key guests & speakers */}
