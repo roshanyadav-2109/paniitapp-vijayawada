@@ -5,7 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, Loader2 } from "@/components/icons";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
-import { useAppPrompt } from "@/hooks/use-app-prompt";
+import { announcePushRegistered, useAppPrompt } from "@/hooks/use-app-prompt";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { EVENT_INSTALL_ART, EVENT_NOTIFY_ART } from "@/lib/event-config";
 import {
@@ -59,6 +60,7 @@ export function AppPromptSheet({
 }) {
   const { toast } = useToast();
   const status = useAppPrompt({ signedIn, pushRegistered, scope });
+  const router = useRouter();
   const [kind, setKind] = useState<AppPromptKind | null>(null);
   const [busy, setBusy] = useState(false);
   const shown = useRef(false);
@@ -151,8 +153,12 @@ export function AppPromptSheet({
           body: JSON.stringify(sub),
         });
         if (!res.ok) throw new Error("Could not register this device");
-        // The prompt asks until a subscription exists; it does now.
+        // The prompt asks until a subscription exists; it does now. Every
+        // copy of the prompt is told at once, and the server's answer is
+        // re-read so the next screen does not ask again either.
         status.setSubscribed(true);
+        announcePushRegistered(scope);
+        router.refresh();
       }
       setKind(null);
       toast({ title: "Notifications on" });

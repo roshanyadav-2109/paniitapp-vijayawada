@@ -4,6 +4,8 @@ import { organizerClient, Restricted } from "../guard";
 import { AnnouncementComposer } from "../announcement-composer";
 
 export const dynamic = "force-dynamic";
+// Pushing an announcement to a few thousand phones takes a while.
+export const maxDuration = 60;
 
 export default async function AdminAnnouncePage() {
   const supabase = await organizerClient();

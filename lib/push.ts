@@ -98,6 +98,71 @@ export async function sendPushToUsers(
   }
 }
 
+/**
+ * Everyone at one summit who has notifications on: an announcement.
+ *
+ * Read a page at a time and sent fifty at a time, so a few thousand
+ * subscribers neither make one enormous query nor open thousands of
+ * connections to the push services at once.
+ */
+export async function sendPushToEvent(
+  eventId: string,
+  payload: PushPayload
+): Promise<{ sent: number; failed: number }> {
+  if (!configured()) return { sent: 0, failed: 0 };
+  let sent = 0;
+  let failed = 0;
+  try {
+    const admin = createServiceRoleClient();
+    webpush.setVapidDetails(
+      process.env.VAPID_SUBJECT!,
+      process.env.VAPID_PUBLIC_KEY!,
+      process.env.VAPID_PRIVATE_KEY!
+    );
+    const body = JSON.stringify({
+      title: payload.title,
+      body: payload.body,
+      url: payload.url ?? "/home",
+      tag: payload.tag,
+    });
+    const PAGE = 1000;
+    for (let from = 0; ; from += PAGE) {
+      const { data } = await admin
+        .from("profiles")
+        .select("id, push_subscription, event_participants!inner(event_id)")
+        .eq("event_participants.event_id", eventId)
+        .not("push_subscription", "is", null)
+        .order("id")
+        .range(from, from + PAGE - 1);
+      const rows = (data ?? []) as { id: string; push_subscription: unknown }[];
+      for (let i = 0; i < rows.length; i += 50) {
+        await Promise.all(
+          rows.slice(i, i + 50).map(async (t) => {
+            if (!t.push_subscription || typeof t.push_subscription !== "object") return;
+            try {
+              await webpush.sendNotification(
+                t.push_subscription as unknown as webpush.PushSubscription,
+                body
+              );
+              sent++;
+            } catch (err) {
+              failed++;
+              const code = (err as { statusCode?: number })?.statusCode;
+              if (code === 404 || code === 410) {
+                await admin.from("profiles").update({ push_subscription: null }).eq("id", t.id);
+              }
+            }
+          })
+        );
+      }
+      if (rows.length < PAGE) break;
+    }
+  } catch {
+    // an announcement that saved but could not be pushed is still sent
+  }
+  return { sent, failed };
+}
+
 /** One person, which is most of the calls. */
 export async function sendPushToUser(
   userId: string,

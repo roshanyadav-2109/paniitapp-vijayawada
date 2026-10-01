@@ -7,11 +7,11 @@ const nextConfig: NextConfig = {
     // How long the phone keeps a screen it has already been given. Next's
     // default for a server-rendered screen is nothing at all, so every tap
     // on a tab it had just left went back to the server and waited for the
-    // whole screen again. Thirty seconds makes going back and forth between
+    // whole screen again. Ten seconds makes going back and forth between
     // tabs instant; anything that has to be live (the feed, the programme,
     // comments, poll counts) listens for its own changes and refreshes
     // itself, and your own actions refresh the screen they were made on.
-    staleTimes: { dynamic: 30, static: 300 },
+    staleTimes: { dynamic: 10, static: 300 },
   },
   images: {
     // Speaker portraits and sponsor logos essentially never change, so let

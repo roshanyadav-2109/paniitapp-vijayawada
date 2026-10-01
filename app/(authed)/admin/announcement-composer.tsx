@@ -46,8 +46,14 @@ export function AnnouncementComposer() {
         toast({ title: "Could not send", description: error.message, variant: "destructive" });
         return;
       }
-      await announcementsChanged().catch(() => {});
-      toast({ title: "Announcement sent" });
+      const pushed = await announcementsChanged(title.trim(), body.trim() || null).catch(() => ({ sent: 0 }));
+      toast({
+        title: "Announcement sent",
+        description:
+          pushed.sent > 0
+            ? `Notified ${pushed.sent} phone${pushed.sent === 1 ? "" : "s"}.`
+            : "It is in everyone's bell.",
+      });
       setTitle("");
       setBody("");
       setPriority("normal");

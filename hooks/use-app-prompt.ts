@@ -52,6 +52,18 @@ const DEV_PREVIEW = process.env.NODE_ENV !== "production";
 // standalone is offered it; where the browser gives us no prompt to fire,
 // the sheet says how to do it by hand.
 
+const PUSH_DONE_EVENT = "paniit:push-registered";
+const PUSH_DONE_KEY = "paniit:push-registered";
+
+/** Tell every copy of the prompt, now and for the rest of this visit, that
+ *  this account is registered for notifications on this device. */
+export function announcePushRegistered(scope: string | null): void {
+  try {
+    sessionStorage.setItem(PUSH_DONE_KEY, scope ?? "");
+  } catch {}
+  window.dispatchEvent(new Event(PUSH_DONE_EVENT));
+}
+
 export interface AppPromptInput {
   signedIn?: boolean;
   /** Does THIS account have a subscription stored? Read on the server. */
@@ -73,6 +85,18 @@ export function useAppPrompt({
     NotificationPermission | "unsupported"
   >("unsupported");
   const [subscribed, setSubscribed] = useState<boolean | null>(null);
+  // Set the moment this device registers for push, in whichever copy of the
+  // prompt did it: the sheet and the home banner each hold their own state,
+  // and the banner went on asking until the page was reloaded.
+  const [registeredHere, setRegisteredHere] = useState(false);
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(PUSH_DONE_KEY) === (scope ?? "")) setRegisteredHere(true);
+    } catch {}
+    const on = () => setRegisteredHere(true);
+    window.addEventListener(PUSH_DONE_EVENT, on);
+    return () => window.removeEventListener(PUSH_DONE_EVENT, on);
+  }, [scope]);
 
   useEffect(() => {
     setInstalled(isStandalone());
@@ -135,7 +159,7 @@ export function useAppPrompt({
   // will not show the prompt again, so the sheet says where the setting is —
   // hiding it would leave somebody who tapped Block by accident with no way
   // back and no explanation.
-  const wantsNotifications = signedIn && !pushRegistered;
+  const wantsNotifications = signedIn && !pushRegistered && !registeredHere;
 
   // Notifications are asked for only once the app is installed. In a tab the
   // permission belongs to the browser rather than to the app, and a visitor

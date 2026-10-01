@@ -3,6 +3,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { EVENT_ID } from "@/lib/event-config";
+import { sendPushToEvent } from "@/lib/push";
 
 /**
  * What the admin panel changes: the programme, who moderates each session,
@@ -192,11 +193,24 @@ export async function deleteExhibitor(id: string): Promise<AdminResult> {
 
 // ---- announcements ----------------------------------------------------------
 
-/** Drop the bell's cached feed once an announcement is sent, so it shows
- *  within the CDN's thirty seconds rather than after the cache's own. */
-export async function announcementsChanged(): Promise<void> {
-  if (!(await asOrganizer())) return;
+/**
+ * After an announcement is saved: drop the bell's cached feed so it shows
+ * within the CDN's thirty seconds, and push it to every attendee of this
+ * summit who has notifications on. Returns how many phones it reached.
+ */
+export async function announcementsChanged(
+  title: string,
+  body: string | null
+): Promise<{ sent: number }> {
+  if (!(await asOrganizer())) return { sent: 0 };
   revalidateTag("announcements");
+  const { sent } = await sendPushToEvent(EVENT_ID, {
+    title: title.slice(0, 120),
+    body: (body ?? "").slice(0, 240) || "New announcement from the summit team",
+    url: "/home",
+    tag: "announcement",
+  });
+  return { sent };
 }
 
 // ---- admin access -------------------------------------------------------------
