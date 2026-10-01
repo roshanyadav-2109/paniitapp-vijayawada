@@ -21,9 +21,7 @@ export default async function DiscussPage() {
   const signedIn = await isSignedIn();
 
   return (
-    // A slimmer margin than other pages on a phone (6px rather than 12px),
-    // so posts get the width. From sm up it sits in its usual centred column.
-    <div className="-mx-1.5 w-auto pt-5 pb-10 sm:mx-auto sm:w-full sm:max-w-2xl lg:pt-8">
+    <div className="mx-auto w-full max-w-2xl pt-5 pb-10 lg:pt-8">
       {/* The feed is everyone's, so it has to move on its own. Likes and
           votes arrive in bursts, hence the longer quiet period. */}
       <RealtimeRefresh
