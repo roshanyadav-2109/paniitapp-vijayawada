@@ -44,6 +44,7 @@ export default async function SpeakersPage() {
                       src={p.photo_url}
                       alt={name}
                       fill
+                      unoptimized={p.photo_url.startsWith("/kp/")}
                       sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 22vw"
                       className="object-cover object-top"
                     />

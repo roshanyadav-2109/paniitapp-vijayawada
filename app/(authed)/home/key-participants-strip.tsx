@@ -155,6 +155,7 @@ function PhotoPreloader({ list, idx }: { list: Person[]; idx: number }) {
             src={p.photo_url as string}
             alt=""
             fill
+            unoptimized={(p.photo_url as string).startsWith("/kp/")}
             className="object-cover object-top"
             sizes="(min-width: 768px) 280px, 70vw"
           />
@@ -204,6 +205,7 @@ function ParticipantCard({
             src={person.photo_url}
             alt={person.full_name}
             fill
+            unoptimized={person.photo_url.startsWith("/kp/")}
             className="object-cover object-top"
             sizes="(min-width: 768px) 280px, 70vw"
           />

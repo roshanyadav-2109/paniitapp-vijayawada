@@ -72,6 +72,9 @@ const nextConfig: NextConfig = {
       { source: "/legacy/:path*", headers: forever },
       { source: "/past-sponsors/:path*", headers: forever },
       { source: "/logo/:path*", headers: forever },
+      // Speaker portraits, resized once and named by their content: served
+      // straight from the CDN to everyone, never through the optimiser.
+      { source: "/kp/:path*", headers: forever },
       { source: "/iits/:path*", headers: forever },
       { source: "/sectors/:path*", headers: forever },
       { source: "/audience/:path*", headers: forever },
