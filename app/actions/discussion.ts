@@ -28,7 +28,10 @@ export async function createPost(
   body: string,
   options?: string[],
   media?: { url: string; type: "image" | "video" },
-  sessionId?: string
+  sessionId?: string,
+  /** Admins only: post under the summit team's name and mark. The
+   *  database drops it for anyone else (0029_post_as_team.sql). */
+  asTeam = false
 ): Promise<ActionResult> {
   if (sessionId && !z.string().uuid().safeParse(sessionId).success) return { error: "invalid" };
   const cleaned = (options ?? []).map((o) => o.trim()).filter(Boolean);
@@ -65,6 +68,7 @@ export async function createPost(
     body: parsed.data.body,
     kind: isPoll ? "poll" : "text",
     ...(sessionId ? { session_id: sessionId } : {}),
+    ...(asTeam ? { as_team: true } : {}),
     ...(attachment
       ? { media_url: attachment.url, media_type: attachment.type }
       : {}),

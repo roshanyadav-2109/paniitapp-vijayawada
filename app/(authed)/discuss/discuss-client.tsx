@@ -70,6 +70,8 @@ export interface PostRow {
   id: string;
   body: string;
   kind: "text" | "poll";
+  /** Posted by an admin under the summit team's name. */
+  as_team?: boolean | null;
   /** Cloudinary URL of an attached photo or clip, and which it is. */
   media_url: string | null;
   media_type: "image" | "video" | null;
@@ -158,7 +160,7 @@ export function DiscussClient({
           Log in to join the discussion
         </button>
       ) : (
-        <Composer sessionId={sessionId} />
+        <Composer sessionId={sessionId} isAdmin={isAdmin} />
       )}
 
       {errored ? (
@@ -198,11 +200,13 @@ export function DiscussClient({
 /* Composer                                                            */
 /* ------------------------------------------------------------------ */
 
-function Composer({ sessionId }: { sessionId?: string }) {
+function Composer({ sessionId, isAdmin = false }: { sessionId?: string; isAdmin?: boolean }) {
   const router = useRouter();
   const { toast } = useToast();
   const [body, setBody] = useState("");
   const [isPoll, setIsPoll] = useState(false);
+  // Admins pick, per post, whose name it goes out under.
+  const [asTeam, setAsTeam] = useState(true);
   const [options, setOptions] = useState<string[]>(["", ""]);
   const [pending, startTransition] = useTransition();
   const [media, setMedia] = useState<UploadedMedia | null>(null);
@@ -251,7 +255,8 @@ function Composer({ sessionId }: { sessionId?: string }) {
         body,
         isPoll ? options : undefined,
         media ?? undefined,
-        sessionId
+        sessionId,
+        isAdmin && asTeam
       );
       if ("error" in res) {
         toast({ title: "Could not post", description: res.error, variant: "destructive" });
@@ -267,6 +272,41 @@ function Composer({ sessionId }: { sessionId?: string }) {
 
   return (
     <div className="rounded-lg border border-rule bg-white p-3">
+      {isAdmin ? (
+        <div role="radiogroup" aria-label="Post as" className="mb-2.5 flex items-center gap-1.5">
+          <span className="mr-0.5 text-[12px] text-brand-900/60">Post as</span>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={asTeam}
+            onClick={() => setAsTeam(true)}
+            className={cn(
+              "inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-[12px] font-medium transition-colors",
+              asTeam
+                ? "border-brand-800 bg-brand-800 text-white"
+                : "border-rule bg-white text-brand-900 hover:bg-paper"
+            )}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={TEAM_LOGO} alt="" className="size-4 rounded-sm bg-white object-contain" />
+            {TEAM_NAME}
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={!asTeam}
+            onClick={() => setAsTeam(false)}
+            className={cn(
+              "inline-flex h-8 items-center rounded-full border px-2.5 text-[12px] font-medium transition-colors",
+              !asTeam
+                ? "border-brand-800 bg-brand-800 text-white"
+                : "border-rule bg-white text-brand-900 hover:bg-paper"
+            )}
+          >
+            My name
+          </button>
+        </div>
+      ) : null}
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value.slice(0, MAX_BODY))}
@@ -457,9 +497,9 @@ function PostCard({
   const [pending, startTransition] = useTransition();
   const [showComments, setShowComments] = useState(false);
   const a = author(post);
-  // The organising team speaks as one: a post by an admin or organiser
-  // shows the summit's name and the PanIIT mark rather than a person.
-  const team = a?.role === "organizer" || a?.role === "admin";
+  // An admin's post goes out under the summit team's name and mark when
+  // they chose that while posting; otherwise under their own name.
+  const team = !!post.as_team && (a?.role === "organizer" || a?.role === "admin");
   const isMine = userId != null && post.author_id === userId;
   const canDelete = isMine || isAdmin;
   // Deleting takes two taps: the first turns the bin into a red Delete.
