@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   isIosSafari,
   isSnoozed,
+  isIosDevice,
   isStandalone,
   type AppPromptKind,
   type BeforeInstallPromptEvent,
@@ -142,7 +143,9 @@ export function useAppPrompt({
   // either — so a tab gets the install offer or nothing.
   let pending: AppPromptKind | null = null;
   if (!ready) pending = null;
-  else if (!installed) pending = "install";
+  // iPhones and iPads are not asked to install: the offer there is
+  // instructions for the Share sheet, which people took for a nag.
+  else if (!installed) pending = isIosDevice() ? null : "install";
   else if (wantsNotifications) pending = "notifications";
 
   const due = pending && !isSnoozed(pending, scope) ? pending : null;

@@ -28,6 +28,15 @@ export function isStandalone(): boolean {
   );
 }
 
+/** Any iPhone, iPad or iPod, in Safari or any other browser on it. */
+export function isIosDevice(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    /iPad|iPhone|iPod/.test(window.navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+}
+
 /**
  * iOS has no beforeinstallprompt: Safari installs only through the Share
  * sheet, so there the prompt shows instructions instead of a button.
