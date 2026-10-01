@@ -207,6 +207,8 @@ function ParticipantCard({
             alt={person.full_name}
             fill
             unoptimized={(person.photo_url || SPEAKER_PLACEHOLDER).startsWith("/kp/")}
+            // The card on screen: fetched at once, ahead of everything else.
+            priority
             className="object-cover object-top"
             sizes="(min-width: 768px) 280px, 70vw"
           />
