@@ -31,11 +31,15 @@ export function RealtimeRefresh({
   channel,
   tables,
   quietMs = 800,
+  jitterMs = 0,
   prompt,
 }: {
   channel: string;
   tables: RealtimeTable[];
   quietMs?: number;
+  /** Up to this much more wait, different on each phone, so a change does
+   *  not send every open copy of the screen back to the server at once. */
+  jitterMs?: number;
   /** When set, a change shows this as a button instead of refreshing on its
    *  own, and the screen refreshes for whoever taps it. On a feed hundreds
    *  of people have open, refreshing them all on every change sent one
@@ -72,7 +76,7 @@ export function RealtimeRefresh({
 
     function bump() {
       if (timer) return;
-      timer = setTimeout(refresh, quietMs);
+      timer = setTimeout(refresh, quietMs + Math.random() * jitterMs);
     }
 
     function onVisibility() {
@@ -99,7 +103,7 @@ export function RealtimeRefresh({
       if (timer) clearTimeout(timer);
       supabase.removeChannel(ch);
     };
-  }, [channel, spec, quietMs, router, prompt]);
+  }, [channel, spec, quietMs, jitterMs, router, prompt]);
 
   if (!prompt || !waiting) return null;
   return (

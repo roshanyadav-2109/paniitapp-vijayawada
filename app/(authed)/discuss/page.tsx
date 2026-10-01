@@ -22,14 +22,15 @@ export default async function DiscussPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl pt-5 pb-10 lg:pt-8">
-      {/* New posts are offered, not pushed: a button appears and the feed
-          reloads for whoever taps it. Likes, votes and comments do not
-          reload anyone's feed; poll counts keep their own live update. */}
+      {/* The feed moves on its own. Only the posts table is listened to:
+          likes, comments and votes each update their post's counts there.
+          Each phone waits its own few seconds before asking again, so a
+          busy minute does not send every open feed to the server at once. */}
       <RealtimeRefresh
         channel="discuss-feed"
         quietMs={1500}
-        prompt="New posts"
-        tables={[{ table: "posts", event: "INSERT" }]}
+        jitterMs={3000}
+        tables={[{ table: "posts" }]}
       />
       {!signedIn ? (
         <LoginCta

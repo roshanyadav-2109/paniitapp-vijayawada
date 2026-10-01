@@ -23,10 +23,6 @@ export default async function AdminExpoPage() {
         &larr; Admin
       </Link>
       <h1 className="mt-2 font-display text-2xl font-semibold text-brand-950">Expo stalls</h1>
-      <p className="mt-1 text-[13px] leading-5 text-brand-900/70">
-        Add the companies exhibiting and their stall numbers. A stall shows on the Expo page
-        once it is set to show.
-      </p>
       <ExpoAdmin stalls={(data as AdminStall[] | null) ?? []} />
     </div>
   );

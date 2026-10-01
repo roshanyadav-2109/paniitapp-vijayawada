@@ -48,7 +48,7 @@ export function ChatButton() {
   }, [supabase]);
 
   // The unread count is asked for, not listened for: when the app comes to
-  // the front, on every change of screen, and each minute while it is on
+  // the front, on every change of screen, and every thirty seconds while it is on
   // screen. A live subscription here put every signed-in phone on every
   // message anyone sent, and made each of them recount on each one.
   // A rise in the count away from the chat plays the ping.
@@ -79,7 +79,7 @@ export function ChatButton() {
     document.addEventListener("visibilitychange", onVisible);
     const timer = setInterval(() => {
       if (!document.hidden) void recount();
-    }, 60_000);
+    }, 30_000);
     return () => {
       cancelled = true;
       document.removeEventListener("visibilitychange", onVisible);

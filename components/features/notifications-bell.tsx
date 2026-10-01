@@ -96,7 +96,7 @@ export function NotificationsBell() {
   }, []);
 
   // Read through the app's cached feed rather than a live connection: on
-  // load, when the app comes back to the front, and every two minutes while
+  // load, when the app comes back to the front, and every thirty seconds while
   // it is on screen. Urgent notices also go out as push notifications.
   useEffect(() => {
     let cancelled = false;
@@ -117,7 +117,7 @@ export function NotificationsBell() {
     document.addEventListener("visibilitychange", onVisible);
     const timer = setInterval(() => {
       if (!document.hidden) void load();
-    }, 120_000);
+    }, 30_000);
     return () => {
       cancelled = true;
       document.removeEventListener("visibilitychange", onVisible);

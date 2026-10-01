@@ -86,11 +86,6 @@ export default async function ModeratePage({
   return (
     <div className="mx-auto w-full max-w-3xl pb-10 pt-5 lg:pt-8">
       <h1 className="font-display text-2xl font-semibold text-brand-950">Session questions</h1>
-      <p className="mt-1 text-[13px] leading-5 text-brand-900/70">
-        {organizer
-          ? "Every session's questions. Only you, the organisers and each session's moderators see them."
-          : "Questions sent to the sessions you moderate. Only you and the organisers see them."}
-      </p>
 
       {sessions.length === 0 ? (
         <div className="mt-10 flex flex-col items-center text-center">

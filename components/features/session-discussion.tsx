@@ -1,4 +1,5 @@
 import { DiscussClient } from "@/app/(authed)/discuss/discuss-client";
+import { RealtimeRefresh } from "@/components/features/realtime-refresh";
 import { loadPosts } from "@/app/(authed)/discuss/load-posts";
 
 /**
@@ -12,9 +13,15 @@ export async function SessionDiscussion({ sessionId }: { sessionId: string }) {
 
   return (
     <>
-      {/* No live listener here: a full hall reading the session page held
-          one database connection each, and a like reloaded the page for all
-          of them. Posts show as the page opens; your own appear at once. */}
+      {/* This session's posts, live. A like or a comment updates the
+          post's own row, so listening to its rows is enough. Phones spread
+          their refreshes over a few seconds. */}
+      <RealtimeRefresh
+        channel={`session-posts-${sessionId}`}
+        quietMs={1500}
+        jitterMs={3000}
+        tables={[{ table: "posts", filter: `session_id=eq.${sessionId}` }]}
+      />
       <DiscussClient
         posts={posts}
         likedIds={likedIds}

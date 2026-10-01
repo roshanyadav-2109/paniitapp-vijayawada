@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/lib/supabase/client";
 import { timeIST } from "@/lib/date";
@@ -42,10 +42,29 @@ export function QaClient({
   const [sent, setSent] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  // A moderator's answer to one of yours shows the next time the page is
-  // opened. It used to arrive live, but that held a database connection
-  // open for every signed-in person reading the session page, and a full
-  // hall is more of those than the database allows.
+  // A moderator answering one of yours shows here as it happens.
+  useEffect(() => {
+    if (!userId) return;
+    const ch = supabase
+      .channel(`my-questions-${sessionId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "session_questions", filter: `user_id=eq.${userId}` },
+        (payload) => {
+          const row = (payload.new ?? payload.old) as MyQuestion & { session_id?: string };
+          if (row.session_id && row.session_id !== sessionId) return;
+          setMine((list) => {
+            if (payload.eventType === "DELETE") return list.filter((q) => q.id !== row.id);
+            const rest = list.filter((q) => q.id !== row.id);
+            return [row, ...rest].sort((a, b) => b.created_at.localeCompare(a.created_at));
+          });
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [supabase, sessionId, userId]);
 
   function submit() {
     const text = body.trim();

@@ -70,18 +70,17 @@ export default async function AdminPage() {
     {
       href: "/admin/agenda",
       title: "Agenda & moderators",
-      sub: "Sessions, and who moderates each one",
       art: "agenda",
     },
     {
       href: "/moderate",
       title: "Session questions",
-      sub: "Every question sent to the panels",
       art: "questions",
       badge: waitingTotal,
     },
-    { href: "/admin/expo", title: "Expo stalls", sub: "Exhibitors, stall numbers and logos", art: "stalls" },
-    { href: "/admin/announce", title: "Announcements", sub: "Tell everyone at once", art: "announce" },
+    { href: "/admin/expo", title: "Expo stalls", art: "stalls" },
+    { href: "/admin/announce", title: "Announcements", art: "announce" },
+    { href: "/admin/admins", title: "Admins", art: "registered" },
   ];
 
   return (
@@ -96,11 +95,6 @@ export default async function AdminPage() {
             <h1 className="mt-1 font-display text-[26px] font-semibold leading-tight text-brand-950 lg:text-[32px]">
               Admin
             </h1>
-            <p className="mt-1.5 text-[13.5px] leading-5 text-brand-900/70">
-              {waitingTotal > 0
-                ? `${waitingTotal} question${waitingTotal === 1 ? "" : "s"} waiting for the panels.`
-                : "No questions waiting for the panels."}
-            </p>
           </div>
           <Image
             src="/ui/admin/header.webp"
@@ -164,7 +158,6 @@ export default async function AdminPage() {
               className="size-[76px] lg:size-[88px]"
             />
             <span className="mt-2 text-[15px] font-semibold leading-snug text-brand-950">{t.title}</span>
-            <span className="mt-0.5 text-[12px] leading-4 text-brand-900/60">{t.sub}</span>
           </Link>
         ))}
       </nav>

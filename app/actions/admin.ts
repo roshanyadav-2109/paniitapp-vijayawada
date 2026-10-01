@@ -198,3 +198,28 @@ export async function announcementsChanged(): Promise<void> {
   if (!(await asOrganizer())) return;
   revalidateTag("announcements");
 }
+
+// ---- admin access -------------------------------------------------------------
+
+/**
+ * Give or take admin access by email. The database does the checking
+ * (set_admin_access in 0028_admin_access.sql): only an admin may call it,
+ * nobody removes themselves, and the last admin stays. Someone who has not
+ * signed in yet becomes an admin the moment they first do.
+ */
+export async function setAdminAccess(
+  rawEmail: string,
+  makeAdmin: boolean
+): Promise<{ ok: true; state: string } | { error: string }> {
+  const ctx = await asOrganizer();
+  if (!ctx) return { error: "Only admins can change admin access." };
+  const email = rawEmail.trim().toLowerCase();
+  if (!EMAIL.test(email)) return { error: "That does not look like an email address." };
+  const { data, error } = await ctx.supabase.rpc("set_admin_access", {
+    target_email: email,
+    make_admin: makeAdmin,
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/admin/admins");
+  return { ok: true, state: String(data) };
+}
