@@ -411,6 +411,9 @@ function Composer({ sessionId }: { sessionId?: string }) {
 /* Post                                                                */
 /* ------------------------------------------------------------------ */
 
+const TEAM_NAME = "PanIIT AP Summit Team";
+const TEAM_LOGO = "/logo/paniit-mark.png";
+
 function PostCard({
   post,
   liked,
@@ -427,6 +430,9 @@ function PostCard({
   const [pending, startTransition] = useTransition();
   const [showComments, setShowComments] = useState(false);
   const a = author(post);
+  // The organising team speaks as one: a post by an admin or organiser
+  // shows the summit's name and the PanIIT mark rather than a person.
+  const team = a?.role === "organizer" || a?.role === "admin";
   const isMine = userId != null && post.author_id === userId;
 
   // Optimistic like — the round trip is long enough to feel broken otherwise.
@@ -469,7 +475,13 @@ function PostCard({
           {/* Square, as on the networking cards: at this size a circle crops
               the top of a head off every portrait. */}
           <Avatar className="size-9 rounded-md ring-1 ring-rule">
-            {a?.photo_url ? (
+            {team ? (
+              <AvatarImage
+                src={TEAM_LOGO}
+                alt={TEAM_NAME}
+                className="rounded-md bg-white object-contain p-0.5"
+              />
+            ) : a?.photo_url ? (
               <AvatarImage
                 src={a.photo_url}
                 alt={a.full_name ?? ""}
@@ -487,9 +499,9 @@ function PostCard({
               href={`/attendees/${post.author_id}`}
               className="truncate text-[13px] font-semibold text-brand-950 hover:underline"
             >
-              {a?.full_name ?? "Attendee"}
+              {team ? TEAM_NAME : a?.full_name ?? "Attendee"}
             </Link>
-            {a?.role === "organizer" || a?.role === "admin" ? (
+            {team ? (
               <BadgeCheck className="size-3.5 shrink-0 text-brand-800" strokeWidth={1.8} />
             ) : null}
             {post.is_pinned ? (
@@ -498,7 +510,9 @@ function PostCard({
               </span>
             ) : null}
           </div>
-          {a?.designation || a?.company ? (
+          {team ? (
+            <p className="truncate text-[11px] text-brand-950">Organiser</p>
+          ) : a?.designation || a?.company ? (
             <p className="truncate text-[11px] text-brand-950">
               {[a?.designation, a?.company].filter(Boolean).join(" | ")}
             </p>

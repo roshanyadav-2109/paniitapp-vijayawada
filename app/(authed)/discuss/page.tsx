@@ -21,7 +21,10 @@ export default async function DiscussPage() {
   const signedIn = await isSignedIn();
 
   return (
-    <div className="mx-auto w-full max-w-2xl pt-5 pb-10 lg:pt-8">
+    // Edge to edge on a phone: the feed takes the full width of the screen,
+    // its cards squared off and without side borders. From sm up it sits
+    // in its usual centred column.
+    <div className="-mx-3 w-auto pt-5 pb-10 max-sm:[&_.rounded-lg]:rounded-none max-sm:[&_.rounded-lg]:border-x-0 sm:mx-auto sm:w-full sm:max-w-2xl lg:pt-8">
       {/* The feed is everyone's, so it has to move on its own. Likes and
           votes arrive in bursts, hence the longer quiet period. */}
       <RealtimeRefresh
