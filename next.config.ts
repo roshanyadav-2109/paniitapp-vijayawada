@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
     // tabs instant; anything that has to be live (the feed, the programme,
     // comments, poll counts) listens for its own changes and refreshes
     // itself, and your own actions refresh the screen they were made on.
-    staleTimes: { dynamic: 10, static: 300 },
+    staleTimes: { dynamic: 10, static: 30 },
   },
   images: {
     // Speaker portraits and sponsor logos essentially never change, so let

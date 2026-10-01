@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RefreshOnReturn } from "@/components/features/refresh-on-return";
 import { notFound } from "next/navigation";
 import { GoogleClock, GoogleMapPin } from "@/components/features/google-glyphs";
 import { LinkedInIcon, XIcon } from "@/components/features/social-icons";
@@ -207,6 +208,8 @@ export default async function SessionDetailPage({
     // being spent twice. The tall bottom padding is for the Ask a question
     // bar, which floats over the end of the page.
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-1.5 pb-32 pt-4 sm:px-3 lg:max-w-4xl lg:px-0 lg:pb-16 lg:pt-7">
+      {/* A changed time, hall or speaker shows within a minute. */}
+      <RefreshOnReturn everyMs={60_000} onReturn={false} />
       <Card className="border-rule">
         <CardContent className="flex flex-col gap-3 p-3.5">
           <div className="flex flex-wrap items-center gap-1.5">
