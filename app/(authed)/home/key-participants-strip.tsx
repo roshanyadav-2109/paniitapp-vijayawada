@@ -2,6 +2,7 @@
 
 import { EmptyArt } from "@/components/features/empty-art";
 import Image from "next/image";
+import { SPEAKER_PLACEHOLDER } from "@/lib/placeholders";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, UserRound } from "@/components/icons";
 import { initials } from "@/lib/utils";
@@ -200,12 +201,12 @@ function ParticipantCard({
           square source loses only a few percent off the sides — nothing like
           the third it was being scaled up by when it filled the whole card. */}
       <div className="absolute inset-x-0 top-0 h-[82%] w-full overflow-hidden bg-paper-deep/40">
-        {person.photo_url ? (
+        {person.photo_url || SPEAKER_PLACEHOLDER ? (
           <Image
-            src={person.photo_url}
+            src={person.photo_url || SPEAKER_PLACEHOLDER}
             alt={person.full_name}
             fill
-            unoptimized={person.photo_url.startsWith("/kp/")}
+            unoptimized={(person.photo_url || SPEAKER_PLACEHOLDER).startsWith("/kp/")}
             className="object-cover object-top"
             sizes="(min-width: 768px) 280px, 70vw"
           />

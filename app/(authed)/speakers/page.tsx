@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { SPEAKER_PLACEHOLDER } from "@/lib/placeholders";
 import { EmptyArt } from "@/components/features/empty-art";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { getPublicKeyParticipants } from "@/lib/public-data";
@@ -39,12 +40,12 @@ export default async function SpeakersPage() {
                     nobody is cropped. object-top for the ones that are not:
                     a head is at the top of a photograph, never the middle. */}
                 <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-paper-deep">
-                  {p.photo_url ? (
+                  {p.photo_url || SPEAKER_PLACEHOLDER ? (
                     <Image
-                      src={p.photo_url}
+                      src={p.photo_url || SPEAKER_PLACEHOLDER}
                       alt={name}
                       fill
-                      unoptimized={p.photo_url.startsWith("/kp/")}
+                      unoptimized={(p.photo_url || SPEAKER_PLACEHOLDER).startsWith("/kp/")}
                       sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 22vw"
                       className="object-cover object-top"
                     />
