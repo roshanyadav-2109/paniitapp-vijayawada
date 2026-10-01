@@ -203,3 +203,19 @@ export async function deletePost(postId: string): Promise<ActionResult> {
   revalidatePath("/discuss");
   return { ok: true };
 }
+
+export async function deleteComment(commentId: string): Promise<ActionResult> {
+  if (!z.string().uuid().safeParse(commentId).success) return { error: "invalid" };
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "unauth" };
+
+  // RLS restricts this to the reply's author or an organiser; the post's
+  // reply count is kept by its trigger.
+  const { error } = await supabase.from("post_comments").delete().eq("id", commentId);
+  if (error) return { error: error.message };
+  revalidatePath("/discuss");
+  return { ok: true };
+}

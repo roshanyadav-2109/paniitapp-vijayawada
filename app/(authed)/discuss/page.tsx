@@ -1,6 +1,6 @@
 import { LoginCta } from "@/components/features/login-cta";
 import { RealtimeRefresh } from "@/components/features/realtime-refresh";
-import { isSignedIn } from "@/lib/viewer";
+import { getViewer, isSignedIn } from "@/lib/viewer";
 import { emptied } from "@/lib/dev-empty";
 import { DiscussClient } from "./discuss-client";
 import { loadPosts } from "./load-posts";
@@ -47,6 +47,7 @@ export default async function DiscussPage() {
         myVotes={myVotes}
         userId={userId}
         errored={errored}
+        isAdmin={(await getViewer()).isAdmin}
       />
     </div>
   );

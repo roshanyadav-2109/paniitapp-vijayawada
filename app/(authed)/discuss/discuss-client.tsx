@@ -44,6 +44,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   addComment,
   createPost,
+  deleteComment,
   deletePost,
   toggleLike,
   votePoll,
@@ -128,12 +129,15 @@ export function DiscussClient({
   userId,
   errored,
   sessionId,
+  isAdmin = false,
 }: {
   posts: PostRow[];
   likedIds: string[];
   myVotes: Record<string, string>;
   userId: string | null;
   errored: boolean;
+  /** Admins may remove any post or reply. */
+  isAdmin?: boolean;
   /** A session's own discussion, on its page; none for the Discuss feed. */
   sessionId?: string;
 }) {
@@ -181,6 +185,7 @@ export function DiscussClient({
               liked={liked.has(p.id)}
               myVote={myVotes[p.id] ?? null}
               userId={userId}
+              isAdmin={isAdmin}
             />
           ))}
         </ul>
@@ -439,11 +444,13 @@ function PostCard({
   liked,
   myVote,
   userId,
+  isAdmin,
 }: {
   post: PostRow;
   liked: boolean;
   myVote: string | null;
   userId: string | null;
+  isAdmin: boolean;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -454,6 +461,14 @@ function PostCard({
   // shows the summit's name and the PanIIT mark rather than a person.
   const team = a?.role === "organizer" || a?.role === "admin";
   const isMine = userId != null && post.author_id === userId;
+  const canDelete = isMine || isAdmin;
+  // Deleting takes two taps: the first turns the bin into a red Delete.
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  useEffect(() => {
+    if (!confirmDelete) return;
+    const t = setTimeout(() => setConfirmDelete(false), 4000);
+    return () => clearTimeout(t);
+  }, [confirmDelete]);
 
   // Optimistic like — the round trip is long enough to feel broken otherwise.
   const [likeOn, setLikeOn] = useState(liked);
@@ -538,16 +553,27 @@ function PostCard({
             </p>
           ) : null}
         </div>
-        {isMine ? (
-          <button
-            type="button"
-            onClick={onDelete}
-            disabled={pending}
-            aria-label="Delete post"
-            className="grid size-7 shrink-0 place-items-center rounded-md text-brand-800/45 hover:bg-paper-deep hover:text-iit-500"
-          >
-            <Trash2 className="size-3.5" strokeWidth={1.7} />
-          </button>
+        {canDelete ? (
+          confirmDelete ? (
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={pending}
+              className="h-7 shrink-0 rounded-md bg-iit-600 px-2.5 text-[12px] font-medium text-white disabled:opacity-50"
+            >
+              Delete
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(true)}
+              disabled={pending}
+              aria-label="Delete post"
+              className="grid size-7 shrink-0 place-items-center rounded-md text-brand-800/45 hover:bg-paper-deep hover:text-iit-500"
+            >
+              <Trash2 className="size-3.5" strokeWidth={1.7} />
+            </button>
+          )
         ) : null}
       </div>
 
@@ -619,7 +645,7 @@ function PostCard({
         </span>
       </div>
 
-      {showComments ? <Comments postId={post.id} /> : null}
+      {showComments ? <Comments postId={post.id} userId={userId} isAdmin={isAdmin} /> : null}
     </li>
   );
 }
@@ -761,13 +787,28 @@ function Poll({
 /* Comments — fetched on demand, not with the feed                      */
 /* ------------------------------------------------------------------ */
 
-function Comments({ postId }: { postId: string }) {
+function Comments({
+  postId,
+  userId,
+  isAdmin,
+}: {
+  postId: string;
+  userId: string | null;
+  isAdmin: boolean;
+}) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [rows, setRows] = useState<CommentRow[] | null>(null);
   const [body, setBody] = useState("");
   const [pending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement | null>(null);
+  // The reply waiting for its second tap to be deleted.
+  const [armed, setArmed] = useState<string | null>(null);
+  useEffect(() => {
+    if (!armed) return;
+    const t = setTimeout(() => setArmed(null), 4000);
+    return () => clearTimeout(t);
+  }, [armed]);
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -813,6 +854,16 @@ function Comments({ postId }: { postId: string }) {
     };
   }, [postId, supabase, load]);
 
+  function removeComment(id: string) {
+    setArmed(null);
+    startTransition(async () => {
+      const res = await deleteComment(id);
+      if ("error" in res) return;
+      setRows((list) => (list ?? []).filter((c) => c.id !== id));
+      router.refresh();
+    });
+  }
+
   function submit() {
     const text = body.trim();
     if (!text || pending) return;
@@ -855,6 +906,28 @@ function Comments({ postId }: { postId: string }) {
                   </span>
                   <p className="text-[13px] leading-5 text-brand-900">{c.body}</p>
                 </div>
+                {userId != null && (c.user_id === userId || isAdmin) ? (
+                  armed === c.id ? (
+                    <button
+                      type="button"
+                      onClick={() => removeComment(c.id)}
+                      disabled={pending}
+                      className="h-6 shrink-0 rounded bg-iit-600 px-2 text-[11px] font-medium text-white disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setArmed(c.id)}
+                      disabled={pending}
+                      aria-label="Delete reply"
+                      className="grid size-6 shrink-0 place-items-center rounded text-brand-800/40 hover:bg-paper-deep hover:text-iit-500"
+                    >
+                      <Trash2 className="size-3" strokeWidth={1.7} />
+                    </button>
+                  )
+                ) : null}
               </li>
             );
           })}
