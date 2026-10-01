@@ -96,6 +96,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${poppins.variable} ${notoTelugu.variable}`}
     >
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
+        {/* Chrome says the app can be installed (beforeinstallprompt) as
+            early as it likes, often before the install button has loaded,
+            and an event missed is gone: the sheet then fell back to "Add to
+            Home screen", which on Android makes a Chrome shortcut, not the
+            app. Held here from the first moment for the button to use. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__installPrompt=e;window.dispatchEvent(new Event('paniit:installable'));});window.addEventListener('appinstalled',function(){window.__installPrompt=null;});`,
+          }}
+        />
         <LaunchSplash />
         {children}
         <Toaster />

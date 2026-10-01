@@ -296,8 +296,8 @@ export function AppPromptSheet({
                     </>
                   ) : (
                     <>
-                      <li>1. Open your browser&apos;s menu</li>
-                      <li>2. Tap Install app, or Add to Home screen</li>
+                      <li>1. Tap the &#8942; menu at the top right of Chrome</li>
+                      <li>2. Tap Install app (not Add to Home screen, which only makes a shortcut)</li>
                     </>
                   )}
                 </ol>

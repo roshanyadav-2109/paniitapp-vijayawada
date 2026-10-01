@@ -138,10 +138,22 @@ export function useAppPrompt({
     const display = window.matchMedia("(display-mode: standalone)");
     const onDisplay = () => setInstalled(isStandalone());
 
+    // The prompt Chrome offered before this hook was running, held by the
+    // root layout's early script.
+    const early = (window as Window & { __installPrompt?: BeforeInstallPromptEvent | null })
+      .__installPrompt;
+    if (early) setDeferred(early);
+    const onEarly = () => {
+      const e = (window as Window & { __installPrompt?: BeforeInstallPromptEvent | null })
+        .__installPrompt;
+      if (e) setDeferred(e);
+    };
+    window.addEventListener("paniit:installable", onEarly);
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
     window.addEventListener("appinstalled", onInstalled);
     display.addEventListener?.("change", onDisplay);
     return () => {
+      window.removeEventListener("paniit:installable", onEarly);
       window.removeEventListener("beforeinstallprompt", onBeforeInstall);
       window.removeEventListener("appinstalled", onInstalled);
       display.removeEventListener?.("change", onDisplay);
