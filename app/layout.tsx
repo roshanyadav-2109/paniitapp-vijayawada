@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins, Noto_Sans_Telugu } from "next/font/google";
 import { Toaster } from "@/components/ui/toaster";
+import { LaunchSplash } from "@/components/features/launch-splash";
 import { EVENT_APP_NAME, EVENT_NAME, EVENT_TAGLINE } from "@/lib/event-config";
 import "./globals.css";
 
@@ -95,6 +96,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${poppins.variable} ${notoTelugu.variable}`}
     >
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
+        <LaunchSplash />
         {children}
         <Toaster />
         {/* Production only. In development Next serves its chunks at URLs

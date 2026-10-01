@@ -333,3 +333,86 @@
     scrollbar-width: none;
   }
 }
+
+/* ---- The installed app's opening (components/features/launch-splash.tsx) */
+.launch-splash {
+  display: none;
+}
+@media (display-mode: standalone) {
+  .launch-splash {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    background: #ffffff;
+    pointer-events: none;
+    animation: launch-out 380ms ease-in 1.75s forwards;
+  }
+}
+.launch-splash__mark {
+  width: min(62vw, 260px);
+  clip-path: inset(100% 0 0 0);
+  animation: launch-unveil 950ms cubic-bezier(0.22, 1, 0.36, 1) 150ms forwards;
+}
+.launch-splash__mark img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.launch-splash__line {
+  max-width: 78vw;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: #1b1464;
+  opacity: 0;
+  animation: launch-line 600ms ease-out 900ms forwards;
+}
+@keyframes launch-unveil {
+  0% {
+    clip-path: inset(100% 0 0 0);
+    transform: translateY(14px) scale(0.97);
+    filter: blur(6px);
+  }
+  60% {
+    filter: blur(0);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    transform: none;
+    filter: none;
+  }
+}
+@keyframes launch-line {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 0.85;
+    transform: none;
+  }
+}
+@keyframes launch-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .launch-splash__mark,
+  .launch-splash__line {
+    clip-path: none;
+    opacity: 1;
+    animation: none;
+  }
+  .launch-splash {
+    animation-duration: 300ms;
+    animation-delay: 700ms;
+  }
+}
