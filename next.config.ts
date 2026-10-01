@@ -3,6 +3,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.resolve(__dirname),
+  // The build a phone is running, compared with /api/version to pick up a
+  // new release without the app being closed.
+  env: {
+    NEXT_PUBLIC_BUILD_ID: process.env.VERCEL_GIT_COMMIT_SHA ?? "dev",
+  },
   experimental: {
     // How long the phone keeps a screen it has already been given. Next's
     // default for a server-rendered screen is nothing at all, so every tap

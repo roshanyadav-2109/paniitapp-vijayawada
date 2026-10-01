@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { TopBar } from "@/components/features/top-bar";
 import { RefreshOnReturn } from "@/components/features/refresh-on-return";
+import { VersionWatcher } from "@/components/features/version-watcher";
 import { BottomNav } from "@/components/features/bottom-nav";
 import { AppPromptSheet } from "@/components/features/app-prompt-sheet";
 import { getMyProfile, getViewer, type MyProfile } from "@/lib/viewer";
@@ -70,6 +71,7 @@ async function Shell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-paper">
       <TopBar />
       <RefreshOnReturn />
+      <VersionWatcher />
       <main className="mx-auto w-full max-w-screen-2xl px-3 pb-32 sm:px-5 lg:px-6 lg:pb-12">
         {children}
       </main>

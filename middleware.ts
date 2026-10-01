@@ -21,6 +21,6 @@ export const config = {
      *   on a screen was a trip through here to read the session for nothing,
      *   and a sign-in rule could catch one (it did: /media).
      */
-    "/((?!api/announcements|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|icons|manifest.json|sw.js|.*\\.(?:png|jpe?g|gif|webp|avif|svg|ico|woff2?|ttf|otf|mp4|webm|pdf|txt|xml|js|css|map)$).*)",
+    "/((?!api/announcements|api/version|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|icons|manifest.json|sw.js|.*\\.(?:png|jpe?g|gif|webp|avif|svg|ico|woff2?|ttf|otf|mp4|webm|pdf|txt|xml|js|css|map)$).*)",
   ],
 };
