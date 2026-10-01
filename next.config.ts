@@ -93,7 +93,11 @@ const nextConfig: NextConfig = {
         "/scan/:path*",
         "/admin/:path*",
         "/onboarding/:path*",
-        "/api/:path*",
+        // Every API route but /api/announcements, which is the same for
+        // everyone and is meant to be held by the CDN.
+        "/api/auth/:path*",
+        "/api/push/:path*",
+        "/api/cron/:path*",
       ].map((source) => ({
         source,
         headers: [

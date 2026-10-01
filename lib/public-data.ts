@@ -201,3 +201,34 @@ export const getPublicVenues = unstable_cache(
   ["public-venues", EVENT_ID],
   { revalidate: FIVE_MINUTES, tags: ["venues"] }
 );
+
+export interface PublicAnnouncement {
+  id: string;
+  title: string;
+  body: string | null;
+  priority: "low" | "normal" | "high" | "urgent" | null;
+  created_at: string;
+}
+
+/**
+ * The latest announcements, for the bell in the top bar.
+ *
+ * The bell used to hold a live database connection open on every screen of
+ * every visitor; the database allows a few hundred of those in all. It asks
+ * this instead, through /api/announcements, which the CDN answers for
+ * everyone and refreshes at most every thirty seconds.
+ */
+export const getPublicAnnouncements = unstable_cache(
+  async (): Promise<PublicAnnouncement[]> => {
+    const supabase = createPublicClient();
+    const { data } = await supabase
+      .from("announcements")
+      .select("id, title, body, priority, created_at")
+      .eq("event_id", EVENT_ID)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    return (data as PublicAnnouncement[] | null) ?? [];
+  },
+  ["public-announcements"],
+  { revalidate: 30, tags: ["announcements"] }
+);

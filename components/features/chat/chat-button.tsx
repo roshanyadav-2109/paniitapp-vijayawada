@@ -47,47 +47,45 @@ export function ChatButton() {
     };
   }, [supabase]);
 
-  // Realtime: any message insert/update may shift the unread count;
-  // an INSERT from another sender also triggers a short ping.
+  // The unread count is asked for, not listened for: when the app comes to
+  // the front, on every change of screen, and each minute while it is on
+  // screen. A live subscription here put every signed-in phone on every
+  // message anyone sent, and made each of them recount on each one.
+  // A rise in the count away from the chat plays the ping.
   const pathnameRef = useRef(pathname);
   pathnameRef.current = pathname;
+  const lastRef = useRef<number | null>(null);
   useEffect(() => {
     if (!userId) return;
+    let cancelled = false;
     const recount = async () => {
       const { count } = await supabase
         .from("messages")
         .select("id", { count: "exact", head: true })
         .neq("sender_id", userId)
         .is("read_at", null);
-      setUnread(count ?? 0);
+      if (cancelled || count == null) return;
+      const before = lastRef.current;
+      lastRef.current = count;
+      setUnread(count);
+      if (before != null && count > before && !pathnameRef.current.startsWith("/chat")) {
+        playMessagePing();
+      }
     };
-    const ch = supabase
-      .channel(`chat-button-${userId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages" },
-        (payload) => {
-          const m = payload.new as { sender_id: string; conversation_id: string };
-          void recount();
-          // Ping only on inbound messages, and skip if we're already viewing
-          // that conversation (the chat thread plays its own behaviour).
-          if (m.sender_id === userId) return;
-          if (pathnameRef.current.startsWith("/chat/")) return;
-          playMessagePing();
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "messages" },
-        () => {
-          void recount();
-        }
-      )
-      .subscribe();
+    void recount();
+    const onVisible = () => {
+      if (!document.hidden) void recount();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    const timer = setInterval(() => {
+      if (!document.hidden) void recount();
+    }, 60_000);
     return () => {
-      supabase.removeChannel(ch);
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      clearInterval(timer);
     };
-  }, [supabase, userId]);
+  }, [supabase, userId, pathname]);
 
   return (
     <Link

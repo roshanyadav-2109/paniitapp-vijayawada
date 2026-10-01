@@ -1,8 +1,7 @@
 "use client";
 
 import { EmptyArt } from "@/components/features/empty-art";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { EVENT_ID } from "@/lib/event-config";
+import { useEffect, useRef, useState } from "react";
 
 function PremiumBell({ className }: { className?: string }) {
   return (
@@ -39,7 +38,6 @@ import {
 } from "@/components/ui/sheet";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Badge } from "@/components/ui/badge";
-import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 interface Announcement {
@@ -85,7 +83,6 @@ function saveSeen(set: Set<string>) {
 }
 
 export function NotificationsBell() {
-  const supabase = useMemo(() => createClient(), []);
   const [items, setItems] = useState<Announcement[]>([]);
   const [open, setOpen] = useState(false);
   // hydration-safe: start empty, hydrate from localStorage in effect
@@ -98,40 +95,35 @@ export function NotificationsBell() {
     setSeenIds(loadSeen());
   }, []);
 
+  // Read through the app's cached feed rather than a live connection: on
+  // load, when the app comes back to the front, and every two minutes while
+  // it is on screen. Urgent notices also go out as push notifications.
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      const { data } = await supabase
-        .from("announcements")
-        .select("id, title, body, priority, created_at")
-        .eq("event_id", EVENT_ID)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      if (!cancelled) setItems((data as Announcement[] | null) ?? []);
-    })();
-
-    const ch = supabase
-      .channel(`announcements-${EVENT_ID}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "announcements",
-          // Without this the other summit's announcements appear live here.
-          filter: `event_id=eq.${EVENT_ID}`,
-        },
-        (payload) => {
-          const row = payload.new as Announcement;
-          setItems((prev) => [row, ...prev].slice(0, 20));
-        }
-      )
-      .subscribe();
+    async function load() {
+      try {
+        const r = await fetch("/api/announcements");
+        if (!r.ok) return;
+        const data = (await r.json()) as Announcement[];
+        if (!cancelled && Array.isArray(data)) setItems(data);
+      } catch {
+        // offline or the feed is unreachable: keep what is shown
+      }
+    }
+    void load();
+    const onVisible = () => {
+      if (!document.hidden) void load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    const timer = setInterval(() => {
+      if (!document.hidden) void load();
+    }, 120_000);
     return () => {
       cancelled = true;
-      supabase.removeChannel(ch);
+      document.removeEventListener("visibilitychange", onVisible);
+      clearInterval(timer);
     };
-  }, [supabase]);
+  }, []);
 
   // Mark all current items as seen when the sheet opens.
   // Functional setter + no seenIds in deps — avoids the render storm.

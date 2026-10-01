@@ -16,7 +16,6 @@ import {
 import { PageWithFilters } from "@/components/features/page-with-filters";
 import { AgendaFilters } from "./agenda-filters";
 import { PromoCarousel } from "@/components/features/promo-carousel";
-import { AgendaRealtime } from "@/components/features/agenda-realtime";
 import { getPublicSessions } from "@/lib/public-data";
 import Link from "next/link";
 import { dayIST } from "@/lib/date";
@@ -205,7 +204,6 @@ export default async function AgendaPage({
         </>
       )}
 
-      <AgendaRealtime />
     </PageWithFilters>
   );
 }

@@ -22,18 +22,14 @@ export default async function DiscussPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl pt-5 pb-10 lg:pt-8">
-      {/* The feed is everyone's, so it has to move on its own. Likes and
-          votes arrive in bursts, hence the longer quiet period. */}
+      {/* New posts are offered, not pushed: a button appears and the feed
+          reloads for whoever taps it. Likes, votes and comments do not
+          reload anyone's feed; poll counts keep their own live update. */}
       <RealtimeRefresh
         channel="discuss-feed"
         quietMs={1500}
-        tables={[
-          { table: "posts" },
-          { table: "post_comments" },
-          { table: "post_likes" },
-          { table: "poll_votes" },
-          { table: "poll_options" },
-        ]}
+        prompt="New posts"
+        tables={[{ table: "posts", event: "INSERT" }]}
       />
       {!signedIn ? (
         <LoginCta

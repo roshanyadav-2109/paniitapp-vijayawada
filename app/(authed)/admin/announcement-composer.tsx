@@ -1,5 +1,6 @@
 "use client";
 
+import { announcementsChanged } from "@/app/actions/admin";
 import { useState, useTransition } from "react";
 import { Loader2 } from "@/components/icons";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ export function AnnouncementComposer() {
         toast({ title: "Could not send", description: error.message, variant: "destructive" });
         return;
       }
+      await announcementsChanged().catch(() => {});
       toast({ title: "Announcement sent" });
       setTitle("");
       setBody("");

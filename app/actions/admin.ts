@@ -189,3 +189,12 @@ export async function deleteExhibitor(id: string): Promise<AdminResult> {
   expoChanged();
   return { ok: true };
 }
+
+// ---- announcements ----------------------------------------------------------
+
+/** Drop the bell's cached feed once an announcement is sent, so it shows
+ *  within the CDN's thirty seconds rather than after the cache's own. */
+export async function announcementsChanged(): Promise<void> {
+  if (!(await asOrganizer())) return;
+  revalidateTag("announcements");
+}
