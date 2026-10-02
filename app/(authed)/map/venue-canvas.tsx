@@ -90,8 +90,12 @@ export interface CanvasProps {
   inside: boolean;
   /** Which of INSIDE_VIEWS (lib/venue-3d) to stand at, when inside. */
   spot: number;
-  /** Held walking controls, inside: forward (1) or back (-1), and turning left (-1) or right (1). */
-  move: { f: number; t: number };
+  /**
+   * Walking, inside: forward (up to 1) or back (down to -1), and turning
+   * left (-1) or right (1). Read every frame; `walking` says when to start.
+   */
+  move: { current: { f: number; t: number } };
+  walking: boolean;
 }
 
 export default function VenueCanvas(props: CanvasProps) {
@@ -189,7 +193,7 @@ function ShadowsOnce({ floor, inside = false }: { floor: FloorKey; inside?: bool
   return null;
 }
 
-function Scene({ floor, showPlan, occupied, selected, onSelect, focus, resetNonce, labelLayer, inside, spot, move }: CanvasProps) {
+function Scene({ floor, showPlan, occupied, selected, onSelect, focus, resetNonce, labelLayer, inside, spot, move, walking }: CanvasProps) {
   const controls = useRef<OrbitControlsImpl | null>(null);
   const data = SCENE.floors[floor];
   const [walk, setWalk] = useState<Walk | null>(null);
@@ -319,7 +323,7 @@ function Scene({ floor, showPlan, occupied, selected, onSelect, focus, resetNonc
         screenSpacePanning={false}
         enablePan={!inside}
       />
-      <CameraRig controls={controls} focus={focus} resetNonce={resetNonce} inside={inside} spot={spot} walk={walk} floor={floor} move={move} />
+      <CameraRig controls={controls} focus={focus} resetNonce={resetNonce} inside={inside} spot={spot} walk={walk} floor={floor} move={move} walking={walking} />
     </>
   );
 }
@@ -2473,6 +2477,7 @@ function CameraRig({
   walk,
   floor,
   move,
+  walking,
 }: {
   controls: React.RefObject<OrbitControlsImpl | null>;
   focus: CanvasProps["focus"];
@@ -2482,13 +2487,13 @@ function CameraRig({
   walk: Walk | null;
   floor: FloorKey;
   move: CanvasProps["move"];
+  walking: boolean;
 }) {
   const { camera, size, invalidate, scene } = useThree();
-  const moveRef = useRef(move);
-  moveRef.current = move;
+  const moveRef = move;
   useEffect(() => {
-    if (move.f || move.t) invalidate();
-  }, [move.f, move.t, invalidate]);
+    if (walking) invalidate();
+  }, [walking, invalidate]);
   const flight = useRef<{
     fromPos: THREE.Vector3;
     fromTarget: THREE.Vector3;
@@ -2684,15 +2689,15 @@ function CameraRig({
   useFrame((_, dt) => {
     const c = controls.current;
     const m = moveRef.current;
-    if (inside && c && !flight.current && (m.f || m.t)) {
+    if (inside && c && !flight.current && (walking || m.f || m.t)) {
       // Walking: turn on the spot, step forward or back at a walking pace,
       // and stop short of anything in the way (seats and the floor aside).
       const step = Math.min(dt, 1 / 30);
       const look = c.target.clone().sub(camera.position);
       if (m.t) look.applyAxisAngle(UP, -m.t * TURN_SPEED * step);
       if (m.f) {
-        const dir = new THREE.Vector3(look.x, 0, look.z).normalize().multiplyScalar(m.f);
-        const dist = WALK_SPEED * step;
+        const dir = new THREE.Vector3(look.x, 0, look.z).normalize().multiplyScalar(Math.sign(m.f));
+        const dist = WALK_SPEED * Math.abs(m.f) * step;
         const eye = camera.position.clone();
         WALK_RAY.set(eye, dir);
         WALK_RAY.far = dist + 0.45;
