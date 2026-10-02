@@ -530,11 +530,13 @@ export const INSIDE_VIEWS: Record<FloorKey, readonly InsideView[]> = {
     { name: "Front row", pos: [-5.8, 1.6, -5.6], look: [-16, 2.1, -3] },
     { name: "On stage", pos: [-13.2, 2.6, -2.6], look: [20, 2.4, -5.6] },
   ],
+  // Arriving upstairs at reception; the gallery looks across the hall at
+  // eye level, as you would stand at its rail.
   first: [
-    { name: "Gallery", pos: [6.85, 1.6, -21.05], look: [6.85, 0.2, -10] },
+    { name: "Reception", pos: [31.5, 1.6, 9], look: [31.5, 1.6, -6] },
     { name: "Board room 1", pos: [-31.6, 1.6, -11.86], look: [-46, 1.5, -11.86] },
     { name: "Board room 2", pos: [-31.6, 1.6, -4.91], look: [-46, 1.5, -4.91] },
-    { name: "Reception", pos: [31.5, 1.6, 9], look: [31.5, 1.6, -6] },
+    { name: "Gallery", pos: [6.85, 1.6, -21.05], look: [6.85, 1.2, -10] },
   ],
   basement: [
     { name: "Car park", pos: [-6, 1.6, -4.5], look: [20, 1.6, -4.5] },
