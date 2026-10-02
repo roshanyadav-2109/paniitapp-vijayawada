@@ -1,6 +1,5 @@
 import { EmptyArt } from "@/components/features/empty-art";
-import { LoginCta } from "@/components/features/login-cta";
-import { isSignedIn } from "@/lib/viewer";
+import { RefreshOnReturn } from "@/components/features/refresh-on-return";
 import { emptied } from "@/lib/dev-empty";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -18,15 +17,11 @@ import {
 import { PageWithFilters } from "@/components/features/page-with-filters";
 import { AgendaFilters } from "./agenda-filters";
 import { PromoCarousel } from "@/components/features/promo-carousel";
-import { AgendaRealtime } from "@/components/features/agenda-realtime";
 import { getPublicSessions } from "@/lib/public-data";
 import Link from "next/link";
 import { dayIST } from "@/lib/date";
 
 export const dynamic = "force-dynamic";
-
-/** How much of the day a signed-out visitor sees in full. */
-const GUEST_PREVIEW = 3;
 
 export default async function AgendaPage({
   searchParams,
@@ -97,7 +92,6 @@ export default async function AgendaPage({
   sessions = emptied(sessions);
   userInterests = emptied(userInterests);
 
-  const signedIn = await isSignedIn();
 
   const filtered = sessions.filter((s) => {
     if (venue !== "all" && s.venue_id !== venue) return false;
@@ -134,6 +128,8 @@ export default async function AgendaPage({
       header={<PromoCarousel />}
       filters={<AgendaFilters venues={venueOptions} />}
     >
+      {/* Organisers' changes to the programme show within a minute. */}
+      <RefreshOnReturn everyMs={60_000} onReturn={false} />
       {userInterests.length === 0 ? (
         /* In the same green as the Recommended bar on a card, because that
            green is exactly what this offer buys you. A line of grey text
@@ -180,7 +176,8 @@ export default async function AgendaPage({
            the day scannable now. */
         <>
           <ul className="flex flex-col gap-2">
-            {(signedIn ? filtered : filtered.slice(0, GUEST_PREVIEW)).map(
+            {/* The whole programme, signed in or not. */}
+            {filtered.map(
               (s, i, shown) => {
                 // The summit is two days now — the Chief Minister's gala
                 // dinner on the Friday, everything else on the Saturday —
@@ -207,39 +204,9 @@ export default async function AgendaPage({
             )}
           </ul>
 
-          {/* A guest sees the first few sessions in full, then the ask, then
-              the rest of the day behind a blur: enough to know the programme
-              is real and worth signing in for, without printing it. The
-              blurred half is inert and hidden from screen readers — it is a
-              picture of a list, not a list. */}
-          {!signedIn && filtered.length > GUEST_PREVIEW ? (
-            <>
-              <LoginCta
-                next="/agenda"
-                className="mt-4"
-              />
-              <div
-                aria-hidden
-                className="pointer-events-none mt-4 select-none blur-[5px] [mask-image:linear-gradient(to_bottom,black,transparent)]"
-              >
-                <ul className="flex flex-col gap-2">
-                  {filtered.slice(GUEST_PREVIEW, GUEST_PREVIEW + 4).map((s) => (
-                    <li key={s.id}>
-                      <SessionCard
-                        session={s}
-                        bookmarked={false}
-                        userInterests={userInterests}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </>
-          ) : null}
         </>
       )}
 
-      <AgendaRealtime />
     </PageWithFilters>
   );
 }

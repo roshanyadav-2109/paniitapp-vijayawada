@@ -16,10 +16,24 @@ const TABS = [
   { href: "/attendees", label: "Network", icon: "/ui/nav-network.webp" },
   { href: "/discuss", label: "Discuss", icon: "/ui/nav-discuss.webp" },
   { href: "/exhibitors", label: "Expo", icon: "/ui/nav-expo.webp" },
-  { href: "/meetings", label: "Meetings", icon: "/ui/nav-meetings.webp" },
-] as const;
+];
 
-export function BottomNav() {
+/** A sixth tab for organisers and admins, and nobody else. */
+const ADMIN_TAB = { href: "/admin", label: "Admin", icon: "/ui/nav-admin.webp" };
+
+/** For session moderators: the questions sent to their sessions. An
+ *  organiser who also moderates has the admin tab, which leads there too. */
+const MODERATE_TAB = { href: "/moderate", label: "Questions", icon: "/ui/nav-moderate.webp" };
+
+export function BottomNav({
+  isAdmin = false,
+  isModerator = false,
+}: {
+  isAdmin?: boolean;
+  isModerator?: boolean;
+}) {
+  const extra = isAdmin ? ADMIN_TAB : isModerator ? MODERATE_TAB : null;
+  const tabs = extra ? [...TABS, extra] : TABS;
   const pathname = usePathname();
   // A tap has to look answered before the page it asks for exists. The tab
   // you pressed lights up immediately and stays lit until the route it
@@ -37,8 +51,13 @@ export function BottomNav() {
       data-bottom-nav
       className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-rule bg-white shadow-[0_-8px_24px_-18px_rgba(13,9,48,0.18)] lg:hidden"
     >
-      <ul className="mx-auto grid h-[88px] w-full max-w-2xl grid-cols-6">
-        {TABS.map(({ href, label, icon }) => {
+      <ul
+        className={cn(
+          "mx-auto grid h-[88px] w-full max-w-2xl",
+          extra ? "grid-cols-6" : "grid-cols-5"
+        )}
+      >
+        {tabs.map(({ href, label, icon }) => {
           const active =
             shown === href || (href !== "/home" && shown.startsWith(`${href}/`));
           return (

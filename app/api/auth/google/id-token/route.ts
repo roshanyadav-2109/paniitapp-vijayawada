@@ -3,8 +3,10 @@ import { NextResponse } from "next/server";
 import {
   GOOGLE_OAUTH_NEXT_COOKIE,
   GOOGLE_OAUTH_NONCE_COOKIE,
+  GOOGLE_OAUTH_PENDING_COOKIE,
   GOOGLE_OAUTH_STATE_COOKIE,
   clearGoogleOAuthCookies,
+  readPending,
   safeNext,
 } from "@/lib/auth/google-oauth";
 import { syncProfileForUser } from "@/lib/auth/sync-profile";
@@ -27,14 +29,26 @@ export async function POST(req: Request) {
     return jsonError("missing_google_id_token");
   }
 
+  // Whichever of the sign-ins waiting in this browser this one is; or, for
+  // one begun before they waited side by side, the single cookies of old.
   const cookieStore = await cookies();
-  const expectedState = cookieStore.get(GOOGLE_OAUTH_STATE_COOKIE)?.value;
-  const nonce = cookieStore.get(GOOGLE_OAUTH_NONCE_COOKIE)?.value;
-  const next = safeNext(cookieStore.get(GOOGLE_OAUTH_NEXT_COOKIE)?.value);
+  const pending = readPending(cookieStore.get(GOOGLE_OAUTH_PENDING_COOKIE)?.value).find(
+    (p) => p.state === state
+  );
+  const legacyState = cookieStore.get(GOOGLE_OAUTH_STATE_COOKIE)?.value;
+  const legacy =
+    legacyState && legacyState === state
+      ? {
+          nonce: cookieStore.get(GOOGLE_OAUTH_NONCE_COOKIE)?.value,
+          next: cookieStore.get(GOOGLE_OAUTH_NEXT_COOKIE)?.value,
+        }
+      : null;
 
-  if (!expectedState || state !== expectedState) {
+  if (!pending && !legacy) {
     return jsonError("invalid_google_state");
   }
+  const nonce = pending?.nonce ?? legacy?.nonce;
+  const next = safeNext(pending?.next ?? legacy?.next);
   if (!nonce) {
     return jsonError("missing_google_nonce");
   }
@@ -65,8 +79,9 @@ export async function POST(req: Request) {
   return response;
 }
 
+// A failure leaves the waiting sign-ins where they are: clearing them made
+// every retry from the same screen fail too, with invalid_google_state,
+// until the page was reloaded.
 function jsonError(error: string, status = 400) {
-  const response = NextResponse.json({ error }, { status });
-  clearGoogleOAuthCookies(response);
-  return response;
+  return NextResponse.json({ error }, { status });
 }

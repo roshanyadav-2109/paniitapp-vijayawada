@@ -50,7 +50,6 @@ interface Filters {
   yearMin: number;
   yearMax: number;
   interests: string[];
-  availableOnly: boolean;
 }
 
 const PAGE_SIZE = 50;
@@ -65,7 +64,6 @@ function emptyFilters(): Filters {
     yearMin: YEAR_MIN,
     yearMax: YEAR_MAX,
     interests: [],
-    availableOnly: false,
   };
 }
 
@@ -74,8 +72,7 @@ function activeExtraCount(f: Filters): number {
     f.campuses.length +
     f.interests.length +
     (f.yearMin > YEAR_MIN ? 1 : 0) +
-    (f.yearMax < YEAR_MAX ? 1 : 0) +
-    (f.availableOnly ? 1 : 0)
+    (f.yearMax < YEAR_MAX ? 1 : 0)
   );
 }
 
@@ -161,8 +158,6 @@ export function NetworkingClient({
       if (f.yearMin > YEAR_MIN) q = q.gte("graduation_year", f.yearMin);
       if (f.yearMax < YEAR_MAX) q = q.lte("graduation_year", f.yearMax);
       if (f.interests.length > 0) q = q.overlaps("interests", f.interests);
-      if (f.availableOnly)
-        q = q.or("available_for_meetings.eq.true,office_hours_enabled.eq.true");
 
       const { data, count } = await q;
       return {
@@ -380,7 +375,9 @@ export function NetworkingClient({
                   tab === "connections"
                     ? "empty-network"
                     : tab === "foryou"
-                      ? canMatch
+                      ? !userId
+                        ? "empty-profile"
+                        : canMatch
                         ? "empty-team"
                         : "empty-profile"
                       : "empty-search"
@@ -391,7 +388,9 @@ export function NetworkingClient({
               {tab === "connections"
                 ? "No connections yet"
                 : tab === "foryou"
-                  ? canMatch
+                  ? !userId
+                    ? "Please login to see recommendations"
+                    : canMatch
                     ? "No matches yet"
                     : "Tell us what you're after"
                   : "No matches"}
@@ -644,19 +643,6 @@ function FilterFields({
         </div>
       </FilterGroup>
 
-      <label className="flex cursor-pointer items-center justify-between rounded-md border border-rule px-3 py-2.5">
-        <span className="text-sm font-medium text-brand-900">
-          Available for meetings
-        </span>
-        <input
-          type="checkbox"
-          checked={value.availableOnly}
-          onChange={(e) =>
-            onChange({ ...value, availableOnly: e.target.checked })
-          }
-          className="size-4 accent-brand-800"
-        />
-      </label>
     </div>
   );
 }

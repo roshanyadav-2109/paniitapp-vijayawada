@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RefreshOnReturn } from "@/components/features/refresh-on-return";
 import { notFound } from "next/navigation";
 import { GoogleClock, GoogleMapPin } from "@/components/features/google-glyphs";
 import { LinkedInIcon, XIcon } from "@/components/features/social-icons";
@@ -10,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookmarkButton } from "@/components/features/bookmark-button";
 import { QaSection } from "@/components/features/qa/qa-section";
-import { CheckInButton } from "./check-in-button";
+import { SessionDiscussion } from "@/components/features/session-discussion";
 import { TRACK_LABELS, TRACK_TO_INTERESTS } from "@/lib/constants";
 import { rangeIST } from "@/lib/date";
 import { initials } from "@/lib/utils";
@@ -87,7 +88,6 @@ export default async function SessionDetailPage({
   let session: SessionRow | null = null;
   let speakers: SpeakerRow[] = [];
   let bookmarked = false;
-  let checkedIn = false;
   let userInterests: string[] = [];
 
   try {
@@ -177,7 +177,7 @@ export default async function SessionDetailPage({
           .maybeSingle(),
       ]);
       bookmarked = !!bm.data;
-      checkedIn = !!ci.data;
+      void ci; // check-in is hidden for now
       userInterests =
         ((prof.data as { interests: string[] | null } | null)?.interests) ?? [];
     }
@@ -208,6 +208,8 @@ export default async function SessionDetailPage({
     // being spent twice. The tall bottom padding is for the Ask a question
     // bar, which floats over the end of the page.
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-1.5 pb-32 pt-4 sm:px-3 lg:max-w-4xl lg:px-0 lg:pb-16 lg:pt-7">
+      {/* A changed time, hall or speaker shows within a minute. */}
+      <RefreshOnReturn everyMs={60_000} onReturn={false} />
       <Card className="border-rule">
         <CardContent className="flex flex-col gap-3 p-3.5">
           <div className="flex flex-wrap items-center gap-1.5">
@@ -277,12 +279,7 @@ export default async function SessionDetailPage({
               withLabel
               size="md"
             />
-            <CheckInButton
-              sessionId={session.id}
-              startsAtIso={session.start_at}
-              endsAtIso={session.end_at}
-              initialCheckedIn={checkedIn}
-            />
+            {/* Session check-in is hidden for now: entry is the gate pass. */}
           </div>
 
           {sessionInterests.length > 0 ? (
@@ -355,11 +352,22 @@ export default async function SessionDetailPage({
       <Card className="border-rule">
         <CardHeader className="px-3.5 pb-2 pt-3.5">
           <CardTitle className="text-[16px] font-bold text-brand-950">
-            Q&amp;A discussion
+            Ask the panel
           </CardTitle>
         </CardHeader>
         <CardContent className="px-3.5 pb-3.5 pt-0">
           <QaSection sessionId={session.id} />
+        </CardContent>
+      </Card>
+
+      {/* The open conversation about the session, beside the private
+          questions: what people want to say to each other, not to the panel. */}
+      <Card className="border-rule">
+        <CardHeader className="px-3.5 pb-2 pt-3.5">
+          <CardTitle className="text-[16px] font-bold text-brand-950">Discussion</CardTitle>
+        </CardHeader>
+        <CardContent className="px-3.5 pb-3.5 pt-0">
+          <SessionDiscussion sessionId={session.id} />
         </CardContent>
       </Card>
     </div>

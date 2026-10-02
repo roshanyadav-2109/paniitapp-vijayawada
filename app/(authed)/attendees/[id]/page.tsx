@@ -8,7 +8,6 @@ import {
   SessionCard,
   type SessionCardData,
 } from "@/components/features/session-card";
-import { ScheduleMeetingButton } from "@/components/features/schedule-meeting-button";
 
 interface ProfileRow {
   id: string;
@@ -131,9 +130,8 @@ export default async function AttendeeProfilePage({
         ) : null}
       </section>
 
-      {/* Schedule meeting + Chat — full-width CTAs */}
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <ScheduleMeetingButton inviteeId={profile.id} />
+      {/* Chat, full width */}
+      <div>
         <Link
           href={`/chat/${profile.id}`}
           className="flex h-12 w-full items-center justify-center gap-2 rounded-md border border-rule bg-white text-[13px] font-semibold text-brand-900 transition-colors hover:bg-paper-deep/30"

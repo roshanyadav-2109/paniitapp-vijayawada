@@ -81,6 +81,16 @@
     overscroll-behavior-y: none;
     -webkit-text-size-adjust: 100%;
   }
+  /* Except the pull-down reload, in a browser tab. Installed, the app has
+     no address bar and nothing to reload from; in Chrome's own tab, pulling
+     down for the round spinner is how people expect to refresh a page, and
+     without it the page just stopped at the top. */
+  @media (display-mode: browser) {
+    html,
+    body {
+      overscroll-behavior-y: auto;
+    }
+  }
   /* Chrome, not content: the programme, a message and a bio all stay
      selectable, because copying them is a thing people do. */
   button,
@@ -115,7 +125,7 @@
     }
   }
   body {
-    /* Standard ligatures and contextual alternates are all Poppins needs.
+    /* Standard ligatures and contextual alternates are all Lexend needs.
        Numerals stay proportional here — the tabular-nums utility opts in
        where columns of times and counts need to line up. */
     font-feature-settings: "rlig" 1, "calt" 1;
@@ -137,15 +147,15 @@
    * Opt in per title.
    *
    * Letter-spacing is the part that matters. `tracking-tight` exists to
-   * correct Inter's loose default fit; Poppins needs its own value, and a
-   * heading set at Poppins' natural fit reads noticeably slack.
+   * correct Inter's loose default fit; Lexend needs its own value, and a
+   * heading set at Lexend's natural fit reads noticeably slack.
    */
   .font-display {
-    /* Poppins is a geometric sans with generous default sidebearings; at
-       title sizes it needs pulling in slightly or headings read loose. The
-       serif variation axes that used to be set here are gone with the serif. */
+    /* Lexend is set wide, for reading at text sizes; at title sizes it
+       needs pulling in a little more or headings read loose. The serif
+       variation axes that used to be set here are gone with the serif. */
     font-weight: 600;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.02em;
     font-feature-settings: "liga" 1, "calt" 1;
   }
 
@@ -167,9 +177,9 @@
   .eyebrow {
     /* Was a serif italic, which distinguished a label from body text by
        typeface. With one family doing both jobs that distinction has to come
-       from weight, size and colour instead. Not italic: Poppins has no true
-       italic, only a slanted roman, and at 12px it reads as a rendering
-       fault rather than as emphasis. */
+       from weight, size and colour instead. Not italic: Lexend has no
+       italic, and a slanted roman at 12px reads as a rendering fault
+       rather than as emphasis. */
     font-family: var(--font-sans), system-ui, sans-serif;
     font-style: normal;
     font-weight: 500;
@@ -340,5 +350,88 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+}
+
+/* ---- The installed app's opening (components/features/launch-splash.tsx) */
+.launch-splash {
+  display: none;
+}
+@media (display-mode: standalone) {
+  .launch-splash {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    background: #ffffff;
+    pointer-events: none;
+    animation: launch-out 380ms ease-in 1.75s forwards;
+  }
+}
+.launch-splash__mark {
+  width: min(62vw, 260px);
+  clip-path: inset(100% 0 0 0);
+  animation: launch-unveil 950ms cubic-bezier(0.22, 1, 0.36, 1) 150ms forwards;
+}
+.launch-splash__mark img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.launch-splash__line {
+  max-width: 78vw;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: #1b1464;
+  opacity: 0;
+  animation: launch-line 600ms ease-out 900ms forwards;
+}
+@keyframes launch-unveil {
+  0% {
+    clip-path: inset(100% 0 0 0);
+    transform: translateY(14px) scale(0.97);
+    filter: blur(6px);
+  }
+  60% {
+    filter: blur(0);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    transform: none;
+    filter: none;
+  }
+}
+@keyframes launch-line {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 0.85;
+    transform: none;
+  }
+}
+@keyframes launch-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .launch-splash__mark,
+  .launch-splash__line {
+    clip-path: none;
+    opacity: 1;
+    animation: none;
+  }
+  .launch-splash {
+    animation-duration: 300ms;
+    animation-delay: 700ms;
   }
 }

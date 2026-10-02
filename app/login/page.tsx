@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { rethrowIfRedirect } from "@/lib/redirect";
 import { SignInForm } from "./sign-in-form";
+import Link from "next/link";
+import { X } from "@/components/icons";
+import { needsSignIn } from "@/lib/supabase/middleware";
 import { GreetingRotator } from "./greeting-rotator";
 import {
   EVENT_ATTENDEE_COUNT,
@@ -16,7 +19,19 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export default async function SignInPage() {
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ redirect?: string }>;
+}) {
+  // Closing the page goes back to where they were, unless that page itself
+  // needs a sign-in, which would only bring them straight back here.
+  const { redirect: from } = await searchParams;
+  const back =
+    from && from.startsWith("/") && !from.startsWith("//") && !needsSignIn(from.split("?")[0])
+      ? from
+      : "/home";
+
   try {
     const supabase = await createClient();
     const {
@@ -29,6 +44,14 @@ export default async function SignInPage() {
 
   return (
     <main className="flex h-[100svh] flex-col overflow-hidden lg:grid lg:h-screen lg:grid-cols-2 lg:overflow-visible">
+      <Link
+        href={back}
+        replace
+        aria-label="Close and continue without signing in"
+        className="fixed right-4 top-[max(env(safe-area-inset-top),1rem)] z-30 grid size-10 place-items-center rounded-full bg-white/15 text-white ring-1 ring-white/25 backdrop-blur transition-colors hover:bg-white/25 lg:bg-brand-950/5 lg:text-brand-950 lg:ring-brand-950/15 lg:hover:bg-brand-950/10"
+      >
+        <X className="size-5" strokeWidth={2} />
+      </Link>
       {/* HERO PANEL — fills 60svh on mobile so the white card overlaps it
           starting around the 50svh line (≈ 10% below the logo block). */}
       <section className="relative isolate flex h-[60svh] shrink-0 flex-col overflow-hidden bg-brand-800 px-5 pt-[20svh] lg:h-auto lg:p-12 lg:pt-12 xl:p-16">

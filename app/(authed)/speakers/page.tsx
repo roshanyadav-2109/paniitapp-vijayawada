@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { SPEAKER_PLACEHOLDER } from "@/lib/placeholders";
 import { EmptyArt } from "@/components/features/empty-art";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { getPublicKeyParticipants } from "@/lib/public-data";
@@ -30,7 +31,7 @@ export default async function SpeakersPage() {
         </Empty>
       ) : (
         <ul className="grid grid-cols-2 items-start gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-4 lg:grid-cols-4">
-          {people.map((p) => {
+          {people.map((p, i) => {
             const line = [p.designation, p.company].filter(Boolean).join(" | ");
             const name = p.full_name ?? "Speaker";
             return (
@@ -39,11 +40,15 @@ export default async function SpeakersPage() {
                     nobody is cropped. object-top for the ones that are not:
                     a head is at the top of a photograph, never the middle. */}
                 <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-paper-deep">
-                  {p.photo_url ? (
+                  {p.photo_url || SPEAKER_PLACEHOLDER ? (
                     <Image
-                      src={p.photo_url}
+                      src={p.photo_url || SPEAKER_PLACEHOLDER}
                       alt={name}
                       fill
+                      unoptimized={(p.photo_url || SPEAKER_PLACEHOLDER).startsWith("/kp/")}
+                      // The first two rows are on screen as the page opens:
+                      // fetched at once and first, not left for lazy loading.
+                      priority={i < 6}
                       sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 22vw"
                       className="object-cover object-top"
                     />

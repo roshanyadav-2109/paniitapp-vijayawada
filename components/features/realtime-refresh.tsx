@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -8,6 +8,8 @@ export interface RealtimeTable {
   table: string;
   /** PostgREST-style filter, e.g. `invitee_id=eq.<uuid>`. */
   filter?: string;
+  /** Which changes count; every kind unless set. */
+  event?: "INSERT" | "UPDATE" | "DELETE" | "*";
 }
 
 /**
@@ -29,12 +31,23 @@ export function RealtimeRefresh({
   channel,
   tables,
   quietMs = 800,
+  jitterMs = 0,
+  prompt,
 }: {
   channel: string;
   tables: RealtimeTable[];
   quietMs?: number;
+  /** Up to this much more wait, different on each phone, so a change does
+   *  not send every open copy of the screen back to the server at once. */
+  jitterMs?: number;
+  /** When set, a change shows this as a button instead of refreshing on its
+   *  own, and the screen refreshes for whoever taps it. On a feed hundreds
+   *  of people have open, refreshing them all on every change sent one
+   *  server render per viewer per change. */
+  prompt?: string;
 }) {
   const router = useRouter();
+  const [waiting, setWaiting] = useState(false);
   // The parent rebuilds this array on every render, so the effect keys off
   // what is in it rather than its identity — otherwise the subscription is
   // torn down and rebuilt each time.
@@ -50,6 +63,10 @@ export function RealtimeRefresh({
 
     function refresh() {
       timer = null;
+      if (prompt) {
+        setWaiting(true);
+        return;
+      }
       if (document.hidden) {
         missed = true;
         return;
@@ -59,13 +76,14 @@ export function RealtimeRefresh({
 
     function bump() {
       if (timer) return;
-      timer = setTimeout(refresh, quietMs);
+      timer = setTimeout(refresh, quietMs + Math.random() * jitterMs);
     }
 
     function onVisibility() {
       if (!document.hidden && missed) {
         missed = false;
-        router.refresh();
+        if (prompt) setWaiting(true);
+        else router.refresh();
       }
     }
 
@@ -73,7 +91,7 @@ export function RealtimeRefresh({
     for (const t of list) {
       ch.on(
         "postgres_changes",
-        { event: "*", schema: "public", table: t.table, filter: t.filter },
+        { event: t.event ?? "*", schema: "public", table: t.table, filter: t.filter },
         bump
       );
     }
@@ -85,7 +103,20 @@ export function RealtimeRefresh({
       if (timer) clearTimeout(timer);
       supabase.removeChannel(ch);
     };
-  }, [channel, spec, quietMs, router]);
+  }, [channel, spec, quietMs, jitterMs, router, prompt]);
 
-  return null;
+  if (!prompt || !waiting) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        setWaiting(false);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        router.refresh();
+      }}
+      className="fixed left-1/2 top-20 z-40 -translate-x-1/2 rounded-full bg-brand-800 px-4 py-2 text-[13px] font-medium text-white shadow-lg"
+    >
+      {prompt}
+    </button>
+  );
 }

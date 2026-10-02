@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Camera, Loader2, Trash2 } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
@@ -28,6 +29,7 @@ export function ProfilePhotoUpload({
   fallbackName: string | null;
 }) {
   const supabase = useMemo(() => createClient(), []);
+  const router = useRouter();
   const { toast } = useToast();
   const [photoUrl, setPhotoUrl] = useState<string | null>(initialPhotoUrl);
   const [busy, setBusy] = useState(false);
@@ -77,6 +79,9 @@ export function ProfilePhotoUpload({
       if (profileErr) throw profileErr;
 
       setPhotoUrl(next);
+      // The top bar and every other screen read the photo on the server:
+      // re-read them now rather than at the next restart.
+      router.refresh();
       toast({ title: "Profile photo updated" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Upload failed.";
@@ -107,6 +112,7 @@ export function ProfilePhotoUpload({
         .eq("id", userId);
       if (profileErr) throw profileErr;
       setPhotoUrl(null);
+      router.refresh();
       toast({ title: "Profile photo removed" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Remove failed.";

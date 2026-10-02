@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 import { TopBar } from "@/components/features/top-bar";
+import { RefreshOnReturn } from "@/components/features/refresh-on-return";
+import { VersionWatcher } from "@/components/features/version-watcher";
 import { BottomNav } from "@/components/features/bottom-nav";
 import { AppPromptSheet } from "@/components/features/app-prompt-sheet";
-import { getViewer } from "@/lib/viewer";
+import { getMyProfile, getViewer, type MyProfile } from "@/lib/viewer";
 import { createClient } from "@/lib/supabase/server";
 import { rethrowIfRedirect } from "@/lib/redirect";
 import { devAuthBypass } from "@/lib/dev-auth";
@@ -30,16 +32,9 @@ export default async function AuthedLayout({
       } = await supabase.auth.getUser();
       if (!user) return <Shell>{children}</Shell>;
 
-      const { data } = await supabase
-        .from("profiles")
-        .select("full_name, designation, company")
-        .eq("id", user.id)
-        .maybeSingle();
-      let p = (data as {
-        full_name: string | null;
-        designation: string | null;
-        company: string | null;
-      } | null) ?? null;
+      // The same read the viewer makes below, so it is made once.
+      let p: Pick<MyProfile, "full_name" | "designation" | "company"> | null =
+        await getMyProfile(user.id);
 
       // No row at all is a different thing from an unfinished one, and it
       // used to be treated the same: bounced to a form that loaded empty,
@@ -75,10 +70,12 @@ async function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-paper">
       <TopBar />
+      <RefreshOnReturn />
+      <VersionWatcher />
       <main className="mx-auto w-full max-w-screen-2xl px-3 pb-32 sm:px-5 lg:px-6 lg:pb-12">
         {children}
       </main>
-      <BottomNav />
+      <BottomNav isAdmin={viewer.isAdmin} isModerator={viewer.isModerator} />
       {/* Slides up a few seconds in, at most once a visit: install the app,
           then — once installed — turn notifications on. The public VAPID key
           is public by definition; the private half stays on the server. */}

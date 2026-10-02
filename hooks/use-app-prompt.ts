@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   isIosSafari,
   isSnoozed,
+  isIosDevice,
   isStandalone,
   type AppPromptKind,
   type BeforeInstallPromptEvent,
@@ -51,6 +52,18 @@ const DEV_PREVIEW = process.env.NODE_ENV !== "production";
 // standalone is offered it; where the browser gives us no prompt to fire,
 // the sheet says how to do it by hand.
 
+const PUSH_DONE_EVENT = "paniit:push-registered";
+const PUSH_DONE_KEY = "paniit:push-registered";
+
+/** Tell every copy of the prompt, now and for the rest of this visit, that
+ *  this account is registered for notifications on this device. */
+export function announcePushRegistered(scope: string | null): void {
+  try {
+    sessionStorage.setItem(PUSH_DONE_KEY, scope ?? "");
+  } catch {}
+  window.dispatchEvent(new Event(PUSH_DONE_EVENT));
+}
+
 export interface AppPromptInput {
   signedIn?: boolean;
   /** Does THIS account have a subscription stored? Read on the server. */
@@ -72,6 +85,18 @@ export function useAppPrompt({
     NotificationPermission | "unsupported"
   >("unsupported");
   const [subscribed, setSubscribed] = useState<boolean | null>(null);
+  // Set the moment this device registers for push, in whichever copy of the
+  // prompt did it: the sheet and the home banner each hold their own state,
+  // and the banner went on asking until the page was reloaded.
+  const [registeredHere, setRegisteredHere] = useState(false);
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(PUSH_DONE_KEY) === (scope ?? "")) setRegisteredHere(true);
+    } catch {}
+    const on = () => setRegisteredHere(true);
+    window.addEventListener(PUSH_DONE_EVENT, on);
+    return () => window.removeEventListener(PUSH_DONE_EVENT, on);
+  }, [scope]);
 
   useEffect(() => {
     setInstalled(isStandalone());
@@ -113,10 +138,22 @@ export function useAppPrompt({
     const display = window.matchMedia("(display-mode: standalone)");
     const onDisplay = () => setInstalled(isStandalone());
 
+    // The prompt Chrome offered before this hook was running, held by the
+    // root layout's early script.
+    const early = (window as Window & { __installPrompt?: BeforeInstallPromptEvent | null })
+      .__installPrompt;
+    if (early) setDeferred(early);
+    const onEarly = () => {
+      const e = (window as Window & { __installPrompt?: BeforeInstallPromptEvent | null })
+        .__installPrompt;
+      if (e) setDeferred(e);
+    };
+    window.addEventListener("paniit:installable", onEarly);
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
     window.addEventListener("appinstalled", onInstalled);
     display.addEventListener?.("change", onDisplay);
     return () => {
+      window.removeEventListener("paniit:installable", onEarly);
       window.removeEventListener("beforeinstallprompt", onBeforeInstall);
       window.removeEventListener("appinstalled", onInstalled);
       display.removeEventListener?.("change", onDisplay);
@@ -134,7 +171,7 @@ export function useAppPrompt({
   // will not show the prompt again, so the sheet says where the setting is —
   // hiding it would leave somebody who tapped Block by accident with no way
   // back and no explanation.
-  const wantsNotifications = signedIn && !pushRegistered;
+  const wantsNotifications = signedIn && !pushRegistered && !registeredHere;
 
   // Notifications are asked for only once the app is installed. In a tab the
   // permission belongs to the browser rather than to the app, and a visitor
@@ -142,7 +179,9 @@ export function useAppPrompt({
   // either — so a tab gets the install offer or nothing.
   let pending: AppPromptKind | null = null;
   if (!ready) pending = null;
-  else if (!installed) pending = "install";
+  // iPhones and iPads are not asked to install: the offer there is
+  // instructions for the Share sheet, which people took for a nag.
+  else if (!installed) pending = isIosDevice() ? null : "install";
   else if (wantsNotifications) pending = "notifications";
 
   const due = pending && !isSnoozed(pending, scope) ? pending : null;

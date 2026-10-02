@@ -49,12 +49,13 @@ interface Props {
 
 export function QuickActions({ role }: Props) {
   const [qrOpen, setQrOpen] = useState(false);
-  const canVerify = role === "volunteer" || role === "admin";
+  // Verify Attendee is hidden for now: entry is the gate pass alone.
+  const canVerify = false as boolean;
   const canAnnounce = role === "organizer" || role === "admin";
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-3">
+      <div className="grid grid-cols-3 gap-2 lg:gap-3">
         <button
           type="button"
           onClick={() => setQrOpen(true)}
@@ -63,11 +64,6 @@ export function QuickActions({ role }: Props) {
           <TileIcon src="/ui/my-qr.webp" />
           <span className={TILE_LABEL}>My QR</span>
         </button>
-        <ActionLink
-          href="/scan"
-          icon={<TileIcon src="/ui/scan-qr.webp" />}
-          label="Scan QR"
-        />
         <ActionLink
           href="mailto:summit@paniit.org"
           icon={<TileIcon src="/ui/contact-us.webp" />}
@@ -92,7 +88,7 @@ export function QuickActions({ role }: Props) {
 
       {canAnnounce ? (
         <Link
-          href="/admin#announce"
+          href="/admin/announce"
           className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-brand-800 bg-white px-4 py-3.5 text-[13px] font-semibold text-brand-800 transition-colors hover:bg-paper-deep"
         >
           <TileIcon src="/ui/post-announcement.webp" size={20} />

@@ -11,6 +11,9 @@ import {
 import { EVENT_ID } from "@/lib/event-config";
 import { canMatch, rankMatches, type MatchProfile } from "@/lib/match";
 
+/** The For you tab is never shorter than this while there are people to show. */
+const MIN_RECOMMENDED = 10;
+
 export const dynamic = "force-dynamic";
 
 // Fields the directory list needs.
@@ -78,12 +81,16 @@ export default async function AttendeesPage() {
       ]);
 
       const viewer = me as MatchProfile | null;
-      if (viewer && canMatch(viewer)) {
-        viewerCanMatch = true;
+      if (viewer) {
+        viewerCanMatch = canMatch(viewer);
         const candidates = (pool as PoolRow[] | null) ?? [];
         const byId = new Map(candidates.map((c) => [c.id, c]));
         const ranked: RecommendedRow[] = [];
-        for (const m of rankMatches(viewer, candidates as MatchProfile[])) {
+        // Everyone who matches the viewer's interests, asks and offers; a
+        // viewer with none mapped, or with few matches, still gets a full
+        // list of ten, the rest being other people at the summit.
+        const matches = viewerCanMatch ? rankMatches(viewer, candidates as MatchProfile[], 500) : [];
+        for (const m of matches) {
           const row = byId.get(m.profile.id);
           if (!row) continue;
           // asks/offers are only needed for scoring, which already happened —
@@ -93,10 +100,19 @@ export default async function AttendeesPage() {
           void _offers;
           ranked.push({ ...listRow, matchReasons: m.reasons });
         }
+        if (ranked.length < MIN_RECOMMENDED) {
+          const have = new Set(ranked.map((r) => r.id));
+          const rest = candidates
+            .filter((c) => !have.has(c.id))
+            .sort((a, b) => Number(!!b.photo_url) - Number(!!a.photo_url));
+          for (const row of rest.slice(0, MIN_RECOMMENDED - ranked.length)) {
+            const { asks: _asks, offers: _offers, ...listRow } = row;
+            void _asks;
+            void _offers;
+            ranked.push({ ...listRow, matchReasons: [] });
+          }
+        }
         recommended = ranked;
-      } else if (viewer) {
-        // Signed in but nothing to match on — the tab explains how to fix that.
-        viewerCanMatch = false;
       }
     }
   } catch (err) {

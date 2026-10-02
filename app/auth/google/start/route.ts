@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
 import {
-  GOOGLE_OAUTH_NEXT_COOKIE,
-  GOOGLE_OAUTH_NONCE_COOKIE,
-  GOOGLE_OAUTH_STATE_COOKIE,
   createGoogleOAuthRequest,
   googleClientId,
-  googleOAuthCookieOptions,
   googleRedirectUri,
   safeNext,
+  setPendingSignIn,
 } from "@/lib/auth/google-oauth";
 
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -28,8 +25,6 @@ export async function GET(req: Request) {
   authUrl.searchParams.set("prompt", "select_account");
 
   const res = NextResponse.redirect(authUrl);
-  res.cookies.set(GOOGLE_OAUTH_STATE_COOKIE, state, googleOAuthCookieOptions);
-  res.cookies.set(GOOGLE_OAUTH_NONCE_COOKIE, nonce, googleOAuthCookieOptions);
-  res.cookies.set(GOOGLE_OAUTH_NEXT_COOKIE, next, googleOAuthCookieOptions);
+  setPendingSignIn(req, res, { state, nonce, next });
   return res;
 }

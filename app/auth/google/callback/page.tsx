@@ -13,7 +13,7 @@ export default function GoogleCallbackPage() {
     );
     const error = params.get("error") || params.get("error_description");
     if (error) {
-      window.location.replace(`/?error=${encodeURIComponent(error)}`);
+      window.location.replace(`/login?error=${encodeURIComponent(error)}`);
       return;
     }
 
@@ -23,7 +23,7 @@ export default function GoogleCallbackPage() {
     window.history.replaceState(null, "", window.location.pathname);
 
     if (!idToken || !state) {
-      window.location.replace("/?error=missing_google_id_token");
+      window.location.replace("/login?error=missing_google_id_token");
       return;
     }
 
@@ -53,7 +53,7 @@ export default function GoogleCallbackPage() {
       const errorMessage =
         err instanceof Error ? err.message : "google_sign_in_failed";
       setMessage("Could not complete sign-in.");
-      window.location.replace(`/?error=${encodeURIComponent(errorMessage)}`);
+      window.location.replace(`/login?error=${encodeURIComponent(errorMessage)}`);
     });
   }, []);
 

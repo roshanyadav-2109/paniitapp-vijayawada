@@ -12,7 +12,6 @@ import {
   useTransition,
 } from "react";
 import {
-  BadgeCheck,
   Camera,
   Check,
   Loader2,
@@ -23,8 +22,10 @@ import {
   X,
 } from "@/components/icons";
 import {
-  MEDIA_ACCEPT,
+  IMAGE_ACCEPT,
+  VIDEO_ACCEPT,
   cloudinaryConfigured,
+  deliverUrl,
   uploadToCloudinary,
   type UploadedMedia,
 } from "@/lib/cloudinary";
@@ -43,6 +44,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   addComment,
   createPost,
+  deleteComment,
   deletePost,
   toggleLike,
   votePoll,
@@ -68,6 +70,11 @@ export interface PostRow {
   id: string;
   body: string;
   kind: "text" | "poll";
+  /** Posted by an admin under the summit team's name. */
+  as_team?: boolean | null;
+  /** Posted as an exhibitor: the company shows, and links to its page. */
+  as_exhibitor_id?: string | null;
+  exhibitor?: PostExhibitor | PostExhibitor[] | null;
   /** Cloudinary URL of an attached photo or clip, and which it is. */
   media_url: string | null;
   media_type: "image" | "video" | null;
@@ -126,18 +133,41 @@ export function DiscussClient({
   myVotes,
   userId,
   errored,
+  sessionId,
+  isAdmin = false,
+  myExhibitors = [],
 }: {
   posts: PostRow[];
   likedIds: string[];
   myVotes: Record<string, string>;
   userId: string | null;
   errored: boolean;
+  /** Admins may remove any post or reply. */
+  isAdmin?: boolean;
+  /** A session's own discussion, on its page; none for the Discuss feed. */
+  sessionId?: string;
+  /** Stalls the viewer runs or works on: they can post as these. */
+  myExhibitors?: PostAsExhibitor[];
 }) {
   const liked = useMemo(() => new Set(likedIds), [likedIds]);
 
   return (
     <div className="space-y-4">
-      <Composer />
+      {/* On a session's page a guest gets the way in instead of a box that
+          would only refuse them; the Discuss feed has its own prompt. */}
+      {sessionId && !userId ? (
+        <button
+          type="button"
+          onClick={() =>
+            window.location.assign(`/login?redirect=${encodeURIComponent(window.location.pathname)}`)
+          }
+          className="flex h-11 w-full items-center justify-center rounded-md border border-brand-800 bg-white text-[14px] font-medium text-brand-800 transition-colors hover:bg-paper"
+        >
+          Log in to join the discussion
+        </button>
+      ) : (
+        <Composer sessionId={sessionId} isAdmin={isAdmin} myExhibitors={myExhibitors} />
+      )}
 
       {errored ? (
         <p className="rounded-lg border border-iit-200 bg-iit-50 p-3 text-[13px] text-iit-700">
@@ -151,7 +181,7 @@ export function DiscussClient({
             <EmptyMedia className="mb-1">
               <EmptyArt name="empty-discussion" />
             </EmptyMedia>
-            <EmptyTitle>Nothing here yet</EmptyTitle>
+            <EmptyTitle>{sessionId ? "No one has posted about this session yet" : "Nothing here yet"}</EmptyTitle>
           </EmptyHeader>
         </Empty>
       ) : (
@@ -163,6 +193,7 @@ export function DiscussClient({
               liked={liked.has(p.id)}
               myVote={myVotes[p.id] ?? null}
               userId={userId}
+              isAdmin={isAdmin}
             />
           ))}
         </ul>
@@ -175,28 +206,53 @@ export function DiscussClient({
 /* Composer                                                            */
 /* ------------------------------------------------------------------ */
 
-function Composer() {
+function Composer({
+  sessionId,
+  isAdmin = false,
+  myExhibitors = [],
+}: {
+  sessionId?: string;
+  isAdmin?: boolean;
+  myExhibitors?: PostAsExhibitor[];
+}) {
   const router = useRouter();
   const { toast } = useToast();
   const [body, setBody] = useState("");
   const [isPoll, setIsPoll] = useState(false);
+  // Admins pick, per post, whose name it goes out under.
+  // Whose name the post goes out under: "me", "team" (admins) or a stall's
+  // id. Admins start on the team, exhibitors on their stall.
+  const [postAs, setPostAs] = useState<string>(
+    isAdmin ? "team" : myExhibitors[0]?.id ?? "me"
+  );
   const [options, setOptions] = useState<string[]>(["", ""]);
   const [pending, startTransition] = useTransition();
   const [media, setMedia] = useState<UploadedMedia | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const canAttach = cloudinaryConfigured();
 
+  // Words, a photo or a video, any of them on their own; a poll needs its
+  // question and two answers.
   const canSubmit =
-    body.trim().length > 0 &&
+    (body.trim().length > 0 || !!media) &&
     !uploading &&
-    (!isPoll || options.filter((o) => o.trim()).length >= 2);
+    (!isPoll || (body.trim().length > 0 && options.filter((o) => o.trim()).length >= 2));
+
+  function pick(accept: string) {
+    const input = fileRef.current;
+    if (!input) return;
+    input.accept = accept;
+    input.click();
+  }
 
   async function attach(file: File | undefined) {
     if (!file) return;
     setUploading(true);
+    setProgress(0);
     try {
-      setMedia(await uploadToCloudinary(file));
+      setMedia(await uploadToCloudinary(file, setProgress));
     } catch (err) {
       toast({
         title: "Could not attach that",
@@ -216,7 +272,10 @@ function Composer() {
       const res = await createPost(
         body,
         isPoll ? options : undefined,
-        media ?? undefined
+        media ?? undefined,
+        sessionId,
+        isAdmin && postAs === "team",
+        postAs !== "me" && postAs !== "team" ? postAs : undefined
       );
       if ("error" in res) {
         toast({ title: "Could not post", description: res.error, variant: "destructive" });
@@ -232,11 +291,39 @@ function Composer() {
 
   return (
     <div className="rounded-lg border border-rule bg-white p-3">
+      {isAdmin || myExhibitors.length > 0 ? (
+        <div
+          role="radiogroup"
+          aria-label="Post as"
+          className="no-scrollbar -mx-3 mb-2.5 flex items-center gap-1.5 overflow-x-auto px-3"
+        >
+          <span className="mr-0.5 shrink-0 text-[12px] text-brand-900/60">Post as</span>
+          {isAdmin ? (
+            <PostAsChip on={postAs === "team"} onClick={() => setPostAs("team")} logo={TEAM_LOGO}>
+              {TEAM_NAME}
+            </PostAsChip>
+          ) : null}
+          {myExhibitors.map((x) => (
+            <PostAsChip key={x.id} on={postAs === x.id} onClick={() => setPostAs(x.id)} logo={x.logo_url}>
+              {x.name}
+            </PostAsChip>
+          ))}
+          <PostAsChip on={postAs === "me"} onClick={() => setPostAs("me")}>
+            My name
+          </PostAsChip>
+        </div>
+      ) : null}
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value.slice(0, MAX_BODY))}
         rows={isPoll ? 2 : 3}
-        placeholder="Share something with the room…"
+        placeholder={
+          isPoll
+            ? "Ask the room a question…"
+            : sessionId
+              ? "Say something about this session…"
+              : "Share something with the room…"
+        }
         className="w-full resize-none rounded-md border border-rule bg-white px-3 py-2 text-[14px] leading-6 text-brand-950 outline-none placeholder:text-brand-900/40 focus:border-brand-300"
       />
 
@@ -284,7 +371,7 @@ function Composer() {
         <div className="relative mt-2.5 w-[132px]">
           {media.type === "video" ? (
             <video
-              src={media.url}
+              src={deliverUrl(media.url, "video")}
               controls
               playsInline
               className="aspect-square w-full rounded-md bg-black object-cover"
@@ -312,38 +399,54 @@ function Composer() {
         <input
           ref={fileRef}
           type="file"
-          accept={MEDIA_ACCEPT}
+          accept={IMAGE_ACCEPT}
           className="hidden"
           onChange={(e) => attach(e.target.files?.[0])}
         />
-        {canAttach ? (
+        {/* Photo, Video and Poll, each its own button: one "photo or clip"
+            button hid that a video could be posted at all. */}
+        <div className="flex items-center gap-0.5">
+          {canAttach ? (
+            uploading ? (
+              <span className="inline-flex h-8 items-center gap-1.5 px-2.5 text-[12px] font-medium text-brand-800">
+                <Loader2 className="size-3.5 animate-spin" />
+                Uploading {Math.round(progress * 100)}%
+              </span>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => pick(IMAGE_ACCEPT)}
+                  disabled={!!media}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium text-brand-800 transition-colors hover:bg-paper-deep disabled:opacity-50"
+                >
+                  <Camera className="size-3.5" strokeWidth={1.8} />
+                  Photo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => pick(VIDEO_ACCEPT)}
+                  disabled={!!media}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium text-brand-800 transition-colors hover:bg-paper-deep disabled:opacity-50"
+                >
+                  <VideoGlyph className="size-3.5" />
+                  Video
+                </button>
+              </>
+            )
+          ) : null}
           <button
             type="button"
-            onClick={() => fileRef.current?.click()}
-            disabled={uploading || !!media}
-            className="mr-2 inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium text-brand-800 transition-colors hover:bg-paper-deep disabled:opacity-50"
-          >
-            {uploading ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <Camera className="size-3.5" strokeWidth={1.8} />
+            onClick={() => setIsPoll((v) => !v)}
+            className={cn(
+              "inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium transition-colors",
+              isPoll ? "bg-brand-800 text-white" : "text-brand-800 hover:bg-paper-deep"
             )}
-            {uploading ? "Uploading" : "Photo or clip"}
+          >
+            <SlidersHorizontal className="size-3.5" strokeWidth={1.8} />
+            Poll
           </button>
-        ) : null}
-        <button
-          type="button"
-          onClick={() => setIsPoll((v) => !v)}
-          className={cn(
-            "inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium transition-colors",
-            isPoll
-              ? "bg-brand-800 text-white"
-              : "text-brand-800 hover:bg-paper-deep"
-          )}
-        >
-          <SlidersHorizontal className="size-3.5" strokeWidth={1.8} />
-          {isPoll ? "Poll" : "Add poll"}
-        </button>
+        </div>
         <Button size="sm" onClick={submit} disabled={!canSubmit || pending}>
           {/* The word alone. A paper-plane beside "Post" says nothing the
               word does not, on the one button whose label is unambiguous. */}
@@ -358,23 +461,127 @@ function Composer() {
 /* Post                                                                */
 /* ------------------------------------------------------------------ */
 
+const TEAM_NAME = "PanIIT AP Summit Team";
+
+interface PostExhibitor {
+  id: string;
+  name: string;
+  logo_url: string | null;
+  booth_number: string | null;
+}
+
+export interface PostAsExhibitor {
+  id: string;
+  name: string;
+  logo_url: string | null;
+}
+
+function PostAsChip({
+  on,
+  onClick,
+  logo,
+  children,
+}: {
+  on: boolean;
+  onClick: () => void;
+  logo?: string | null;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={on}
+      onClick={onClick}
+      className={cn(
+        "inline-flex h-8 max-w-[220px] shrink-0 items-center gap-1.5 rounded-full border px-2.5 text-[12px] font-medium transition-colors",
+        on ? "border-brand-800 bg-brand-800 text-white" : "border-rule bg-white text-brand-900 hover:bg-paper"
+      )}
+    >
+      {logo ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={logo} alt="" className="size-4 shrink-0 rounded-sm bg-white object-contain" />
+      ) : null}
+      <span className="truncate">{children}</span>
+    </button>
+  );
+}
+
+/** A link to the author's profile, or plain text where there is none to
+ *  give (the summit team's posts). */
+function AuthorLink({
+  href,
+  className,
+  children,
+}: {
+  href: string | null;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  if (!href) return <span className={className}>{children}</span>;
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  );
+}
+
+/** The organisers' mark: a solid blue badge with a white tick, read at a
+ *  glance the way the verified mark on X is. */
+function VerifiedTick() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-4 shrink-0" role="img" aria-label="Verified organiser">
+      <path
+        fill="#1D9BF0"
+        d="M9.78133 3.89027C10.3452 3.40974 10.6271 3.16948 10.9219 3.02859C11.6037 2.70271 12.3963 2.70271 13.0781 3.02859C13.3729 3.16948 13.6548 3.40974 14.2187 3.89027C14.4431 4.08152 14.5553 4.17715 14.6752 4.25747C14.9499 4.4416 15.2584 4.56939 15.5828 4.63344C15.7244 4.66139 15.8713 4.67312 16.1653 4.69657C16.9038 4.7555 17.273 4.78497 17.5811 4.89378C18.2936 5.14546 18.8541 5.70591 19.1058 6.41844C19.2146 6.72651 19.244 7.09576 19.303 7.83426C19.3264 8.12819 19.3381 8.27515 19.3661 8.41669C19.4301 8.74114 19.5579 9.04965 19.7421 9.32437C19.8224 9.44421 19.918 9.55642 20.1093 9.78084C20.5898 10.3447 20.8301 10.6267 20.971 10.9214C21.2968 11.6032 21.2968 12.3958 20.971 13.0776C20.8301 13.3724 20.5898 13.6543 20.1093 14.2182C19.918 14.4426 19.8224 14.5548 19.7421 14.6747C19.5579 14.9494 19.4301 15.2579 19.3661 15.5824C19.3381 15.7239 19.3264 15.8709 19.303 16.1648C19.244 16.9033 19.2146 17.2725 19.1058 17.5806C18.8541 18.2931 18.2936 18.8536 17.5811 19.1053C17.273 19.2141 16.9038 19.2435 16.1653 19.3025C15.8713 19.3259 15.7244 19.3377 15.5828 19.3656C15.2584 19.4297 14.9499 19.5574 14.6752 19.7416C14.5553 19.8219 14.4431 19.9175 14.2187 20.1088C13.6548 20.5893 13.3729 20.8296 13.0781 20.9705C12.3963 21.2963 11.6037 21.2963 10.9219 20.9705C10.6271 20.8296 10.3452 20.5893 9.78133 20.1088C9.55691 19.9175 9.44469 19.8219 9.32485 19.7416C9.05014 19.5574 8.74163 19.4297 8.41718 19.3656C8.27564 19.3377 8.12868 19.3259 7.83475 19.3025C7.09625 19.2435 6.72699 19.2141 6.41893 19.1053C5.7064 18.8536 5.14594 18.2931 4.89427 17.5806C4.78546 17.2725 4.75599 16.9033 4.69706 16.1648C4.6736 15.8709 4.66188 15.7239 4.63393 15.5824C4.56988 15.2579 4.44209 14.9494 4.25796 14.6747C4.17764 14.5548 4.08201 14.4426 3.89076 14.2182C3.41023 13.6543 3.16997 13.3724 3.02907 13.0776C2.7032 12.3958 2.7032 11.6032 3.02907 10.9214C3.16997 10.6266 3.41023 10.3447 3.89076 9.78084C4.08201 9.55642 4.17764 9.44421 4.25796 9.32437C4.44209 9.04965 4.56988 8.74114 4.63393 8.41669C4.66188 8.27515 4.6736 8.12819 4.69706 7.83426C4.75599 7.09576 4.78546 6.72651 4.89427 6.41844C5.14594 5.70591 5.7064 5.14546 6.41893 4.89378C6.72699 4.78497 7.09625 4.7555 7.83475 4.69657C8.12868 4.67312 8.27564 4.66139 8.41718 4.63344C8.74163 4.56939 9.05014 4.4416 9.32485 4.25747C9.4447 4.17715 9.55691 4.08152 9.78133 3.89027Z"
+      />
+      <path
+        d="M8.5 12.5L10.5 14.5L15.5 9.5"
+        fill="none"
+        stroke="#FFFFFF"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+const TEAM_LOGO = "/logo/paniit-mark.png";
+
 function PostCard({
   post,
   liked,
   myVote,
   userId,
+  isAdmin,
 }: {
   post: PostRow;
   liked: boolean;
   myVote: string | null;
   userId: string | null;
+  isAdmin: boolean;
 }) {
   const router = useRouter();
   const { toast } = useToast();
   const [pending, startTransition] = useTransition();
   const [showComments, setShowComments] = useState(false);
   const a = author(post);
+  // An admin's post goes out under the summit team's name and mark when
+  // they chose that while posting; otherwise under their own name.
+  const team = !!post.as_team && (a?.role === "organizer" || a?.role === "admin");
+  // Posted as a stall: its logo and name, leading to its page.
+  const stall = post.as_exhibitor_id
+    ? (Array.isArray(post.exhibitor) ? post.exhibitor[0] : post.exhibitor) ?? null
+    : null;
   const isMine = userId != null && post.author_id === userId;
+  const canDelete = isMine || isAdmin;
+  // Deleting takes two taps: the first turns the bin into a red Delete.
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  useEffect(() => {
+    if (!confirmDelete) return;
+    const t = setTimeout(() => setConfirmDelete(false), 4000);
+    return () => clearTimeout(t);
+  }, [confirmDelete]);
 
   // Optimistic like — the round trip is long enough to feel broken otherwise.
   const [likeOn, setLikeOn] = useState(liked);
@@ -412,11 +619,30 @@ function PostCard({
   return (
     <li className="rounded-lg border border-rule bg-white p-3.5">
       <div className="flex items-start gap-2.5">
-        <Link href={`/attendees/${post.author_id}`} className="shrink-0">
+        {/* The team's posts lead nowhere: tapping the mark or the name must
+            not open the profile of the admin who wrote it. */}
+        <AuthorLink
+          href={stall ? `/exhibitors/${stall.id}` : team ? null : `/attendees/${post.author_id}`}
+          className="shrink-0"
+        >
           {/* Square, as on the networking cards: at this size a circle crops
               the top of a head off every portrait. */}
           <Avatar className="size-9 rounded-md ring-1 ring-rule">
-            {a?.photo_url ? (
+            {stall ? (
+              stall.logo_url ? (
+                <AvatarImage
+                  src={stall.logo_url}
+                  alt={stall.name}
+                  className="rounded-md bg-white object-contain p-0.5"
+                />
+              ) : null
+            ) : team ? (
+              <AvatarImage
+                src={TEAM_LOGO}
+                alt={TEAM_NAME}
+                className="rounded-md bg-white object-contain p-0.5"
+              />
+            ) : a?.photo_url ? (
               <AvatarImage
                 src={a.photo_url}
                 alt={a.full_name ?? ""}
@@ -427,17 +653,20 @@ function PostCard({
               {initials(a?.full_name ?? null)}
             </AvatarFallback>
           </Avatar>
-        </Link>
+        </AuthorLink>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <Link
-              href={`/attendees/${post.author_id}`}
-              className="truncate text-[13px] font-semibold text-brand-950 hover:underline"
+            <AuthorLink
+              href={stall ? `/exhibitors/${stall.id}` : team ? null : `/attendees/${post.author_id}`}
+              className={cn(
+                "truncate text-[13px] font-semibold text-brand-950",
+                !team && "hover:underline"
+              )}
             >
-              {a?.full_name ?? "Attendee"}
-            </Link>
-            {a?.role === "organizer" || a?.role === "admin" ? (
-              <BadgeCheck className="size-3.5 shrink-0 text-brand-800" strokeWidth={1.8} />
+              {stall ? stall.name : team ? TEAM_NAME : a?.full_name ?? "Attendee"}
+            </AuthorLink>
+            {team ? (
+              <VerifiedTick />
             ) : null}
             {post.is_pinned ? (
               <span className="ml-auto shrink-0 rounded-full bg-paper-deep px-2 py-0.5 text-[10px] font-semibold text-brand-800">
@@ -445,57 +674,79 @@ function PostCard({
               </span>
             ) : null}
           </div>
-          {a?.designation || a?.company ? (
+          {stall ? (
+            <p className="truncate text-[11px] text-brand-950">
+              Exhibitor{stall.booth_number ? ` · Stall ${stall.booth_number}` : ""}
+            </p>
+          ) : team ? (
+            <p className="truncate text-[11px] text-brand-950">Organiser</p>
+          ) : a?.designation || a?.company ? (
             <p className="truncate text-[11px] text-brand-950">
               {[a?.designation, a?.company].filter(Boolean).join(" | ")}
             </p>
           ) : null}
         </div>
-        {isMine ? (
-          <button
-            type="button"
-            onClick={onDelete}
-            disabled={pending}
-            aria-label="Delete post"
-            className="grid size-7 shrink-0 place-items-center rounded-md text-brand-800/45 hover:bg-paper-deep hover:text-iit-500"
-          >
-            <Trash2 className="size-3.5" strokeWidth={1.7} />
-          </button>
+        {canDelete ? (
+          confirmDelete ? (
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={pending}
+              className="h-7 shrink-0 rounded-md bg-iit-600 px-2.5 text-[12px] font-medium text-white disabled:opacity-50"
+            >
+              Delete
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(true)}
+              disabled={pending}
+              aria-label="Delete post"
+              className="grid size-7 shrink-0 place-items-center rounded-md text-brand-800/45 hover:bg-paper-deep hover:text-iit-500"
+            >
+              <Trash2 className="size-3.5" strokeWidth={1.7} />
+            </button>
+          )
         ) : null}
       </div>
 
-      <p className="mt-2 whitespace-pre-wrap text-[14px] leading-6 text-brand-950">
-        {post.body}
-      </p>
+      {post.body.trim() ? (
+        <p className="mt-2 whitespace-pre-wrap text-[14px] leading-6 text-brand-950">
+          {post.body}
+        </p>
+      ) : null}
 
       {/* Attachment in a square, capped so one photo cannot take the whole
           screen. A clip carries controls and no autoplay — a feed that starts
           playing at you is a feed people leave. */}
+      {/* The picture in its own shape and the card's width, as tall as
+          480 px: a square crop cut people out of group photos. Sent at a
+          phone's width and in the lightest format the browser reads. */}
       {post.media_url ? (
-        <div className="mt-2.5 max-w-[280px]">
+        <div className="mt-2.5 overflow-hidden rounded-md bg-paper">
           {post.media_type === "video" ? (
             <video
-              src={post.media_url}
+              src={deliverUrl(post.media_url, "video")}
               controls
               playsInline
               preload="metadata"
-              className="aspect-square w-full rounded-md bg-black object-cover"
+              className="max-h-[480px] w-full bg-black"
             />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={post.media_url}
+              src={deliverUrl(post.media_url, "image")}
               alt=""
               loading="lazy"
               decoding="async"
-              className="aspect-square w-full rounded-md object-cover"
+              className="max-h-[480px] w-full object-contain"
             />
           )}
         </div>
       ) : null}
 
       {post.kind === "poll" && post.poll_options ? (
-        <Poll post={post} myVote={myVote} />
+        <Poll post={post} myVote={myVote} signedIn={userId != null} />
       ) : null}
 
       <div className="mt-2.5 flex items-center gap-1">
@@ -527,7 +778,7 @@ function PostCard({
         </span>
       </div>
 
-      {showComments ? <Comments postId={post.id} /> : null}
+      {showComments ? <Comments postId={post.id} userId={userId} isAdmin={isAdmin} /> : null}
     </li>
   );
 }
@@ -536,70 +787,190 @@ function PostCard({
 /* Poll                                                                */
 /* ------------------------------------------------------------------ */
 
-function Poll({ post, myVote }: { post: PostRow; myVote: string | null }) {
+function Poll({
+  post,
+  myVote,
+  signedIn,
+}: {
+  post: PostRow;
+  myVote: string | null;
+  signedIn: boolean;
+}) {
   const router = useRouter();
+  const supabase = useMemo(() => createClient(), []);
   const [pending, startTransition] = useTransition();
   const [voted, setVoted] = useState<string | null>(myVote);
   useEffect(() => setVoted(myVote), [myVote]);
 
+  // The counts as the server last sent them, kept live from there. The
+  // feed does re-fetch when anything moves, but only after it goes quiet
+  // for a second and a half, and a poll being answered by a room is never
+  // quiet: each option's own row is listened to instead, and its count
+  // taken as it arrives.
+  const fromServer = useMemo(
+    () => Object.fromEntries((post.poll_options ?? []).map((o) => [o.id, o.vote_count])),
+    [post.poll_options]
+  );
+  const [counts, setCounts] = useState<Record<string, number>>(fromServer);
+  useEffect(() => setCounts(fromServer), [fromServer]);
+
+  useEffect(() => {
+    const ch = supabase
+      .channel(`poll-${post.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "poll_options",
+          filter: `post_id=eq.${post.id}`,
+        },
+        (payload) => {
+          const row = payload.new as { id: string; vote_count: number };
+          setCounts((c) => ({ ...c, [row.id]: row.vote_count }));
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [post.id, supabase]);
+
   const options = [...(post.poll_options ?? [])].sort((a, b) => a.position - b.position);
-  const total = options.reduce((n, o) => n + o.vote_count, 0);
+  const countOf = (id: string) => Math.max(0, counts[id] ?? 0);
+  const total = options.reduce((n, o) => n + countOf(o.id), 0);
 
   function cast(optionId: string) {
+    if (!signedIn) {
+      router.push("/login?redirect=%2Fdiscuss");
+      return;
+    }
     if (pending || voted === optionId) return;
+    const before = voted;
+    // Your own vote shows at once, tick and bars both; the counts the
+    // table sends back afterwards are totals, so they replace these
+    // rather than add to them.
+    const move = (by: 1 | -1) =>
+      setCounts((c) => {
+        const next = { ...c, [optionId]: (c[optionId] ?? 0) + by };
+        if (before) next[before] = (c[before] ?? 0) - by;
+        return next;
+      });
     setVoted(optionId);
+    move(1);
     startTransition(async () => {
       const res = await votePoll(post.id, optionId);
-      if ("error" in res) setVoted(myVote);
-      router.refresh();
+      if ("error" in res) {
+        setVoted(before);
+        move(-1);
+        if (res.error === "unauth") router.push("/login?redirect=%2Fdiscuss");
+      }
     });
   }
 
+  // The answer in front, once there is one: it gets the deeper fill.
+  const top = Math.max(0, ...options.map((o) => countOf(o.id)));
+
   return (
-    <div className="mt-2.5 space-y-1.5">
-      {options.map((o) => {
-        const pct = total > 0 ? Math.round((o.vote_count / total) * 100) : 0;
-        const mine = voted === o.id;
-        return (
-          <button
-            key={o.id}
-            type="button"
-            onClick={() => cast(o.id)}
-            disabled={pending}
-            className={cn(
-              "relative w-full overflow-hidden rounded-md border px-3 py-2 text-left text-[13px] transition-colors",
-              mine
-                ? "border-brand-300 bg-paper-deep/40 font-semibold text-brand-900"
-                : "border-rule text-brand-950 hover:bg-paper-deep/40"
-            )}
-          >
-            {/* Result bar only appears once the viewer has voted, so early
-                votes don't anchor everyone else's answer. */}
-            {voted ? (
+    <div className="mt-3 rounded-xl bg-[#F3F6FD] p-2.5 ring-1 ring-[#E1E8F8]">
+      <div className="mb-2 flex items-center justify-between px-1">
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-800">
+          <PollGlyph className="size-3.5" />
+          Poll
+        </span>
+        {total > 0 ? (
+          <span className="text-[11px] tabular-nums text-brand-900/60">
+            {total} vote{total === 1 ? "" : "s"}
+          </span>
+        ) : null}
+      </div>
+
+      <div className="space-y-1.5">
+        {options.map((o, i) => {
+          const n = countOf(o.id);
+          const pct = total > 0 ? Math.round((n / total) * 100) : 0;
+          const mine = voted === o.id;
+          const leading = !!voted && n > 0 && n === top;
+          return (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => cast(o.id)}
+              disabled={pending}
+              aria-pressed={mine}
+              className={cn(
+                "group relative flex w-full items-center gap-2.5 overflow-hidden rounded-lg border bg-white px-2.5 py-2 text-left transition-all",
+                mine
+                  ? "border-brand-800 shadow-[0_0_0_1px_rgba(27,20,100,0.9)]"
+                  : voted
+                    ? "border-[#E1E8F8]"
+                    : "border-[#E1E8F8] hover:-translate-y-px hover:border-brand-300 hover:shadow-[0_6px_14px_-10px_rgba(27,20,100,0.45)] active:translate-y-0"
+              )}
+            >
+              {/* Results stay hidden until you have answered, so early votes
+                  do not steer anyone else's. */}
+              {voted ? (
+                <span
+                  aria-hidden
+                  className={cn(
+                    "absolute inset-y-0 left-0 transition-[width] duration-700 ease-out",
+                    leading ? "bg-[#D6E1FA]" : "bg-[#EAF0FC]"
+                  )}
+                  style={{ width: `${pct}%` }}
+                />
+              ) : null}
+
               <span
-                aria-hidden
-                className="absolute inset-y-0 left-0 bg-rule/70"
-                style={{ width: `${pct}%` }}
-              />
-            ) : null}
-            <span className="relative flex items-center justify-between gap-2">
-              <span className="flex items-center gap-1.5">
-                {mine ? <Check className="size-3.5 shrink-0" strokeWidth={2.2} /> : null}
+                className={cn(
+                  "relative grid size-6 shrink-0 place-items-center rounded-md text-[11px] font-semibold transition-colors",
+                  mine
+                    ? "bg-brand-800 text-white"
+                    : "bg-[#EEF2FC] text-brand-800 ring-1 ring-[#DCE4F7] group-hover:bg-white"
+                )}
+              >
+                {mine ? <Check className="size-3.5" strokeWidth={2.6} /> : String.fromCharCode(65 + i)}
+              </span>
+
+              <span
+                className={cn(
+                  "relative min-w-0 flex-1 text-[13.5px] leading-snug",
+                  mine || leading ? "font-semibold text-brand-950" : "text-brand-950"
+                )}
+              >
                 {o.label}
               </span>
+
               {voted ? (
-                <span className="shrink-0 tabular-nums text-brand-900/70">{pct}%</span>
+                <span className="relative shrink-0 text-right">
+                  <span className={cn("block text-[13px] font-semibold tabular-nums", leading ? "text-brand-800" : "text-brand-900/75")}>
+                    {pct}%
+                  </span>
+                </span>
               ) : null}
-            </span>
-          </button>
-        );
-      })}
-      <p className="pt-0.5 text-[11px] text-brand-900/50">
-        {total === 0
-          ? "No votes yet"
-          : `${total} vote${total === 1 ? "" : "s"}${voted ? "" : " | tap to vote"}`}
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="mt-2 px-1 text-[11px] text-brand-900/55">
+        {voted
+          ? "You voted · tap another option to change"
+          : total === 0
+            ? "Be the first to vote"
+            : "Tap an option to vote"}
       </p>
     </div>
+  );
+}
+
+/** Three bars of different lengths: the poll mark beside the label. */
+function PollGlyph({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className} aria-hidden>
+      <rect x="2" y="3" width="9" height="2.4" rx="1.2" fill="currentColor" />
+      <rect x="2" y="6.8" width="12" height="2.4" rx="1.2" fill="currentColor" opacity="0.55" />
+      <rect x="2" y="10.6" width="6" height="2.4" rx="1.2" fill="currentColor" opacity="0.3" />
+    </svg>
   );
 }
 
@@ -607,13 +978,28 @@ function Poll({ post, myVote }: { post: PostRow; myVote: string | null }) {
 /* Comments — fetched on demand, not with the feed                      */
 /* ------------------------------------------------------------------ */
 
-function Comments({ postId }: { postId: string }) {
+function Comments({
+  postId,
+  userId,
+  isAdmin,
+}: {
+  postId: string;
+  userId: string | null;
+  isAdmin: boolean;
+}) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [rows, setRows] = useState<CommentRow[] | null>(null);
   const [body, setBody] = useState("");
   const [pending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement | null>(null);
+  // The reply waiting for its second tap to be deleted.
+  const [armed, setArmed] = useState<string | null>(null);
+  useEffect(() => {
+    if (!armed) return;
+    const t = setTimeout(() => setArmed(null), 4000);
+    return () => clearTimeout(t);
+  }, [armed]);
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -659,6 +1045,16 @@ function Comments({ postId }: { postId: string }) {
     };
   }, [postId, supabase, load]);
 
+  function removeComment(id: string) {
+    setArmed(null);
+    startTransition(async () => {
+      const res = await deleteComment(id);
+      if ("error" in res) return;
+      setRows((list) => (list ?? []).filter((c) => c.id !== id));
+      router.refresh();
+    });
+  }
+
   function submit() {
     const text = body.trim();
     if (!text || pending) return;
@@ -701,6 +1097,28 @@ function Comments({ postId }: { postId: string }) {
                   </span>
                   <p className="text-[13px] leading-5 text-brand-900">{c.body}</p>
                 </div>
+                {userId != null && (c.user_id === userId || isAdmin) ? (
+                  armed === c.id ? (
+                    <button
+                      type="button"
+                      onClick={() => removeComment(c.id)}
+                      disabled={pending}
+                      className="h-6 shrink-0 rounded bg-iit-600 px-2 text-[11px] font-medium text-white disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setArmed(c.id)}
+                      disabled={pending}
+                      aria-label="Delete reply"
+                      className="grid size-6 shrink-0 place-items-center rounded text-brand-800/40 hover:bg-paper-deep hover:text-iit-500"
+                    >
+                      <Trash2 className="size-3" strokeWidth={1.7} />
+                    </button>
+                  )
+                ) : null}
               </li>
             );
           })}
@@ -740,5 +1158,15 @@ function Comments({ postId }: { postId: string }) {
         </button>
       </div>
     </div>
+  );
+}
+
+/** A video camera, drawn to sit with the Solar set's linear icons. */
+function VideoGlyph({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className={className} aria-hidden="true">
+      <rect x="2" y="6" width="14" height="12" rx="3" />
+      <path strokeLinejoin="round" d="M16 10.5l5-3v9l-5-3z" />
+    </svg>
   );
 }

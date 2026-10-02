@@ -3,6 +3,21 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.resolve(__dirname),
+  // The build a phone is running, compared with /api/version to pick up a
+  // new release without the app being closed.
+  env: {
+    NEXT_PUBLIC_BUILD_ID: process.env.VERCEL_GIT_COMMIT_SHA ?? "dev",
+  },
+  experimental: {
+    // How long the phone keeps a screen it has already been given. Next's
+    // default for a server-rendered screen is nothing at all, so every tap
+    // on a tab it had just left went back to the server and waited for the
+    // whole screen again. Ten seconds makes going back and forth between
+    // tabs instant; anything that has to be live (the feed, the programme,
+    // comments, poll counts) listens for its own changes and refreshes
+    // itself, and your own actions refresh the screen they were made on.
+    staleTimes: { dynamic: 10, static: 30 },
+  },
   images: {
     // Speaker portraits and sponsor logos essentially never change, so let
     // the shared optimiser cache hold them for a month instead of the
@@ -62,6 +77,9 @@ const nextConfig: NextConfig = {
       { source: "/legacy/:path*", headers: forever },
       { source: "/past-sponsors/:path*", headers: forever },
       { source: "/logo/:path*", headers: forever },
+      // Speaker portraits, resized once and named by their content: served
+      // straight from the CDN to everyone, never through the optimiser.
+      { source: "/kp/:path*", headers: forever },
       { source: "/iits/:path*", headers: forever },
       { source: "/sectors/:path*", headers: forever },
       { source: "/audience/:path*", headers: forever },
@@ -80,7 +98,11 @@ const nextConfig: NextConfig = {
         "/scan/:path*",
         "/admin/:path*",
         "/onboarding/:path*",
-        "/api/:path*",
+        // Every API route but /api/announcements, which is the same for
+        // everyone and is meant to be held by the CDN.
+        "/api/auth/:path*",
+        "/api/push/:path*",
+        "/api/cron/:path*",
       ].map((source) => ({
         source,
         headers: [

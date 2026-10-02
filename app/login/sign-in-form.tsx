@@ -2,7 +2,26 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Loader2 } from "@/components/icons";
-import { isStandalone } from "@/lib/pwa";
+
+/**
+ * What a failed sign-in says. The codes are the server's, and one of them,
+ * invalid_google_state, was being shown word for word.
+ */
+function explain(code: string): string {
+  switch (code) {
+    case "invalid_google_state":
+    case "missing_google_nonce":
+      return "That sign-in timed out or was started on another screen. Tap Continue with Google again.";
+    case "missing_google_id_token":
+      return "Google did not finish signing you in. Tap Continue with Google again.";
+    case "no_email_from_provider":
+      return "Google did not share an email address for that account. Try another account.";
+    case "access_denied":
+      return "Sign-in was cancelled.";
+    default:
+      return "Could not sign you in. Tap Continue with Google again.";
+  }
+}
 
 /** The slice of Google's script this file uses. */
 interface GoogleIdApi {
@@ -12,198 +31,182 @@ interface GoogleIdApi {
         client_id: string;
         nonce?: string;
         use_fedcm_for_prompt?: boolean;
-        use_fedcm_for_button?: boolean;
         itp_support?: boolean;
         auto_select?: boolean;
         cancel_on_tap_outside?: boolean;
         callback: (res: { credential?: string }) => void;
       }) => void;
-      renderButton: (
-        parent: HTMLElement,
-        opts: Record<string, string | number>
-      ) => void;
-      prompt: () => void;
+      prompt: (listener?: (n: { isSkippedMoment?: () => boolean }) => void) => void;
     };
   };
 }
 
 const GIS_SRC = "https://accounts.google.com/gsi/client";
 
-/** Loads Google's script once, and resolves when it is there. */
 function loadGis(): Promise<void> {
   return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${GIS_SRC}"]`)) {
-      // Already requested by an earlier mount; it may still be in flight.
-      const done = () =>
-        (window as unknown as { google?: GoogleIdApi }).google?.accounts?.id
-          ? resolve()
-          : setTimeout(done, 50);
-      done();
-      return;
+    const ready = () => !!(window as unknown as { google?: GoogleIdApi }).google?.accounts?.id;
+    if (ready()) return resolve();
+    if (!document.querySelector(`script[src="${GIS_SRC}"]`)) {
+      const s = document.createElement("script");
+      s.src = GIS_SRC;
+      s.async = true;
+      s.onerror = () => reject(new Error("gis_unavailable"));
+      document.head.appendChild(s);
     }
-    const s = document.createElement("script");
-    s.src = GIS_SRC;
-    s.async = true;
-    s.defer = true;
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error("gis_unavailable"));
-    document.head.appendChild(s);
+    const started = Date.now();
+    const wait = () =>
+      ready() ? resolve() : Date.now() - started > 8000 ? reject(new Error("gis_timeout")) : setTimeout(wait, 60);
+    wait();
   });
 }
 
-/** Where the visitor goes once they are in. */
+/** Where the visitor goes once they are in; the server checks it again. */
 function nextPath(): string {
   const back = new URLSearchParams(window.location.search).get("redirect");
   return back && back.startsWith("/") && !back.startsWith("//") ? back : "/home";
 }
 
+/** A prepared sign-in waits an hour on the server; well before that, renew. */
+const STALE_AFTER_MS = 40 * 60 * 1000;
+
+/**
+ * Our own button, signing in inside the app.
+ *
+ * A trip to Google's sign-in page leaves the installed app for a page with
+ * an address bar, which is what made signing in look like a website. Tapped,
+ * this asks Chrome for Google's own account sheet instead (FedCM): it rises
+ * over the app, and choosing an account signs in without leaving it. Nothing
+ * is shown before the tap. Where the sheet cannot be shown (an older
+ * browser, Chrome's cool-down after it was dismissed, Google unreachable)
+ * the button falls back to the sign-in page, as does "Sign in another way".
+ */
 export function SignInForm() {
   const [oauthError, setOauthError] = useState<string | null>(null);
-  const [googlePending, startGoogle] = useTransition();
-  const [gisReady, setGisReady] = useState(false);
-  const gisRef = useRef<HTMLDivElement | null>(null);
+  const [pending, start] = useTransition();
+  const [busy, setBusy] = useState(false);
+  const prepared = useRef<{ state: string; at: number } | null>(null);
+  const preparing = useRef<Promise<boolean> | null>(null);
+  // Set when a tap asked for the sheet; a second tap with nothing to show
+  // for the first goes to the sign-in page rather than asking again.
+  const askedSheet = useRef(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
     const err = new URLSearchParams(window.location.search).get("error");
-    if (err) setOauthError(decodeURIComponent(err));
+    if (err) {
+      // eslint-disable-next-line no-console
+      console.warn("[sign-in]", err);
+      setOauthError(explain(decodeURIComponent(err)));
+    }
+    void prepare();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Google Identity Services: the token exchange happens in an overlay the
-  // script owns, so the app never navigates away and an installed copy stays
-  // an installed copy. The state and nonce come from our own server first;
-  // the credential goes back to the same endpoint the redirect flow posts to.
-  useEffect(() => {
-    let cancelled = false;
-
-    async function boot() {
-      const slot = gisRef.current;
-      if (!slot) return;
-
-      const res = await fetch(
-        `/api/auth/google/prepare?next=${encodeURIComponent(nextPath())}`,
-        { cache: "no-store" }
-      );
-      if (!res.ok) return;
-      const { clientId, state, hashedNonce } = (await res.json()) as {
-        clientId: string;
-        state: string;
-        hashedNonce: string;
-      };
-      if (cancelled) return;
-
-      await loadGis();
-      const google = (window as unknown as { google?: GoogleIdApi }).google;
-      if (cancelled || !google?.accounts?.id || !gisRef.current) return;
-
-      google.accounts.id.initialize({
-        client_id: clientId,
-        nonce: hashedNonce,
-        // Chrome's own account dialog, drawn over the page rather than in a
-        // popup window — in an installed copy a popup means being thrown out
-        // into the browser halfway through signing in.
-        use_fedcm_for_prompt: true,
-        // The same dialog for the button, but only where it is the better of
-        // the two. Asking for it everywhere breaks the button on a desktop: a
-        // browser without FedCM, or one with third-party sign-in switched off
-        // for the site, then has no dialog to show and no popup to fall back
-        // to, so the click does nothing at all and says nothing either. Off,
-        // the click opens the ordinary popup, which every browser has. The
-        // installed app keeps FedCM, where the popup is the thing that breaks.
-        use_fedcm_for_button: isStandalone(),
-        itp_support: true,
-        auto_select: false,
-        cancel_on_tap_outside: true,
-        callback: ({ credential }) => {
-          if (!credential) return;
-          void completeSignIn(credential, state).catch((e: unknown) => {
-            setOauthError(e instanceof Error ? e.message : "google_sign_in_failed");
-          });
-        },
-      });
-      google.accounts.id.renderButton(gisRef.current, {
-        theme: "outline",
-        size: "large",
-        shape: "rectangular",
-        text: "continue_with",
-        logo_alignment: "center",
-        width: Math.min(Math.round(gisRef.current.clientWidth) || 320, 400),
-      });
-      setGisReady(true);
-
-      // One Tap, which is the only sign-in that never shows a web page: with
-      // FedCM the account chooser is drawn by the browser itself, so someone
-      // already signed in to Google picks their account and is straight in.
-      // It shows nothing at all if there is no Google session here, which is
-      // why the button above stays — tapping that opens Google's own popup,
-      // and there is no way around that one: Google refuses to authenticate
-      // inside an embedded view, by policy.
-      google.accounts.id.prompt();
-    }
-
-    void boot().catch(() => {
-      /* leaves the redirect button showing */
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  async function completeSignIn(credential: string, state: string) {
-    const response = await fetch("/api/auth/google/id-token", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id_token: credential, state }),
-    });
-    const payload = (await response.json().catch(() => null)) as {
-      redirectTo?: string;
-      error?: string;
-    } | null;
-    if (!response.ok || !payload?.redirectTo) {
-      throw new Error(payload?.error || "google_sign_in_failed");
-    }
-    window.location.replace(payload.redirectTo);
+  /** Ask the server for a state and nonce and hand Google the nonce, ahead
+   *  of the tap so the sheet opens straight away. */
+  function prepare(): Promise<boolean> {
+    if (prepared.current && Date.now() - prepared.current.at < STALE_AFTER_MS) return Promise.resolve(true);
+    if (preparing.current) return preparing.current;
+    preparing.current = (async () => {
+      try {
+        const res = await fetch(`/api/auth/google/prepare?next=${encodeURIComponent(nextPath())}`, {
+          cache: "no-store",
+        });
+        if (!res.ok) return false;
+        const { clientId, state, hashedNonce } = (await res.json()) as {
+          clientId: string;
+          state: string;
+          hashedNonce: string;
+        };
+        await loadGis();
+        const google = (window as unknown as { google?: GoogleIdApi }).google;
+        if (!google?.accounts?.id) return false;
+        google.accounts.id.initialize({
+          client_id: clientId,
+          nonce: hashedNonce,
+          use_fedcm_for_prompt: true,
+          itp_support: true,
+          auto_select: false,
+          cancel_on_tap_outside: true,
+          callback: ({ credential }) => {
+            if (credential) void finish(credential, state);
+          },
+        });
+        prepared.current = { state, at: Date.now() };
+        return true;
+      } catch {
+        return false;
+      } finally {
+        preparing.current = null;
+      }
+    })();
+    return preparing.current;
   }
 
-  function handleGoogle() {
+  async function finish(credential: string, state: string) {
+    setBusy(true);
     setOauthError(null);
-    startGoogle(() => {
-      // Come back to whatever the visitor was reading. Every sign-in prompt
-      // in the app links here as /login?redirect=<path>; without this the
-      // trip always ended on the home screen and lost their place. Only a
-      // same-site path is honoured — safeNext on the server checks again.
-      const back = new URLSearchParams(window.location.search).get("redirect");
-      const next = back && back.startsWith("/") && !back.startsWith("//") ? back : "/home";
-      window.location.href = `/auth/google/start?next=${encodeURIComponent(next)}`;
+    try {
+      const res = await fetch("/api/auth/google/id-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_token: credential, state }),
+      });
+      const payload = (await res.json().catch(() => null)) as { redirectTo?: string; error?: string } | null;
+      if (!res.ok || !payload?.redirectTo) throw new Error(payload?.error || "google_sign_in_failed");
+      window.location.replace(payload.redirectTo);
+    } catch (e) {
+      setBusy(false);
+      setOauthError(explain(e instanceof Error ? e.message : "google_sign_in_failed"));
+      prepared.current = null;
+      void prepare();
+    }
+  }
+
+  /** The sign-in page: the way that always works, in a page of its own. */
+  function viaPage() {
+    start(() => {
+      window.location.href = `/auth/google/start?next=${encodeURIComponent(nextPath())}`;
     });
   }
+
+  async function go() {
+    setOauthError(null);
+    // No FedCM in this browser, or the sheet already failed to appear: the
+    // page is the way in.
+    if (!("IdentityCredential" in window) || askedSheet.current) return viaPage();
+    askedSheet.current = true;
+    const ok = await prepare();
+    const google = (window as unknown as { google?: GoogleIdApi }).google;
+    if (!ok || !google?.accounts?.id) return viaPage();
+    google.accounts.id.prompt((n) => {
+      // Skipped: the sheet could not be shown here. Use the page instead.
+      if (n?.isSkippedMoment?.()) viaPage();
+    });
+  }
+
+  const working = pending || busy;
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Google's own button, rendered by their script into this slot. It
-          signs in without leaving the page, which is what keeps an installed
-          copy of the app out of the system browser. */}
-      <div ref={gisRef} className="min-h-[48px] w-full [&>div]:!w-full" />
+      <button
+        type="button"
+        onClick={() => void go()}
+        disabled={working}
+        className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-md border border-rule bg-white px-5 text-sm font-semibold text-brand-950 shadow-sm transition-colors hover:bg-paper-deep disabled:opacity-60"
+      >
+        {working ? <Loader2 className="size-4 animate-spin text-brand-800" /> : <GoogleIcon />}
+        {busy ? "Signing you in…" : "Continue with Google"}
+      </button>
 
-      {/* Shown when their script cannot load, or has not decided to offer a
-          button — an ad blocker, a locked-down network, an older webview.
-          This is the old redirect, which works everywhere and costs a trip
-          out to accounts.google.com. */}
-      {gisReady ? null : (
-        <button
-          type="button"
-          onClick={handleGoogle}
-          disabled={googlePending}
-          className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-md border border-rule bg-white px-5 text-sm font-semibold text-brand-950 shadow-sm transition-colors hover:bg-paper-deep disabled:opacity-60"
-        >
-          {googlePending ? (
-            <Loader2 className="size-4 animate-spin text-brand-800" />
-          ) : (
-            <GoogleIcon />
-          )}
-          Continue with Google
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={viaPage}
+        disabled={working}
+        className="-mt-1 self-center text-[12.5px] text-brand-900/60 underline-offset-2 hover:underline disabled:opacity-50"
+      >
+        Sign in another way
+      </button>
 
       {oauthError ? (
         <div

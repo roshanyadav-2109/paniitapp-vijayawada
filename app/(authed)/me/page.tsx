@@ -3,7 +3,6 @@ import Link from "next/link";
 import { Pencil, Camera } from "@/components/icons";
 import { createClient } from "@/lib/supabase/server";
 import { rethrowIfRedirect } from "@/lib/redirect";
-import { OfficeHoursToggle } from "@/components/features/office-hours-toggle";
 import { ProfileAvatar } from "@/components/features/default-avatar";
 
 export const dynamic = "force-dynamic";
@@ -74,8 +73,6 @@ export default async function MePage() {
   const eduLine = [profile?.iit_campus, profile?.graduation_year, profile?.branch]
     .filter(Boolean)
     .join(" | ");
-  const showOfficeHours =
-    profile?.role === "vc" || profile?.role === "alumni";
 
   return (
     <div className="mx-auto w-full max-w-2xl px-1 pb-12 pt-6 sm:pt-7 lg:pt-9">
@@ -155,17 +152,6 @@ export default async function MePage() {
         </Link>
       </div>
 
-      {showOfficeHours ? (
-        <div className="mt-7">
-          <h2 className="font-display text-[15px] font-semibold text-brand-950">
-            Availability
-          </h2>
-          <div className="mt-2">
-            <OfficeHoursToggle initial={!!profile?.office_hours_enabled} />
-          </div>
-        </div>
-      ) : null}
-
       {/* The four destinations. No rules and no boxes — the drawn icon in
           front of each one is enough to separate them. */}
       <div className="mt-6">
@@ -181,6 +167,10 @@ export default async function MePage() {
           icon="privacy"
           label="Privacy & Notifications"
         />
+        {/* Only for the people it opens for. */}
+        {profile?.role === "admin" || profile?.role === "organizer" ? (
+          <Row href="/admin" icon="admin" label="Admin Panel" />
+        ) : null}
 
         <form action="/api/auth/signout" method="post">
           <button
@@ -257,7 +247,7 @@ function ChipBlock({ label, items }: { label: string; items: string[] }) {
 }
 
 /** The drawn row icons, cut from the supplied sheet and sized as a set. */
-type RowIconName = "connections" | "qr-badge" | "privacy" | "logout";
+type RowIconName = "connections" | "qr-badge" | "privacy" | "admin" | "logout";
 
 function RowIcon({ name }: { name: RowIconName }) {
   return (

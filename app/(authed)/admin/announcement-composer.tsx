@@ -1,7 +1,8 @@
 "use client";
 
+import { announcementsChanged } from "@/app/actions/admin";
 import { useState, useTransition } from "react";
-import { Loader2, Megaphone } from "@/components/icons";
+import { Loader2 } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,7 +46,14 @@ export function AnnouncementComposer() {
         toast({ title: "Could not send", description: error.message, variant: "destructive" });
         return;
       }
-      toast({ title: "Announcement sent" });
+      const pushed = await announcementsChanged(title.trim(), body.trim() || null).catch(() => ({ sent: 0 }));
+      toast({
+        title: "Announcement sent",
+        description:
+          pushed.sent > 0
+            ? `Notified ${pushed.sent} phone${pushed.sent === 1 ? "" : "s"}.`
+            : "It is in everyone's bell.",
+      });
       setTitle("");
       setBody("");
       setPriority("normal");
@@ -55,7 +63,6 @@ export function AnnouncementComposer() {
   return (
     <div id="announce" className="rounded-lg border border-rule bg-white p-4 scroll-mt-20">
       <div className="mb-3 flex items-center gap-2">
-        <Megaphone className="h-4 w-4 text-brand-800" />
         <h2 className="text-sm font-semibold text-brand-900">Send an announcement</h2>
       </div>
       <div className="space-y-3">

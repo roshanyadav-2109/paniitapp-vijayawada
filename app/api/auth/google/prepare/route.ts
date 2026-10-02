@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
 import {
-  GOOGLE_OAUTH_NEXT_COOKIE,
-  GOOGLE_OAUTH_NONCE_COOKIE,
-  GOOGLE_OAUTH_STATE_COOKIE,
   createGoogleOAuthRequest,
   googleClientId,
-  googleOAuthCookieOptions,
   safeNext,
+  setPendingSignIn,
 } from "@/lib/auth/google-oauth";
 
 /**
@@ -32,8 +29,7 @@ export async function GET(req: Request) {
     state,
     hashedNonce,
   });
-  res.cookies.set(GOOGLE_OAUTH_STATE_COOKIE, state, googleOAuthCookieOptions);
-  res.cookies.set(GOOGLE_OAUTH_NONCE_COOKIE, nonce, googleOAuthCookieOptions);
-  res.cookies.set(GOOGLE_OAUTH_NEXT_COOKIE, next, googleOAuthCookieOptions);
+  // Beside any other sign-in still open, not in place of it.
+  setPendingSignIn(req, res, { state, nonce, next });
   return res;
 }

@@ -8,7 +8,9 @@ import { EVENT_ID } from "@/lib/event-config";
 export type ActionResult = { ok: true } | { error: string };
 
 const PostSchema = z.object({
-  body: z.string().trim().min(1).max(2000),
+  // May be empty when a photo or video carries the post (0026); checked
+  // against that below, as the rule depends on the attachment.
+  body: z.string().trim().max(2000),
   // A poll needs at least two distinct options to be a poll.
   options: z.array(z.string().trim().min(1).max(120)).max(4).optional(),
   // The upload already happened in the browser; what arrives here is the
@@ -25,14 +27,25 @@ const PostSchema = z.object({
 export async function createPost(
   body: string,
   options?: string[],
-  media?: { url: string; type: "image" | "video" }
+  media?: { url: string; type: "image" | "video" },
+  sessionId?: string,
+  /** Admins only: post under the summit team's name and mark. The
+   *  database drops it for anyone else (0029_post_as_team.sql). */
+  asTeam = false,
+  /** Post as this exhibitor; the database drops it for anyone who is not
+   *  on that stall's team (0030_exhibitor_access.sql). */
+  asExhibitorId?: string
 ): Promise<ActionResult> {
+  if (asExhibitorId && !z.string().uuid().safeParse(asExhibitorId).success) return { error: "invalid" };
+  if (sessionId && !z.string().uuid().safeParse(sessionId).success) return { error: "invalid" };
   const cleaned = (options ?? []).map((o) => o.trim()).filter(Boolean);
   const parsed = PostSchema.safeParse({ body, options: cleaned, media });
   if (!parsed.success) {
     const onMedia = parsed.error.issues.some((i) => i.path[0] === "media");
     return { error: onMedia ? "That attachment was rejected." : "Write something first." };
   }
+  if (!parsed.data.body && !parsed.data.media) return { error: "Write something, or add a photo or video." };
+  if (cleaned.length >= 2 && !parsed.data.body) return { error: "Write the poll's question." };
   if (cleaned.length === 1) return { error: "A poll needs at least two options." };
   if (new Set(cleaned).size !== cleaned.length)
     return { error: "Poll options must be different." };
@@ -58,6 +71,9 @@ export async function createPost(
     author_id: user.id,
     body: parsed.data.body,
     kind: isPoll ? "poll" : "text",
+    ...(sessionId ? { session_id: sessionId } : {}),
+    ...(asTeam ? { as_team: true } : {}),
+    ...(asExhibitorId ? { as_exhibitor_id: asExhibitorId } : {}),
     ...(attachment
       ? { media_url: attachment.url, media_type: attachment.type }
       : {}),
@@ -87,7 +103,7 @@ export async function createPost(
     }
   }
 
-  revalidatePath("/discuss");
+  revalidatePath(sessionId ? `/agenda/${sessionId}` : "/discuss");
   return { ok: true };
 }
 
@@ -192,6 +208,22 @@ export async function deletePost(postId: string): Promise<ActionResult> {
 
   // RLS already restricts this to the author or an organizer.
   const { error } = await supabase.from("posts").delete().eq("id", postId);
+  if (error) return { error: error.message };
+  revalidatePath("/discuss");
+  return { ok: true };
+}
+
+export async function deleteComment(commentId: string): Promise<ActionResult> {
+  if (!z.string().uuid().safeParse(commentId).success) return { error: "invalid" };
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "unauth" };
+
+  // RLS restricts this to the reply's author or an organiser; the post's
+  // reply count is kept by its trigger.
+  const { error } = await supabase.from("post_comments").delete().eq("id", commentId);
   if (error) return { error: error.message };
   revalidatePath("/discuss");
   return { ok: true };

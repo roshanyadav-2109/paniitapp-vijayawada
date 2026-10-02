@@ -101,7 +101,7 @@ export function PushPrompt({ vapidPublicKey }: Props) {
         <div>
           <div className="text-sm font-medium text-brand-900">Event notifications</div>
           <div className="text-xs text-brand-900/60">
-            Session reminders, meeting requests, urgent updates.
+            Session reminders and urgent updates.
           </div>
         </div>
         {subscribed ? (

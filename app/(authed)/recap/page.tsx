@@ -5,7 +5,6 @@ import { Download, FileText } from "@/components/icons";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { initials } from "@/lib/utils";
-import { EVENT_ID } from "@/lib/event-config";
 
 interface MiniProfile {
   id: string;
@@ -18,7 +17,7 @@ interface MiniProfile {
 export const dynamic = "force-dynamic";
 
 export default async function RecapPage() {
-  let counts = { sessions: 0, questions: 0, answeredQuestions: 0, meetings: 0 };
+  let counts = { sessions: 0, questions: 0, answeredQuestions: 0 };
   let people: MiniProfile[] = [];
 
   try {
@@ -34,7 +33,7 @@ export default async function RecapPage() {
       );
     }
 
-    const [conns, sessionsCount, qCount, aCount, mCount] = await Promise.all([
+    const [conns, sessionsCount, qCount, aCount] = await Promise.all([
       supabase
         .from("connections")
         .select(
@@ -54,19 +53,12 @@ export default async function RecapPage() {
         .select("id", { count: "exact", head: true })
         .eq("user_id", user.id)
         .eq("is_answered", true),
-      supabase
-        .from("meetings")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "accepted")
-        .eq("event_id", EVENT_ID)
-        .or(`requester_id.eq.${user.id},invitee_id.eq.${user.id}`),
     ]);
 
     counts = {
       sessions: sessionsCount.count ?? 0,
       questions: qCount.count ?? 0,
       answeredQuestions: aCount.count ?? 0,
-      meetings: mCount.count ?? 0,
     };
 
     const rows = (conns.data as {
@@ -96,11 +88,10 @@ export default async function RecapPage() {
         </p>
       </header>
 
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <section className="grid grid-cols-3 gap-3">
         <Stat label="People met" value={people.length} />
         <Stat label="Sessions" value={counts.sessions} />
         <Stat label="Questions asked" value={counts.questions} />
-        <Stat label="Meetings" value={counts.meetings} />
       </section>
 
       <section>
@@ -135,7 +126,7 @@ export default async function RecapPage() {
           <div className="mt-3 flex flex-col items-center text-center">
             <EmptyArt name="empty-network" className="mb-3" />
             <p className="text-sm text-brand-950">
-              Nobody yet. Scan badges or accept meetings.
+              Nobody yet. Scan badges to connect.
             </p>
           </div>
         ) : (

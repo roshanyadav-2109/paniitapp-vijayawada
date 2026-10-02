@@ -51,7 +51,6 @@ const W_SHARED_INTEREST = 3;
 const W_SAME_CAMPUS = 4;
 const W_ROLE_PAIR = 6;
 const W_OPEN_TO_MEET = 3;
-const W_OFFICE_HOURS = 2;
 
 const MAX_INTEREST_HITS = 3; // don't let a long interest list drown the asks
 
@@ -131,10 +130,6 @@ export function scoreMatch(viewer: MatchProfile, other: MatchProfile): MatchResu
   }
 
   if (other.available_for_meetings) score += W_OPEN_TO_MEET;
-  if (other.office_hours_enabled) {
-    score += W_OFFICE_HOURS;
-    reasons.push("Holding office hours");
-  }
 
   return { score, reasons: reasons.slice(0, 3) };
 }

@@ -5,11 +5,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, Loader2 } from "@/components/icons";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
-import { useAppPrompt } from "@/hooks/use-app-prompt";
+import { announcePushRegistered, useAppPrompt } from "@/hooks/use-app-prompt";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { EVENT_INSTALL_ART, EVENT_NOTIFY_ART } from "@/lib/event-config";
 import {
   APP_PROMPT_EVENT,
+  blockingOem,
+  type BlockingOem,
+  isStandalone,
   snooze,
   type AppPromptKind,
 } from "@/lib/pwa";
@@ -59,6 +63,14 @@ export function AppPromptSheet({
 }) {
   const { toast } = useToast();
   const status = useAppPrompt({ signedIn, pushRegistered, scope });
+  const router = useRouter();
+  // A Xiaomi, Oppo, Vivo or Realme phone turns an install into a shortcut
+  // unless Chrome may add apps: say so before they tap Install.
+  const [oem, setOem] = useState<BlockingOem | null>(null);
+  useEffect(() => {
+    if (status.ios) return;
+    void blockingOem().then(setOem);
+  }, [status.ios]);
   const [kind, setKind] = useState<AppPromptKind | null>(null);
   const [busy, setBusy] = useState(false);
   const shown = useRef(false);
@@ -105,6 +117,37 @@ export function AppPromptSheet({
     [kind, scope]
   );
 
+  // No web page can open the phone's settings or ask again once blocked.
+  // So while the blocked sheet is up, the permission is watched: allowed in
+  // settings and back in the app, it finishes switching on by itself.
+  useEffect(() => {
+    if (kind !== "notifications" || status.permission !== "denied") return;
+    if (!("Notification" in window)) return;
+    let done = false;
+    const recheck = () => {
+      if (done || Notification.permission !== "granted") return;
+      done = true;
+      status.setPermission("granted");
+      void enableNotifications();
+    };
+    document.addEventListener("visibilitychange", recheck);
+    window.addEventListener("focus", recheck);
+    let perm: PermissionStatus | null = null;
+    navigator.permissions
+      ?.query({ name: "notifications" as PermissionName })
+      .then((p) => {
+        perm = p;
+        p.onchange = recheck;
+      })
+      .catch(() => {});
+    return () => {
+      document.removeEventListener("visibilitychange", recheck);
+      window.removeEventListener("focus", recheck);
+      if (perm) perm.onchange = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind, status.permission]);
+
   async function install() {
     const evt = status.deferred;
     if (!evt) return;
@@ -119,7 +162,7 @@ export function AppPromptSheet({
     }
   }
 
-  async function enableNotifications() {
+  async function enableNotifications(keepOpen = false) {
     setBusy(true);
     try {
       if (!("Notification" in window)) return;
@@ -129,6 +172,13 @@ export function AppPromptSheet({
       const perm = await Notification.requestPermission();
       status.setPermission(perm);
       if (perm !== "granted") {
+        if (keepOpen) {
+          toast({
+            title: "Still blocked on this phone",
+            description: "Follow the two steps shown, then come back here.",
+          });
+          return;
+        }
         close(true);
         toast({ title: "Notifications blocked", variant: "destructive" });
         return;
@@ -151,8 +201,12 @@ export function AppPromptSheet({
           body: JSON.stringify(sub),
         });
         if (!res.ok) throw new Error("Could not register this device");
-        // The prompt asks until a subscription exists; it does now.
+        // The prompt asks until a subscription exists; it does now. Every
+        // copy of the prompt is told at once, and the server's answer is
+        // re-read so the next screen does not ask again either.
         status.setSubscribed(true);
+        announcePushRegistered(scope);
+        router.refresh();
       }
       setKind(null);
       toast({ title: "Notifications on" });
@@ -180,6 +234,10 @@ export function AppPromptSheet({
   // browser refuses to ask again, so the only honest thing is to say where
   // the switch lives.
   const blocked = !isInstall && status.permission === "denied";
+  // Where the switch is depends on how the app was opened: the installed
+  // app keeps it under the phone's app info, a browser tab under the site's
+  // settings by the address bar.
+  const standalone = typeof window !== "undefined" && isStandalone();
 
   return (
     <Sheet
@@ -209,19 +267,41 @@ export function AppPromptSheet({
               </SheetTitle>
 
               {blocked ? (
-                <ol className="mt-3 space-y-1.5 text-[13px] text-brand-950">
-                  {status.ios ? (
-                    <>
-                      <li>1. iPhone Settings, then Notifications</li>
-                      <li>2. Find this app and allow them</li>
-                    </>
-                  ) : (
-                    <>
-                      <li>1. Hold the app icon, then App info</li>
-                      <li>2. Notifications, then allow them</li>
-                    </>
-                  )}
-                </ol>
+                <>
+                  <p className="mt-2 text-[12.5px] leading-5 text-brand-950/75">
+                    This phone has blocked them for the app. Tap Try again first; if nothing pops
+                    up, switch them on here:
+                  </p>
+                  <ol className="mt-2 space-y-1.5 text-[13px] text-brand-950">
+                    {status.ios ? (
+                      <>
+                        <li>1. iPhone Settings, then Notifications</li>
+                        <li>2. Find this app and turn Allow on</li>
+                      </>
+                    ) : standalone ? (
+                      <>
+                        <li>1. Hold the app icon, then App info</li>
+                        <li>2. Notifications, then turn them on</li>
+                      </>
+                    ) : (
+                      <>
+                        <li>1. Tap the icon left of the web address</li>
+                        <li>2. Permissions, then Notifications, then Allow</li>
+                      </>
+                    )}
+                  </ol>
+                  <p className="mt-2 text-[12px] text-brand-950/60">
+                    Then come back here; they switch on by themselves.
+                  </p>
+                </>
+              ) : null}
+
+              {isInstall && oem ? (
+                <p className="mt-2 rounded-md bg-white/70 px-2.5 py-2 text-[12px] leading-5 text-brand-950">
+                  On {oem === "xiaomi" ? "Xiaomi, Redmi and POCO" : oem === "oppo" ? "Oppo" : oem === "vivo" ? "Vivo" : "Realme"} phones, first allow
+                  Chrome to add apps: Settings, Apps, Chrome, {oem === "xiaomi" ? "Other permissions, Home screen shortcuts" : "Permissions, Create desktop shortcuts"}.
+                  Otherwise it only makes a shortcut.
+                </p>
               ) : null}
 
               {byHand ? (
@@ -233,15 +313,25 @@ export function AppPromptSheet({
                     </>
                   ) : (
                     <>
-                      <li>1. Open your browser&apos;s menu</li>
-                      <li>2. Tap Install app, or Add to Home screen</li>
+                      <li>1. Tap the &#8942; menu at the top right of Chrome</li>
+                      <li>2. Tap Install app (not Add to Home screen, which only makes a shortcut)</li>
                     </>
                   )}
                 </ol>
               ) : null}
 
               <div className="mt-4 flex items-center gap-2">
-                {byHand || blocked ? (
+                {blocked ? (
+                  <button
+                    type="button"
+                    onClick={() => void enableNotifications(true)}
+                    disabled={busy}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-md bg-brand-800 px-4 text-[13px] font-medium text-white transition-colors hover:bg-brand-900 disabled:opacity-60"
+                  >
+                    {busy ? <Loader2 className="size-3.5 animate-spin" /> : null}
+                    Try again
+                  </button>
+                ) : byHand ? (
                   <button
                     type="button"
                     onClick={() => close(false)}
@@ -252,7 +342,7 @@ export function AppPromptSheet({
                 ) : (
                   <button
                     type="button"
-                    onClick={isInstall ? install : enableNotifications}
+                    onClick={isInstall ? install : () => void enableNotifications()}
                     disabled={busy || (isInstall && !status.deferred)}
                     className={cn(
                       "inline-flex h-9 items-center gap-1.5 rounded-md px-4 text-[13px] font-medium text-white transition-colors disabled:opacity-60",

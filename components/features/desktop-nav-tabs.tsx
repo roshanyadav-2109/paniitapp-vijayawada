@@ -10,7 +10,6 @@ const TABS = [
   { href: "/attendees", label: "Networking" },
   { href: "/discuss", label: "Discussion" },
   { href: "/exhibitors", label: "Exhibitors" },
-  { href: "/meetings", label: "Meetings" },
 ] as const;
 
 export function DesktopNavTabs() {

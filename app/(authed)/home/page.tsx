@@ -1,5 +1,7 @@
 import Image from "next/image";
 import { LoginCta } from "@/components/features/login-cta";
+import { SafeSection } from "@/components/features/safe-section";
+import { InstagramLogo, LinkedInLogo, XLogo } from "@/components/features/brand-logos";
 import { getViewer } from "@/lib/viewer";
 import Link from "next/link";
 import { emptied } from "@/lib/dev-empty";
@@ -18,7 +20,6 @@ import {
   EVENT_DATE_LABEL,
   EVENT_MAPS_URL,
   EVENT_NAME,
-  EVENT_ID,
   EVENT_SCALE,
   EVENT_SCALE_EXHIBITOR_ICON,
   EVENT_SCALE_STANDIN,
@@ -35,7 +36,8 @@ import { SponsorsBoard, type SponsorTier } from "./sponsors-marquee";
 import { QuickActions } from "./quick-actions";
 import { IitMarquee } from "./iit-marquee";
 import { EventScale } from "@/components/features/event-scale";
-import { GatePassBanner } from "./gate-pass-banner";
+import { FrameCta } from "./frame-camera";
+import { TicketsBanner } from "./tickets-banner";
 import { AppPromptBanner } from "@/components/features/app-prompt-banner";
 import {
   getPublicExhibitorCount,
@@ -61,7 +63,7 @@ const SPONSOR_TIER_FOLDERS = [
 export const dynamic = "force-dynamic";
 
 interface CalendarItem {
-  kind: "meeting" | "session";
+  kind: "session";
   start: string;
   end: string;
   title: string;
@@ -110,9 +112,9 @@ export default async function HomePage() {
     // trips one after another — the page could not start rendering until the
     // last of them came back, which is what left the splash screen up.
     // Three of them are the same for every visitor and come from the shared
-    // cache (lib/public-data.ts); only the role, the meetings and the
-    // bookmarks are this person's.
-    const [roleRes, exhibitors, kp, tiers, meetingsRes, bookmarkRes] =
+    // cache (lib/public-data.ts); only the role and the bookmarks are this
+    // person's.
+    const [roleRes, exhibitors, kp, tiers, bookmarkRes] =
       await Promise.all([
         user
           ? supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
@@ -124,16 +126,6 @@ export default async function HomePage() {
           LOGO_BUCKET,
           EVENT_STORAGE_PREFIX
         ),
-        user
-          ? supabase
-              .from("meetings")
-              .select(
-                "id, requester_id, invitee_id, accepted_slot, status, requester:requester_id(id, full_name), invitee:invitee_id(id, full_name)",
-              )
-              .eq("event_id", EVENT_ID)
-              .or(`requester_id.eq.${user.id},invitee_id.eq.${user.id}`)
-              .eq("status", "accepted")
-          : Promise.resolve({ data: [] as unknown[] }),
         user
           ? supabase
               .from("session_bookmarks")
@@ -148,15 +140,6 @@ export default async function HomePage() {
     exhibitorCount = exhibitors ?? null;
     keyPeople = kp as unknown as KeyPerson[];
     sponsorTiers = tiers as unknown as SponsorTier[];
-
-    const acceptedMeetings = (meetingsRes.data ?? []) as Array<{
-      id: string;
-      requester_id: string;
-      invitee_id: string;
-      accepted_slot: { start: string; end: string } | null;
-      requester: { id: string; full_name: string | null } | null;
-      invitee: { id: string; full_name: string | null } | null;
-    }>;
 
     type BookmarkedSession = {
       id: string;
@@ -191,20 +174,6 @@ export default async function HomePage() {
     }
 
     calendar = [
-      ...acceptedMeetings.flatMap((m) => {
-        if (!m.accepted_slot || !user) return [];
-        const other = m.requester_id === user.id ? m.invitee : m.requester;
-        return [
-          {
-            kind: "meeting" as const,
-            start: m.accepted_slot.start,
-            end: m.accepted_slot.end,
-            title: "1:1 Meeting",
-            presenter: other?.full_name ?? null,
-            href: `/meetings/${m.id}`,
-          },
-        ];
-      }),
       ...bookmarks.map((b) => ({
         kind: "session" as const,
         start: b.start_at,
@@ -255,7 +224,7 @@ export default async function HomePage() {
           purple-to-navy gradient card, then a flat navy one, then nothing at
           all on a white page, which left it with no edges. White again, and
           the cool ground is what gives it its edge. */}
-      <section className="px-3 sm:px-5 lg:px-6">
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
         <div className="overflow-hidden rounded-lg bg-paper-raised">
           {/* A little card showing around the picture on three sides. Flush
               to the edges, the photograph was the card's own boundary and
@@ -345,24 +314,25 @@ export default async function HomePage() {
         <div className="mt-3">
           <EventScale stats={scaleStats} />
         </div>
-      </section>
+      </SafeSection>
+
+      {/* Registration and the summit photo, close together: two calls to
+          act, one under the other, rather than two sections. */}
+      <SafeSection className="space-y-3 px-3 sm:px-5 lg:px-6">
+        <TicketsBanner />
+        <FrameCta />
+      </SafeSection>
 
       {/* The four things you actually do in the app — badge, scanner,
           secretariat, programme — directly under the masthead. Someone
           opening this at the door wants a QR code, not a photograph. */}
-      <section className="px-3 sm:px-5 lg:px-6">
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
         <QuickActions role={role} />
-      </section>
-
-      {/* The pass, under the four tiles: it is what you open at the door,
-          and the tiles are what you open before you get there. */}
-      <section className="px-3 sm:px-5 lg:px-6">
-        <GatePassBanner signedIn={signedIn} />
-      </section>
+      </SafeSection>
 
       {/* Key guests & speakers */}
       {keyPeople.length > 0 ? (
-        <section>
+        <SafeSection>
           <div className="px-3 sm:px-5 lg:px-6">
             <SectionHead title="Key guests & speakers" />
           </div>
@@ -379,34 +349,34 @@ export default async function HomePage() {
               View all
             </Link>
           </div>
-        </section>
+        </SafeSection>
       ) : null}
 
       {/* The sectors the summit's sessions cover, on a white panel of their
           own. The card's padding is the page gutter, so the marquee's own
           full-bleed lands exactly on the card's edges rather than
           overshooting them. */}
-      <section className="px-3 sm:px-5 lg:px-6">
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
         <div className="rounded-lg bg-paper-raised px-3 py-4 sm:px-5 sm:py-5 lg:px-6">
           <SectionHead title="Focussed Sectors" />
           <div className="mt-4">
             <SectorMarquee />
           </div>
         </div>
-      </section>
+      </SafeSection>
 
       {/* Below the sectors, where a guest has just seen what the summit is
           about and has a reason to want the rest. */}
       {!signedIn ? (
-        <section className="px-3 sm:px-5 lg:px-6">
+        <SafeSection className="px-3 sm:px-5 lg:px-6">
           <LoginCta next="/home" />
-        </section>
+        </SafeSection>
       ) : null}
 
       {/* The two leaders the summit is held under, above the day. Full
           bleed to the card's edges and 2:1, the ratio it was made at, so the
           faces are never cropped out of it on a narrow screen. */}
-      <section className="px-3 sm:px-5 lg:px-6">
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
         <div className="overflow-hidden rounded-lg">
           <Image
             src="/ui/leadership-banner.webp"
@@ -417,7 +387,7 @@ export default async function HomePage() {
             className="h-auto w-full"
           />
         </div>
-      </section>
+      </SafeSection>
 
       {/*
         Today's calendar. Was a white card containing a stack of smaller white
@@ -425,12 +395,11 @@ export default async function HomePage() {
         the section rule separates it from what is above and hairlines separate
         the rows, so the timetable reads as a timetable.
       */}
-      <section className="px-3 sm:px-5 lg:px-6">
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
         <SectionHead title="Today’s calendar" />
         {calendar.length === 0 ? (
           <p className="mt-4 max-w-prose text-[14px] leading-7 text-brand-900/70">
-            Your day is open. Bookmark sessions in Agenda and accept meeting
-            requests to fill this in.
+            Your day is open. Bookmark sessions in Agenda to fill this in.
           </p>
         ) : (
           <ul className="list-ruled mt-1">
@@ -448,7 +417,7 @@ export default async function HomePage() {
                       {e.title}
                     </span>
                     <span className="mt-0.5 block text-[12.5px] text-brand-900/60">
-                      {e.kind === "meeting" ? "1:1 meeting" : "Session"}
+                      Session
                       {e.presenter ? <> | {e.presenter}</> : null}
                     </span>
                   </span>
@@ -458,10 +427,10 @@ export default async function HomePage() {
             ))}
           </ul>
         )}
-      </section>
+      </SafeSection>
 
       {/* About */}
-      <section className="px-3 sm:px-5 lg:px-6">
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
         <SectionHead title="About the summit" />
         <p className="mt-4 max-w-[62ch] text-[15px] leading-[1.75] text-brand-900/85">
           The {EVENT_NAME} brings together {EVENT_ATTENDEE_COUNT} delegates —
@@ -479,10 +448,10 @@ export default async function HomePage() {
           />
         </Link>
         <IitMarquee />
-      </section>
+      </SafeSection>
 
       {/* Video — a live stream on the day, a recording before it. */}
-      <section className="px-3 sm:px-5 lg:px-6">
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
         <SectionHead
           title={EVENT_VIDEO_EMBED.heading}
           meta={EVENT_VIDEO_EMBED.isLive ? "Live" : undefined}
@@ -514,18 +483,18 @@ export default async function HomePage() {
         <div className="mt-3">
           <PostStrip />
         </div>
-      </section>
+      </SafeSection>
 
       {/* Previous editions. "Legacy" and "Past" are doing the work in the
           two titles — these are not this summit's line-up or its sponsors. */}
-      <section className="px-3 sm:px-5 lg:px-6">
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
         <SectionHead title="Legacy of eminent speakers" />
         <div className="mt-5">
           <LegacySpeakers />
         </div>
-      </section>
+      </SafeSection>
 
-      <section className="px-3 sm:px-5 lg:px-6">
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
         <SectionHead title="Past sponsors" />
         {/* On a white panel, not on the ground: twelve of these seventeen
             logos are published with an opaque white panel baked into the
@@ -534,17 +503,17 @@ export default async function HomePage() {
         <div className="mt-5 rounded-lg bg-paper-raised p-5 sm:p-6">
           <PastSponsors />
         </div>
-      </section>
+      </SafeSection>
 
       {/* Sponsors */}
       {sponsorTiers.length > 0 ? (
-        <section className="px-3 sm:px-5 lg:px-6">
+        <SafeSection className="px-3 sm:px-5 lg:px-6">
           <SponsorsBoard tiers={sponsorTiers} />
-        </section>
+        </SafeSection>
       ) : null}
 
       {/* Connect */}
-      <section className="px-3 sm:px-5 lg:px-6">
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
         <SectionHead title="Connect with us" />
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
           {EVENT_SOCIALS.map((s) => (
@@ -561,7 +530,7 @@ export default async function HomePage() {
             </a>
           ))}
         </div>
-      </section>
+      </SafeSection>
 
       {/* The skyline closes the page and stays its last element — anything
           added later goes above this, never below it. Full-bleed and flush
@@ -632,81 +601,6 @@ function GoogleMapsPin() {
 }
 
 /* Brand-color social logos — sized 28px so they read at a glance. */
-
-function LinkedInLogo() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden
-      className="size-7"
-    >
-      <rect width="24" height="24" rx="5" fill="#0A66C2" />
-      <path
-        fill="#fff"
-        d="M7.06 9.5h2.55v8.2H7.06V9.5zm1.27-3.7a1.48 1.48 0 110 2.96 1.48 1.48 0 010-2.96zM11.4 9.5h2.45v1.12h.04c.34-.64 1.18-1.32 2.42-1.32 2.59 0 3.07 1.7 3.07 3.92v4.48h-2.55v-3.97c0-.95-.02-2.17-1.32-2.17-1.33 0-1.53 1.03-1.53 2.1v4.04H11.4V9.5z"
-      />
-    </svg>
-  );
-}
-
-function InstagramLogo() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden
-      className="size-7"
-    >
-      <defs>
-        <linearGradient id="ig-grad" x1="0%" y1="100%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#FCAF45" />
-          <stop offset="30%" stopColor="#F77737" />
-          <stop offset="55%" stopColor="#E1306C" />
-          <stop offset="85%" stopColor="#833AB4" />
-          <stop offset="100%" stopColor="#405DE6" />
-        </linearGradient>
-      </defs>
-      <rect width="24" height="24" rx="6" fill="url(#ig-grad)" />
-      <rect
-        x="5.5"
-        y="5.5"
-        width="13"
-        height="13"
-        rx="4"
-        fill="none"
-        stroke="#fff"
-        strokeWidth="1.6"
-      />
-      <circle
-        cx="12"
-        cy="12"
-        r="3.1"
-        fill="none"
-        stroke="#fff"
-        strokeWidth="1.6"
-      />
-      <circle cx="16.5" cy="7.6" r="0.9" fill="#fff" />
-    </svg>
-  );
-}
-
-function XLogo() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden
-      className="size-7"
-    >
-      <rect width="24" height="24" rx="5" fill="#000" />
-      <path
-        d="M16.05 5h2.16l-4.72 5.4L19 19h-4.34l-3.4-4.45L7.32 19H5.15l5.05-5.78L5 5h4.45l3.07 4.06L16.05 5zm-.76 12.7h1.2L8.78 6.23H7.5L15.29 17.7z"
-        fill="#fff"
-      />
-    </svg>
-  );
-}
 
 function YouTubeLogo() {
   return (

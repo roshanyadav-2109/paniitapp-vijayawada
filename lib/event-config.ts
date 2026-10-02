@@ -22,16 +22,15 @@ export const EVENT_SUBTAGLINE = "Swarna Andhra to Viksit Bharat 2047";
 /**
  * Summit day, IST — 3 October 2026.
  *
- * NOT cosmetic: lib/slots.ts builds the entire meeting-availability grid from
- * this date. Changing it moves every generated availability slot.
+ * NOT cosmetic: session times and reminders are worked out from this date.
  */
 export const EVENT_DATE_ISO = "2026-10-03";
 export const EVENT_DATE_LABEL = "2–3 October 2026 · all times IST";
 /**
  * The summit day itself, which is not the same as the summit's dates: the
  * Friday is the Chief Minister's gala dinner for invited guests, and the
- * programme, the meetings and the availability grid all run on the
- * Saturday. Anything that asks somebody to pick a time uses this one.
+ * programme runs on the Saturday. Anything that asks somebody to pick a
+ * time uses this one.
  */
 export const EVENT_DATE_TEXT = "October 3, 2026";
 /** Both days, for the places that name the summit rather than a slot. */
