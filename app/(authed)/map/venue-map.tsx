@@ -211,7 +211,7 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
         <div ref={setLabelLayer} className="pointer-events-none absolute inset-0 z-[5] overflow-hidden" />
 
         {/* search */}
-        <div className="absolute inset-x-3 top-3 z-20 flex gap-2 sm:left-4 sm:right-auto sm:w-[340px]">
+        <div className="absolute inset-x-3 top-3 z-20 flex gap-2 sm:left-4 sm:right-auto sm:w-[480px]">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-brand-900/45" />
             <input
@@ -252,13 +252,43 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
           >
             <RotateCcw className="size-4" strokeWidth={1.8} />
           </button>
+          {/* Roof off to find your way, or roof on to stand inside. */}
+          <div
+            role="radiogroup"
+            aria-label="View"
+            className="flex h-10 shrink-0 items-center rounded-full border border-white/70 bg-white/95 p-1 shadow-[0_4px_14px_rgba(15,23,42,0.12)]"
+          >
+            {[
+              { on: false, label: "Roof open" },
+              { on: true, label: "Inside" },
+            ].map((v) => (
+              <button
+                key={v.label}
+                type="button"
+                role="radio"
+                aria-checked={inside === v.on}
+                onClick={() => {
+                  setSelected(null);
+                  setSpot(0);
+                  setInside(v.on);
+                }}
+                className={
+                  inside === v.on
+                    ? "h-8 rounded-full bg-brand-800 px-3 text-[12.5px] font-medium text-white"
+                    : "h-8 rounded-full px-3 text-[12.5px] font-medium text-brand-900"
+                }
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Floors, top to bottom as a lift panel reads, and the drawing
             behind them as a layer to switch on. Inside, the panel is the
             lift: it takes you up or down to that floor. */}
         <div className="absolute right-3 top-16 z-10 flex flex-col items-center gap-2">
-          <div className="flex flex-col overflow-hidden rounded-2xl border border-white/70 bg-white/95 shadow-[0_4px_14px_rgba(15,23,42,0.12)]">
+          <div className="flex flex-col overflow-hidden rounded-lg border border-white/70 bg-white/95 shadow-[0_4px_14px_rgba(15,23,42,0.12)]">
             {[...FLOOR_ORDER].reverse().map((f) => (
               <button
                 key={f}
@@ -272,8 +302,8 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
                 aria-pressed={floor === f}
                 className={
                   floor === f
-                    ? "grid size-10 place-items-center bg-brand-800 text-[13px] font-bold text-white"
-                    : "grid size-10 place-items-center text-[13px] font-bold text-brand-900 hover:bg-paper"
+                    ? "grid size-10 place-items-center bg-brand-800 text-[13px] font-medium text-white"
+                    : "grid size-10 place-items-center text-[13px] font-medium text-brand-900 hover:bg-paper"
                 }
               >
                 {f === "basement" ? "B" : f === "ground" ? "G" : "1"}
@@ -288,55 +318,13 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
             aria-pressed={showPlan}
             className={
               showPlan
-                ? "grid size-10 place-items-center rounded-full bg-brand-800 text-white shadow-[0_4px_14px_rgba(15,23,42,0.12)]"
-                : "grid size-10 place-items-center rounded-full border border-white/70 bg-white/95 text-brand-800 shadow-[0_4px_14px_rgba(15,23,42,0.12)]"
+                ? "grid size-10 place-items-center rounded-lg bg-brand-800 text-white shadow-[0_4px_14px_rgba(15,23,42,0.12)]"
+                : "grid size-10 place-items-center rounded-lg border border-white/70 bg-white/95 text-brand-800 shadow-[0_4px_14px_rgba(15,23,42,0.12)]"
             }
           >
             <Layers className="size-4" strokeWidth={1.8} />
           </button>
         </div>
-
-        {/* Roof off to find your way, or roof on to stand in the hall. */}
-        <div
-          role="radiogroup"
-          aria-label="View"
-          className="absolute left-3 top-16 z-10 flex rounded-full border border-white/70 bg-white/95 p-0.5 shadow-[0_4px_14px_rgba(15,23,42,0.12)]"
-        >
-          {[
-            { on: false, label: "Roof open" },
-            { on: true, label: "Inside" },
-          ].map((v) => (
-            <button
-              key={v.label}
-              type="button"
-              role="radio"
-              aria-checked={inside === v.on}
-              onClick={() => {
-                setSelected(null);
-                setSpot(0);
-                setInside(v.on);
-              }}
-              className={
-                inside === v.on
-                  ? "rounded-full bg-brand-800 px-3 py-1 text-[12px] font-semibold text-white"
-                  : "rounded-full px-3 py-1 text-[12px] font-semibold text-brand-900"
-              }
-            >
-              {v.label}
-            </button>
-          ))}
-        </div>
-
-        {/* which floor this is, where a lift would say it */}
-        {inside ? (
-          <p className="pointer-events-none absolute left-3 top-[100px] z-10 rounded-full bg-white/95 px-3 py-1 text-[12px] font-semibold text-brand-900 shadow-sm">
-            {FLOOR_NAMES[floor]} floor · stick to walk · drag to look
-          </p>
-        ) : (
-          <p className="pointer-events-none absolute left-3 top-[100px] z-10 rounded-full bg-white/95 px-3 py-1 text-[12px] font-semibold text-brand-900 shadow-sm">
-            {FLOOR_NAMES[floor]} floor
-          </p>
-        )}
 
         {/* The neighbourhood is OpenStreetMap's; its licence asks for this. */}
         <a
@@ -367,8 +355,8 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
                 aria-pressed={spot === i}
                 className={
                   spot === i
-                    ? "shrink-0 rounded-full bg-brand-800 px-3 py-1.5 text-[12px] font-semibold text-white shadow-sm"
-                    : "shrink-0 rounded-full bg-white/95 px-3 py-1.5 text-[12px] font-semibold text-brand-900 shadow-sm"
+                    ? "shrink-0 rounded-full bg-brand-800 px-3 py-1.5 text-[12px] font-medium text-white shadow-sm"
+                    : "shrink-0 rounded-full bg-white/95 px-3 py-1.5 text-[12px] font-medium text-brand-900 shadow-sm"
                 }
               >
                 {v.name}
@@ -383,19 +371,19 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
             {(Object.keys(ZONE_COLOR) as StallZone[]).map((z) => (
               <span
                 key={z}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold text-brand-900 shadow-sm"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-medium text-brand-900 shadow-sm"
               >
                 <span className="size-2.5 rounded-sm" style={{ background: ZONE_COLOR[z] }} />
                 {ZONE_SHORT[z]}
               </span>
             ))}
-            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold text-brand-900 shadow-sm">
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-medium text-brand-900 shadow-sm">
               <span className="size-2.5 rounded-sm bg-[#16A34A]" /> Entrance
             </span>
-            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold text-brand-900 shadow-sm">
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-medium text-brand-900 shadow-sm">
               <span className="size-2.5 rounded-sm bg-[#059669]" /> One-way loop
             </span>
-            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold text-brand-900 shadow-sm">
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10.5px] font-medium text-brand-900 shadow-sm">
               <span className="size-2.5 rounded-sm bg-[#1B1464]" /> Backdrop
             </span>
           </div>

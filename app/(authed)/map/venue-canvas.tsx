@@ -2634,7 +2634,10 @@ function CameraRig({
       const look = new THREE.Vector3(...v.look);
       if (!wasInside.current || wasFloor.current !== floor) {
         // From outside, or by the lift from another floor, appear at the
-        // spot at once: a flight would pass through a roof or a slab.
+        // spot at once: a flight would pass through a roof or a slab. Any
+        // flight still under way out there (a reset, a stall) is dropped,
+        // or it would carry on and lift you back over the roof.
+        flight.current = null;
         camera.position.copy(to);
         controls.current?.target.copy(to).addScaledVector(look.sub(to).normalize(), EYE_REACH);
         controls.current?.update();
@@ -2644,6 +2647,7 @@ function CameraRig({
         fly(to, look);
       }
     } else if (wasInside.current) {
+      flight.current = null;
       const [pos, target] = overview();
       camera.position.copy(pos);
       controls.current?.target.copy(target);
