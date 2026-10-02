@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { updateProfile, type UpdateProfileResult } from "@/app/actions/update-profile";
@@ -56,6 +56,16 @@ export function EditProfileForm({ initial }: { initial: InitialProfile }) {
   );
   const message = errorMessage(state);
 
+  // Arriving from "Add interests", go straight to them: the page renders
+  // after the navigation, so the browser's own jump to #interests misses.
+  useEffect(() => {
+    if (window.location.hash !== "#interests") return;
+    const t = window.setTimeout(() => {
+      document.getElementById("interests")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 150);
+    return () => window.clearTimeout(t);
+  }, []);
+
   return (
     <form action={action} className="space-y-5">
       <Field label="Full name" name="full_name" defaultValue={initial.full_name ?? ""} required />
@@ -91,6 +101,8 @@ export function EditProfileForm({ initial }: { initial: InitialProfile }) {
         />
       </div>
 
+      {/* "Add interests" on the networking page lands here. */}
+      <section id="interests" className="scroll-mt-24 space-y-5">
       <ChipMultiSelect
         name="interests"
         label="Areas of interest"
@@ -112,6 +124,7 @@ export function EditProfileForm({ initial }: { initial: InitialProfile }) {
         options={OFFERS}
         initial={initial.offers ?? []}
       />
+      </section>
 
       {message ? (
         <p className="text-sm text-iit-500" role="alert">

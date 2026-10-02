@@ -9,7 +9,7 @@ import {
   type RecommendedRow,
 } from "./networking-client";
 import { EVENT_ID } from "@/lib/event-config";
-import { canMatch, rankMatches, type MatchProfile } from "@/lib/match";
+import { canMatch, rankMatches, standoutScore, type MatchProfile } from "@/lib/match";
 
 /** The For you tab is never shorter than this while there are people to show. */
 const MIN_RECOMMENDED = 10;
@@ -69,7 +69,7 @@ export default async function AttendeesPage() {
       const [{ data: me }, { data: pool }] = await Promise.all([
         supabase
           .from("profiles")
-          .select("id, full_name, role, iit_campus, interests, asks, offers, available_for_meetings, office_hours_enabled")
+          .select("id, full_name, role, iit_campus, graduation_year, company, designation, photo_url, interests, asks, offers, available_for_meetings, office_hours_enabled")
           .eq("id", user.id)
           .maybeSingle(),
         supabase
@@ -104,7 +104,11 @@ export default async function AttendeesPage() {
           const have = new Set(ranked.map((r) => r.id));
           const rest = candidates
             .filter((c) => !have.has(c.id))
-            .sort((a, b) => Number(!!b.photo_url) - Number(!!a.photo_url));
+            .sort(
+              (a, b) =>
+                standoutScore(b as MatchProfile) - standoutScore(a as MatchProfile) ||
+                (a.full_name ?? "").localeCompare(b.full_name ?? "")
+            );
           for (const row of rest.slice(0, MIN_RECOMMENDED - ranked.length)) {
             const { asks: _asks, offers: _offers, ...listRow } = row;
             void _asks;

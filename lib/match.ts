@@ -18,6 +18,10 @@ export interface MatchProfile {
   full_name: string | null;
   role: string | null;
   iit_campus: string | null;
+  graduation_year?: number | null;
+  company?: string | null;
+  designation?: string | null;
+  photo_url?: string | null;
   interests: string[] | null;
   asks: string[] | null;
   offers: string[] | null;
@@ -44,11 +48,56 @@ const ASK_TO_OFFERS: Record<string, string[]> = {
   "Product feedback": ["Product expertise", "Mentorship"],
 };
 
+/**
+ * Interests that are not the same but sit close together: someone in
+ * defence tech and someone in space have plenty to say to each other.
+ * Each pair counts once, for less than a shared interest.
+ */
+const RELATED_INTERESTS: readonly [string, string][] = [
+  ["AI & Machine Learning", "Deep Tech"],
+  ["AI & Machine Learning", "SaaS"],
+  ["AI & Machine Learning", "Dev Tools"],
+  ["AI & Machine Learning", "Robotics"],
+  ["Deep Tech", "Semiconductors"],
+  ["Deep Tech", "Robotics"],
+  ["Deep Tech", "Space"],
+  ["Deep Tech", "Hardware"],
+  ["Semiconductors", "Hardware"],
+  ["Robotics", "Hardware"],
+  ["Robotics", "Manufacturing"],
+  ["Hardware", "Manufacturing"],
+  ["Defense Tech", "Space"],
+  ["Defense Tech", "Cybersecurity"],
+  ["Defense Tech", "Robotics"],
+  ["Fintech", "Web3"],
+  ["Fintech", "SaaS"],
+  ["Fintech", "Marketplaces"],
+  ["Consumer", "Marketplaces"],
+  ["SaaS", "Dev Tools"],
+  ["Cybersecurity", "Dev Tools"],
+  ["Climate / Energy", "Mobility"],
+  ["Climate / Energy", "Agritech"],
+  ["Climate / Energy", "Manufacturing"],
+  ["Mobility", "Logistics"],
+  ["Logistics", "Marketplaces"],
+  ["Agritech", "Logistics"],
+  ["Healthcare", "AI & Machine Learning"],
+  ["Education", "Public Policy"],
+  ["Public Policy", "Climate / Energy"],
+];
+
+function related(a: string, b: string): boolean {
+  return RELATED_INTERESTS.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
+}
+
 // Weights. Ordered by how strong a reason each is to walk across the room.
 const W_THEY_HELP_YOU = 10; // your ask ← their offer
 const W_YOU_HELP_THEM = 6; //  their ask ← your offer (mutual, so still worth it)
 const W_SHARED_INTEREST = 3;
+const W_RELATED_INTEREST = 1.5;
 const W_SAME_CAMPUS = 4;
+const W_BATCHMATE = 3; // same campus, within two years of each other
+const W_COMPLETE = 1; // a real photo and a job title: someone you can find
 const W_ROLE_PAIR = 6;
 const W_OPEN_TO_MEET = 3;
 
@@ -105,9 +154,9 @@ export function scoreMatch(viewer: MatchProfile, other: MatchProfile): MatchResu
     }
   }
 
-  const sharedInterests = [...norm(viewer.interests)].filter((i) =>
-    norm(other.interests).has(i)
-  );
+  const mine = norm(viewer.interests);
+  const theirs = norm(other.interests);
+  const sharedInterests = [...mine].filter((i) => theirs.has(i));
   if (sharedInterests.length > 0) {
     score += Math.min(sharedInterests.length, MAX_INTEREST_HITS) * W_SHARED_INTEREST;
     reasons.push(
@@ -116,10 +165,23 @@ export function scoreMatch(viewer: MatchProfile, other: MatchProfile): MatchResu
         : `${sharedInterests.length} shared interests`
     );
   }
+  // Close to what you're into, without being the same thing.
+  const near = [...theirs].filter((t) => !mine.has(t) && [...mine].some((m) => related(m, t)));
+  if (near.length > 0) {
+    score += Math.min(near.length, 2) * W_RELATED_INTEREST;
+    if (sharedInterests.length === 0) reasons.push(`Works in ${near[0]}`);
+  }
 
   if (viewer.iit_campus && viewer.iit_campus === other.iit_campus) {
     score += W_SAME_CAMPUS;
-    reasons.push(other.iit_campus!);
+    const batch =
+      viewer.graduation_year && other.graduation_year && Math.abs(viewer.graduation_year - other.graduation_year) <= 2;
+    if (batch) {
+      score += W_BATCHMATE;
+      reasons.push(`${other.iit_campus}, batch of '${String(other.graduation_year).slice(-2)}`);
+    } else {
+      reasons.push(other.iit_campus!);
+    }
   }
 
   const rp = rolePairBonus(viewer.role, other.role);
@@ -130,6 +192,8 @@ export function scoreMatch(viewer: MatchProfile, other: MatchProfile): MatchResu
   }
 
   if (other.available_for_meetings) score += W_OPEN_TO_MEET;
+  // Only ever a tie-breaker, never a reason by itself.
+  if (reasons.length > 0 && other.photo_url && (other.designation || other.company)) score += W_COMPLETE;
 
   return { score, reasons: reasons.slice(0, 3) };
 }
@@ -147,7 +211,7 @@ export function rankMatches(
   candidates: MatchProfile[],
   limit = 24
 ): RankedMatch[] {
-  return candidates
+  const ranked = candidates
     .filter((c) => c.id !== viewer.id)
     .map((c) => ({ profile: c, ...scoreMatch(viewer, c) }))
     .filter((m) => m.score > 0 && m.reasons.length > 0)
@@ -155,8 +219,38 @@ export function rankMatches(
       (a, b) =>
         b.score - a.score ||
         (a.profile.full_name ?? "").localeCompare(b.profile.full_name ?? "")
-    )
-    .slice(0, limit);
+    );
+  // No more than two from one company near the top: ten people from one
+  // firm is one introduction, not ten. The rest wait further down.
+  const top: RankedMatch[] = [];
+  const later: RankedMatch[] = [];
+  const perCompany = new Map<string, number>();
+  for (const m of ranked) {
+    const co = (m.profile.company ?? "").trim().toLowerCase();
+    const n = co ? perCompany.get(co) ?? 0 : 0;
+    if (co && n >= 2) later.push(m);
+    else {
+      if (co) perCompany.set(co, n + 1);
+      top.push(m);
+    }
+  }
+  return [...top, ...later].slice(0, limit);
+}
+
+/**
+ * For someone who has told us nothing yet: the people most worth knowing
+ * about anyway — a real photo and a job title, open to meeting, a speaker
+ * or an investor — rather than whoever sorts first.
+ */
+export function standoutScore(p: MatchProfile): number {
+  let s = 0;
+  if (p.photo_url) s += 3;
+  if (p.designation) s += 1;
+  if (p.company) s += 1;
+  if ((p.interests ?? []).length > 0) s += 1;
+  if (p.available_for_meetings) s += 1;
+  if (p.role === "speaker" || p.role === "vc") s += 1;
+  return s;
 }
 
 /** True when the viewer has given us enough to match on. */
