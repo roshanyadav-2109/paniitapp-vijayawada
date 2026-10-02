@@ -3,14 +3,31 @@ import { ManageStall } from "./manage-stall";
 import { rethrowIfRedirect } from "@/lib/redirect";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Store, ExternalLink, MapPin } from "@/components/icons";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EVENT_ID } from "@/lib/event-config";
 import { GmailIcon, LinkedInIcon } from "@/components/features/social-icons";
+import {
+  FacebookLogo,
+  InstagramLogo,
+  LinkedInLogo,
+  XLogo,
+  YouTubeLogo,
+} from "@/components/features/brand-logos";
 import { initials } from "@/lib/utils";
+import { ArrowUpRight } from "lucide-react";
+import { getViewer } from "@/lib/viewer";
+import { pavilionOf } from "@/lib/pavilions";
 
 export const dynamic = "force-dynamic";
+
+export interface StallSocial {
+  linkedin?: string;
+  x?: string;
+  instagram?: string;
+  youtube?: string;
+  facebook?: string;
+}
 
 interface ExhibitorDetail {
   id: string;
@@ -18,11 +35,13 @@ interface ExhibitorDetail {
   tagline: string | null;
   about: string | null;
   logo_url: string | null;
-  cover_url: string | null;
   website: string | null;
   booth_number: string | null;
   location_floor: string | null;
   category: string | null;
+  social_links: StallSocial | null;
+  showcase: string | null;
+  based_in: string | null;
 }
 
 interface TeamRow {
@@ -35,6 +54,16 @@ interface TeamRow {
   linkedin_url: string | null;
 }
 
+const SOCIALS: { key: keyof StallSocial; label: string; Logo: (p: { className?: string }) => React.ReactElement }[] = [
+  { key: "linkedin", label: "LinkedIn", Logo: LinkedInLogo },
+  { key: "x", label: "X", Logo: XLogo },
+  { key: "instagram", label: "Instagram", Logo: InstagramLogo },
+  { key: "youtube", label: "YouTube", Logo: YouTubeLogo },
+  { key: "facebook", label: "Facebook", Logo: FacebookLogo },
+];
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default async function ExhibitorDetailPage({
   params,
 }: {
@@ -44,44 +73,51 @@ export default async function ExhibitorDetailPage({
   let exhibitor: ExhibitorDetail | null = null;
   let team: TeamRow[] = [];
   // The viewer's own place at this stall, if they have one, and its
-  // access list for the owner's team panel.
+  // access list for the owner's team panel. An organiser may change any
+  // stall, as its owner can.
   let myRole: "owner" | "member" | null = null;
   let access: { email: string; role: "owner" | "member" }[] = [];
 
   try {
     const supabase = await createClient();
-    const { data } = await supabase
-      .from("exhibitors")
-      .select(
-        "id, name, tagline, about, logo_url, cover_url, website, booth_number, location_floor, category"
-      )
-      .eq("id", id)
-      .eq("event_id", EVENT_ID)
-      .maybeSingle();
-    exhibitor = (data as ExhibitorDetail | null) ?? null;
+    if (UUID.test(id)) {
+      const { data } = await supabase
+        .from("exhibitors")
+        .select(
+          "id, name, tagline, about, logo_url, website, booth_number, location_floor, category, social_links, showcase, based_in"
+        )
+        .eq("id", id)
+        .eq("event_id", EVENT_ID)
+        .maybeSingle();
+      exhibitor = (data as ExhibitorDetail | null) ?? null;
+    }
+
     if (!exhibitor) notFound();
 
-    const { data: t } = await supabase
-      .from("exhibitor_team_members")
-      .select("id, profile_id, full_name, designation, photo_url, email, linkedin_url")
-      .eq("exhibitor_id", id)
-      .order("display_order", { ascending: true })
-      .order("full_name", { ascending: true });
-    team = (t as TeamRow[] | null) ?? [];
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    const email = user?.email?.toLowerCase();
-    if (email) {
-      const { data: acc } = await supabase
-        .from("exhibitor_access")
-        .select("email, role")
+    if (UUID.test(id)) {
+      const { data: t } = await supabase
+        .from("exhibitor_team_members")
+        .select("id, profile_id, full_name, designation, photo_url, email, linkedin_url")
         .eq("exhibitor_id", id)
-        .order("role", { ascending: false })
-        .order("email", { ascending: true });
-      access = (acc as typeof access | null) ?? [];
-      myRole = access.find((a) => a.email === email)?.role ?? null;
+        .order("display_order", { ascending: true })
+        .order("full_name", { ascending: true });
+      team = (t as TeamRow[] | null) ?? [];
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const email = user?.email?.toLowerCase();
+      if (email) {
+        const { data: acc } = await supabase
+          .from("exhibitor_access")
+          .select("email, role")
+          .eq("exhibitor_id", id)
+          .order("role", { ascending: false })
+          .order("email", { ascending: true });
+        access = (acc as typeof access | null) ?? [];
+        myRole = access.find((a) => a.email === email)?.role ?? null;
+        if (!myRole && (await getViewer()).isAdmin) myRole = "owner";
+      }
     }
   } catch (err) {
     rethrowIfRedirect(err);
@@ -90,116 +126,120 @@ export default async function ExhibitorDetailPage({
 
   if (!exhibitor) notFound();
 
+  const pavilion = exhibitor.category ? pavilionOf(exhibitor.category) : null;
+  const social = exhibitor.social_links ?? {};
+  const links = SOCIALS.filter((s) => social[s.key]);
+
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-4 pb-12">
+    <div className="mx-auto w-full max-w-2xl pb-12 pt-2">
       {myRole ? (
-        <ManageStall
-          id={exhibitor.id}
-          role={myRole}
-          team={access}
-          initial={{
-            name: exhibitor.name,
-            tagline: exhibitor.tagline ?? "",
-            about: exhibitor.about ?? "",
-            website: exhibitor.website ?? "",
-            category: exhibitor.category ?? "",
-            logo_url: exhibitor.logo_url ?? "",
-          }}
-        />
+        <div className="mb-6">
+          <ManageStall
+            id={exhibitor.id}
+            role={myRole}
+            team={access}
+            initial={{
+              name: exhibitor.name,
+              tagline: exhibitor.tagline ?? "",
+              about: exhibitor.about ?? "",
+              website: exhibitor.website ?? "",
+              category: exhibitor.category ?? "",
+              logo_url: exhibitor.logo_url ?? "",
+              showcase: exhibitor.showcase ?? "",
+              based_in: exhibitor.based_in ?? "",
+              social: {
+                linkedin: social.linkedin ?? "",
+                x: social.x ?? "",
+                instagram: social.instagram ?? "",
+                youtube: social.youtube ?? "",
+                facebook: social.facebook ?? "",
+              },
+            }}
+          />
+        </div>
       ) : null}
-      {/* Cover + logo */}
-      <section className="overflow-hidden rounded-lg border border-rule bg-white">
-        {exhibitor.cover_url ? (
-          <div className="relative h-32 w-full bg-paper-deep">
-            <Image
-              src={exhibitor.cover_url}
-              alt=""
-              fill
-              className="object-cover"
-            />
-          </div>
-        ) : (
-          // Flat navy with the red keyline, matching the home masthead. The
-          // radial gradient it replaced was the same purple-to-navy sweep
-          // used in three other places — one gradient recipe reused as
-          // decoration everywhere is exactly what reads as generated.
-          <div className="h-20 w-full bg-brand-800">
-            <div className="h-[3px] w-full bg-iit-500" aria-hidden />
-          </div>
-        )}
-        <div className="-mt-10 px-5 pb-5">
-          <div className="inline-grid size-20 place-items-center overflow-hidden rounded-lg bg-white ring-1 ring-rule shadow-sm">
-            {exhibitor.logo_url ? (
-              <Image
-                src={exhibitor.logo_url}
-                alt={exhibitor.name}
-                width={80}
-                height={80}
-                className="size-full object-contain p-2"
-              />
-            ) : (
-              <Store className="size-7 text-brand-800/65" />
-            )}
-          </div>
-          <h1 className="mt-3 font-display text-[22px] font-semibold leading-tight text-brand-950">
-            {exhibitor.name}
-          </h1>
-          {exhibitor.tagline ? (
-            <p className="mt-1 text-sm font-medium text-brand-900/85">
-              {exhibitor.tagline}
+
+      {/* Who they are, where to find them, and what they do: one box */}
+      <section className="rounded-[4px] border border-rule bg-white p-3 sm:p-4">
+      <header className="flex items-start gap-4">
+        <div className="grid size-20 shrink-0 place-items-center overflow-hidden rounded-[4px] border border-rule bg-white">
+          {exhibitor.logo_url ? (
+            <Image src={exhibitor.logo_url} alt={exhibitor.name} width={80} height={80} className="size-full object-contain p-2" />
+          ) : (
+            <span className="text-[22px] font-semibold tracking-tight text-brand-950">{initials(exhibitor.name)}</span>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-[22px] font-semibold leading-tight text-brand-950">{exhibitor.name}</h1>
+          {pavilion ? <p className="mt-1 text-[14px] text-brand-950">{pavilion.key}</p> : null}
+          {exhibitor.booth_number || exhibitor.location_floor ? (
+            <p className="mt-1 text-[14px] text-brand-950">
+              {exhibitor.booth_number ? <span className="font-medium">Stall {exhibitor.booth_number}</span> : null}
+              {exhibitor.booth_number && exhibitor.location_floor ? <span className="mx-2">|</span> : null}
+              {exhibitor.location_floor}
             </p>
           ) : null}
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            {exhibitor.category ? (
-              <span className="inline-flex items-center rounded-[4px] border border-brand-900/25 bg-white px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-brand-950">
-                {exhibitor.category}
-              </span>
-            ) : null}
-            {exhibitor.booth_number || exhibitor.location_floor ? (
-              <span className="inline-flex items-center gap-1 rounded-[4px] border border-brand-900/25 bg-white px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-brand-950">
-                <MapPin className="size-3" strokeWidth={1.8} />
-                {[exhibitor.booth_number, exhibitor.location_floor]
-                  .filter(Boolean)
-                  .join(" | ")}
-              </span>
-            ) : null}
-            {exhibitor.website ? (
-              <a
-                href={exhibitor.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 rounded-[4px] border border-brand-900/25 bg-white px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-brand-950 hover:bg-paper"
-              >
-                <ExternalLink className="size-3" strokeWidth={1.8} />
-                Website
-              </a>
-            ) : null}
-          </div>
         </div>
+      </header>
+
+      {/* Their website, then where else to follow them */}
+      {exhibitor.website ? (
+        <a
+          href={exhibitor.website}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 inline-flex items-center gap-1 border-b border-brand-950 pb-0.5 text-[14.5px] font-medium text-brand-950"
+        >
+          Visit website
+          <ArrowUpRight className="size-4" strokeWidth={2} aria-hidden />
+        </a>
+      ) : null}
+      {links.length > 0 ? (
+        <div className="mt-4 flex flex-wrap items-center gap-2.5">
+          {links.map(({ key, label, Logo }) => (
+            <a
+              key={key}
+              href={social[key]}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${exhibitor.name} on ${label}`}
+              className="inline-flex transition-opacity hover:opacity-80"
+            >
+              <Logo className="size-10" />
+            </a>
+          ))}
+        </div>
+      ) : null}
+
+      {exhibitor.about ? (
+        <div className="mt-6">
+          <h2 className="text-[16px] font-semibold text-brand-950">About</h2>
+          <p className="mt-2 whitespace-pre-line font-[family-name:var(--font-poppins)] text-[14.5px] leading-relaxed text-brand-950">
+            {exhibitor.about}
+          </p>
+        </div>
+      ) : null}
       </section>
 
-      {/* About */}
-      {exhibitor.about ? (
-        <section className="pt-4">
-          <h2 className="eyebrow text-brand-800/75">
-            About
-          </h2>
-          <p className="mt-2 whitespace-pre-line text-sm leading-6 text-brand-900">
-            {exhibitor.about}
+      {exhibitor.showcase ? (
+        <section className="mt-3 rounded-[4px] border border-rule bg-white p-3 sm:p-4">
+          <h2 className="text-[16px] font-semibold text-brand-950">At the stall</h2>
+          <p className="mt-2 whitespace-pre-line font-[family-name:var(--font-poppins)] text-[14.5px] leading-relaxed text-brand-950">
+            {exhibitor.showcase}
           </p>
         </section>
       ) : null}
 
-      {/* Team */}
-      <section className="pt-4">
-        <h2 className="eyebrow text-brand-800/75">
-          Team on ground
-        </h2>
-        {team.length === 0 ? (
-          <p className="mt-3 text-sm text-brand-900/75">
-            Team members will be listed here closer to the event.
-          </p>
-        ) : (
+      {exhibitor.based_in ? (
+        <section className="mt-3 rounded-[4px] border border-rule bg-white p-3 sm:p-4">
+          <h2 className="text-[16px] font-semibold text-brand-950">Based in</h2>
+          <p className="mt-1 text-[14.5px] text-brand-950">{exhibitor.based_in}</p>
+        </section>
+      ) : null}
+
+      {team.length > 0 ? (
+        <section className="mt-3 rounded-[4px] border border-rule bg-white p-3 sm:p-4">
+          <h2 className="text-[16px] font-semibold text-brand-950">Team at the stall</h2>
           <ul className="mt-3 space-y-2">
             {team.map((t) => (
               <li key={t.id}>
@@ -207,8 +247,8 @@ export default async function ExhibitorDetailPage({
               </li>
             ))}
           </ul>
-        )}
-      </section>
+        </section>
+      ) : null}
     </div>
   );
 }

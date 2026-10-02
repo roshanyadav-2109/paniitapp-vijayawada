@@ -19,6 +19,14 @@ function changed(id: string) {
   revalidatePath(`/exhibitors/${id}`);
 }
 
+export interface StallSocialInput {
+  linkedin: string;
+  x: string;
+  instagram: string;
+  youtube: string;
+  facebook: string;
+}
+
 export interface MyExhibitorInput {
   name: string;
   tagline: string;
@@ -26,6 +34,17 @@ export interface MyExhibitorInput {
   website: string;
   category: string;
   logo_url: string;
+  /** What the stall is showing at the expo. */
+  showcase: string;
+  based_in: string;
+  social: StallSocialInput;
+}
+
+/** A link as typed: trimmed, given https:// if it had no scheme, or nothing. */
+function asLink(raw: string): string | null {
+  const v = raw.trim();
+  if (!v) return null;
+  return /^https?:\/\//i.test(v) ? v.slice(0, 300) : `https://${v}`.slice(0, 300);
 }
 
 export async function updateMyExhibitor(id: string, input: MyExhibitorInput): Promise<ExhibitorResult> {
@@ -43,6 +62,13 @@ export async function updateMyExhibitor(id: string, input: MyExhibitorInput): Pr
       website: website || null,
       category: input.category.trim().slice(0, 60) || null,
       logo_url: input.logo_url.trim() || null,
+      showcase: input.showcase.trim().slice(0, 2000) || null,
+      based_in: input.based_in.trim().slice(0, 80) || null,
+      social_links: Object.fromEntries(
+        (Object.entries(input.social) as [keyof StallSocialInput, string][])
+          .map(([k, v]) => [k, asLink(v)] as const)
+          .filter(([, v]) => v)
+      ),
     })
     .eq("id", id)
     .select("id");

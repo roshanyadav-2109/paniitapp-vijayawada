@@ -52,3 +52,24 @@ export function XLogo({ className = "size-7" }: LogoProps) {
     </svg>
   );
 }
+
+export function YouTubeLogo({ className = "size-7" }: LogoProps) {
+  return (
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden className={className}>
+      <rect width="24" height="24" rx="5" fill="#FF0000" />
+      <path d="M10 8.4v7.2l6-3.6-6-3.6z" fill="#fff" />
+    </svg>
+  );
+}
+
+export function FacebookLogo({ className = "size-7" }: LogoProps) {
+  return (
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden className={className}>
+      <rect width="24" height="24" rx="5" fill="#1877F2" />
+      <path
+        d="M15.4 12.6l.4-2.7h-2.6V8.2c0-.74.36-1.46 1.53-1.46h1.18V4.43s-1.07-.18-2.1-.18c-2.14 0-3.54 1.3-3.54 3.65v2h-2.38v2.7h2.38V20h2.93v-7.4h2.2z"
+        fill="#fff"
+      />
+    </svg>
+  );
+}

@@ -13,7 +13,7 @@ import { EVENT_STORAGE_PREFIX } from "@/lib/event-config";
 import { cn } from "@/lib/utils";
 
 const FIELD =
-  "h-10 w-full rounded-md border border-rule bg-white px-3 text-[14px] text-brand-950 outline-none focus:border-brand-300";
+  "h-10 w-full rounded-[4px] border border-rule bg-white px-3 text-[14px] text-brand-950 outline-none focus:border-brand-950";
 
 /**
  * The stall's own people, on its page. The owner edits the details and the
@@ -32,7 +32,7 @@ export function ManageStall({
 }) {
   if (role === "member") {
     return (
-      <section className="rounded-lg border border-[#DCE4F7] bg-[#F3F6FD] p-4">
+      <section className="rounded-[4px] border border-rule bg-white p-4">
         <p className="text-[14px] font-semibold text-brand-950">You are on {initial.name}&apos;s team</p>
         <p className="mt-1 text-[13px] leading-5 text-brand-900/75">
           In Discuss, choose {initial.name} under Post as to post for the company.
@@ -61,7 +61,9 @@ function OwnerTools({
   const [uploading, setUploading] = useState(false);
   const [pending, startTransition] = useTransition();
   const fileRef = useRef<HTMLInputElement | null>(null);
-  const set = (k: keyof MyExhibitorInput, v: string) => setF((x) => ({ ...x, [k]: v }));
+  const set = (k: Exclude<keyof MyExhibitorInput, "social">, v: string) => setF((x) => ({ ...x, [k]: v }));
+  const setSocial = (k: keyof MyExhibitorInput["social"], v: string) =>
+    setF((x) => ({ ...x, social: { ...x.social, [k]: v } }));
 
   async function upload(file: File) {
     if (file.size > 3 * 1024 * 1024) {
@@ -124,14 +126,14 @@ function OwnerTools({
   const members = team.filter((t) => t.role === "member");
 
   return (
-    <section className="rounded-lg border border-[#DCE4F7] bg-[#F3F6FD] p-4">
+    <section className="rounded-[4px] border border-rule bg-white p-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-[14px] font-semibold text-brand-950">Manage your stall</p>
         {!open ? (
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="h-9 rounded-md bg-brand-800 px-3.5 text-[13px] font-medium text-white hover:bg-brand-900"
+            className="h-9 rounded-[4px] bg-brand-950 px-3.5 text-[13px] font-medium text-white"
           >
             Edit details
           </button>
@@ -154,6 +156,15 @@ function OwnerTools({
               className="w-full rounded-md border border-rule bg-white px-3 py-2 text-[14px] text-brand-950 outline-none focus:border-brand-300"
             />
           </Labelled>
+          <Labelled label="At the stall">
+            <textarea
+              value={f.showcase}
+              onChange={(e) => set("showcase", e.target.value)}
+              rows={3}
+              placeholder="What visitors will see: products, demos, models"
+              className="w-full rounded-[4px] border border-rule bg-white px-3 py-2 text-[14px] text-brand-950 outline-none focus:border-brand-950"
+            />
+          </Labelled>
           <div className="grid grid-cols-2 gap-2.5">
             <Labelled label="Website">
               <input
@@ -163,14 +174,35 @@ function OwnerTools({
                 className={FIELD}
               />
             </Labelled>
-            <Labelled label="Category">
+            <Labelled label="Based in">
               <input
-                value={f.category}
-                onChange={(e) => set("category", e.target.value)}
-                placeholder="e.g. Deeptech"
+                value={f.based_in}
+                onChange={(e) => set("based_in", e.target.value)}
+                placeholder="City"
                 className={FIELD}
               />
             </Labelled>
+          </div>
+          {/* The pavilion (category) is the organisers' to set, so it is not here. */}
+          <div className="grid grid-cols-2 gap-2.5">
+            {(
+              [
+                ["linkedin", "LinkedIn"],
+                ["x", "X"],
+                ["instagram", "Instagram"],
+                ["youtube", "YouTube"],
+                ["facebook", "Facebook"],
+              ] as const
+            ).map(([k, label]) => (
+              <Labelled key={k} label={label}>
+                <input
+                  value={f.social[k]}
+                  onChange={(e) => setSocial(k, e.target.value)}
+                  placeholder="Link to the page"
+                  className={FIELD}
+                />
+              </Labelled>
+            ))}
           </div>
           <Labelled label="Logo">
             <div className="flex items-center gap-3">
@@ -278,7 +310,7 @@ function OwnerTools({
 function Labelled({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[11.5px] font-medium text-brand-900/60">{label}</span>
+      <span className="mb-1 block text-[12px] font-medium text-brand-950">{label}</span>
       {children}
     </label>
   );

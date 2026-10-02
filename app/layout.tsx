@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Lexend, Noto_Sans_Telugu } from "next/font/google";
+import { Lexend, Noto_Sans_Telugu, Poppins } from "next/font/google";
 import { Toaster } from "@/components/ui/toaster";
 import { LaunchSplash } from "@/components/features/launch-splash";
 import { EVENT_APP_NAME, EVENT_NAME, EVENT_TAGLINE } from "@/lib/event-config";
@@ -23,6 +23,19 @@ const lexend = Lexend({
   variable: "--font-sans",
   display: "swap",
   preload: true,
+});
+
+/**
+ * Poppins at its regular weight only, for running descriptions where a
+ * quieter face than Lexend reads better (the exhibitors' summaries).
+ * Not preloaded: it is only needed where it is used.
+ */
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-poppins",
+  display: "swap",
+  preload: false,
 });
 
 const notoTelugu = Noto_Sans_Telugu({
@@ -88,7 +101,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${lexend.variable} ${notoTelugu.variable}`}
+      className={`${lexend.variable} ${poppins.variable} ${notoTelugu.variable}`}
     >
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         {/* Chrome says the app can be installed (beforeinstallprompt) as

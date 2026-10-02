@@ -21,6 +21,7 @@ export default async function ExhibitorsPage() {
   // touching a row in the database.
   rows = emptied(rows);
 
+
   const signedIn = await isSignedIn();
 
   return (
