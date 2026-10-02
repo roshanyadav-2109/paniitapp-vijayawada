@@ -799,51 +799,109 @@ function Poll({
     });
   }
 
+  // The answer in front, once there is one: it gets the deeper fill.
+  const top = Math.max(0, ...options.map((o) => countOf(o.id)));
+
   return (
-    <div className="mt-2.5 space-y-1.5">
-      {options.map((o) => {
-        const pct = total > 0 ? Math.round((countOf(o.id) / total) * 100) : 0;
-        const mine = voted === o.id;
-        return (
-          <button
-            key={o.id}
-            type="button"
-            onClick={() => cast(o.id)}
-            disabled={pending}
-            className={cn(
-              "relative w-full overflow-hidden rounded-md border px-3 py-2 text-left text-[13px] transition-colors",
-              mine
-                ? "border-brand-300 bg-paper-deep/40 font-semibold text-brand-900"
-                : "border-rule text-brand-950 hover:bg-paper-deep/40"
-            )}
-          >
-            {/* Result bar only appears once the viewer has voted, so early
-                votes don't anchor everyone else's answer. */}
-            {voted ? (
+    <div className="mt-3 rounded-xl bg-[#F3F6FD] p-2.5 ring-1 ring-[#E1E8F8]">
+      <div className="mb-2 flex items-center justify-between px-1">
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-800">
+          <PollGlyph className="size-3.5" />
+          Poll
+        </span>
+        {total > 0 ? (
+          <span className="text-[11px] tabular-nums text-brand-900/60">
+            {total} vote{total === 1 ? "" : "s"}
+          </span>
+        ) : null}
+      </div>
+
+      <div className="space-y-1.5">
+        {options.map((o, i) => {
+          const n = countOf(o.id);
+          const pct = total > 0 ? Math.round((n / total) * 100) : 0;
+          const mine = voted === o.id;
+          const leading = !!voted && n > 0 && n === top;
+          return (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => cast(o.id)}
+              disabled={pending}
+              aria-pressed={mine}
+              className={cn(
+                "group relative flex w-full items-center gap-2.5 overflow-hidden rounded-lg border bg-white px-2.5 py-2 text-left transition-all",
+                mine
+                  ? "border-brand-800 shadow-[0_0_0_1px_rgba(27,20,100,0.9)]"
+                  : voted
+                    ? "border-[#E1E8F8]"
+                    : "border-[#E1E8F8] hover:-translate-y-px hover:border-brand-300 hover:shadow-[0_6px_14px_-10px_rgba(27,20,100,0.45)] active:translate-y-0"
+              )}
+            >
+              {/* Results stay hidden until you have answered, so early votes
+                  do not steer anyone else's. */}
+              {voted ? (
+                <span
+                  aria-hidden
+                  className={cn(
+                    "absolute inset-y-0 left-0 transition-[width] duration-700 ease-out",
+                    leading ? "bg-[#D6E1FA]" : "bg-[#EAF0FC]"
+                  )}
+                  style={{ width: `${pct}%` }}
+                />
+              ) : null}
+
               <span
-                aria-hidden
-                className="absolute inset-y-0 left-0 bg-rule/70"
-                style={{ width: `${pct}%` }}
-              />
-            ) : null}
-            <span className="relative flex items-center justify-between gap-2">
-              <span className="flex items-center gap-1.5">
-                {mine ? <Check className="size-3.5 shrink-0" strokeWidth={2.2} /> : null}
+                className={cn(
+                  "relative grid size-6 shrink-0 place-items-center rounded-md text-[11px] font-semibold transition-colors",
+                  mine
+                    ? "bg-brand-800 text-white"
+                    : "bg-[#EEF2FC] text-brand-800 ring-1 ring-[#DCE4F7] group-hover:bg-white"
+                )}
+              >
+                {mine ? <Check className="size-3.5" strokeWidth={2.6} /> : String.fromCharCode(65 + i)}
+              </span>
+
+              <span
+                className={cn(
+                  "relative min-w-0 flex-1 text-[13.5px] leading-snug",
+                  mine || leading ? "font-semibold text-brand-950" : "text-brand-950"
+                )}
+              >
                 {o.label}
               </span>
+
               {voted ? (
-                <span className="shrink-0 tabular-nums text-brand-900/70">{pct}%</span>
+                <span className="relative shrink-0 text-right">
+                  <span className={cn("block text-[13px] font-semibold tabular-nums", leading ? "text-brand-800" : "text-brand-900/75")}>
+                    {pct}%
+                  </span>
+                </span>
               ) : null}
-            </span>
-          </button>
-        );
-      })}
-      <p className="pt-0.5 text-[11px] text-brand-900/50">
-        {total === 0
-          ? "No votes yet"
-          : `${total} vote${total === 1 ? "" : "s"}${voted ? "" : " | tap to vote"}`}
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="mt-2 px-1 text-[11px] text-brand-900/55">
+        {voted
+          ? "You voted · tap another option to change"
+          : total === 0
+            ? "Be the first to vote"
+            : "Tap an option to vote"}
       </p>
     </div>
+  );
+}
+
+/** Three bars of different lengths: the poll mark beside the label. */
+function PollGlyph({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className} aria-hidden>
+      <rect x="2" y="3" width="9" height="2.4" rx="1.2" fill="currentColor" />
+      <rect x="2" y="6.8" width="12" height="2.4" rx="1.2" fill="currentColor" opacity="0.55" />
+      <rect x="2" y="10.6" width="6" height="2.4" rx="1.2" fill="currentColor" opacity="0.3" />
+    </svg>
   );
 }
 
