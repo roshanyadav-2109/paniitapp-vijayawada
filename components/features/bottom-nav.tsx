@@ -1,29 +1,34 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import {
+  NavAdmin, NavAdminActive, NavAgenda, NavAgendaActive, NavDiscuss, NavDiscussActive,
+  NavExpo, NavExpoActive, NavHome, NavHomeActive, NavModerate, NavModerateActive,
+  NavNetwork, NavNetworkActive, type LucideIcon,
+} from "@/components/icons";
 
-// Supplied flat artwork, one icon per tab rather than the linear/bold pair
-// the generated Solar set used. A single flat icon cannot carry that
-// distinction, so the selected state is opacity instead: full strength when
-// active, dimmed when not — the same contrast the labels already use.
-const TABS = [
-  { href: "/home", label: "Home", icon: "/ui/nav-home.webp" },
-  { href: "/agenda", label: "Agenda", icon: "/ui/nav-agenda.webp" },
-  { href: "/attendees", label: "Network", icon: "/ui/nav-network.webp" },
-  { href: "/discuss", label: "Discuss", icon: "/ui/nav-discuss.webp" },
-  { href: "/exhibitors", label: "Expo", icon: "/ui/nav-expo.webp" },
+// Each tab has a line icon and a filled one. The tab you are on shows the
+// filled icon in the brand colour; the rest are black line icons. Shape
+// carries the difference, not a faded copy of the same picture.
+type Tab = { href: string; label: string; icon: LucideIcon; activeIcon: LucideIcon };
+
+const TABS: Tab[] = [
+  { href: "/home", label: "Home", icon: NavHome, activeIcon: NavHomeActive },
+  { href: "/agenda", label: "Agenda", icon: NavAgenda, activeIcon: NavAgendaActive },
+  { href: "/attendees", label: "Network", icon: NavNetwork, activeIcon: NavNetworkActive },
+  { href: "/discuss", label: "Discuss", icon: NavDiscuss, activeIcon: NavDiscussActive },
+  { href: "/exhibitors", label: "Expo", icon: NavExpo, activeIcon: NavExpoActive },
 ];
 
 /** A sixth tab for organisers and admins, and nobody else. */
-const ADMIN_TAB = { href: "/admin", label: "Admin", icon: "/ui/nav-admin.webp" };
+const ADMIN_TAB: Tab = { href: "/admin", label: "Admin", icon: NavAdmin, activeIcon: NavAdminActive };
 
 /** For session moderators: the questions sent to their sessions. An
  *  organiser who also moderates has the admin tab, which leads there too. */
-const MODERATE_TAB = { href: "/moderate", label: "Questions", icon: "/ui/nav-moderate.webp" };
+const MODERATE_TAB: Tab = { href: "/moderate", label: "Questions", icon: NavModerate, activeIcon: NavModerateActive };
 
 export function BottomNav({
   isAdmin = false,
@@ -62,7 +67,7 @@ export function BottomNav({
           extra ? "grid-cols-6" : "grid-cols-5"
         )}
       >
-        {tabs.map(({ href, label, icon }) => {
+        {tabs.map(({ href, label, icon: LineIcon, activeIcon: FilledIcon }) => {
           const active =
             shown === href || (href !== "/home" && shown.startsWith(`${href}/`));
           return (
@@ -79,19 +84,14 @@ export function BottomNav({
                 }
                 className={cn(
                   "flex w-full flex-col items-center justify-center gap-1.5 px-0.5 transition-colors",
-                  active ? "text-brand-800" : "text-brand-800/45 hover:text-brand-800"
+                  active ? "text-brand-800" : "text-brand-950 hover:text-brand-800"
                 )}
               >
-                <Image
-                  src={icon}
-                  alt=""
-                  width={22}
-                  height={22}
-                  className={cn(
-                    "h-[22px] w-[22px] transition-opacity",
-                    active ? "opacity-100" : "opacity-40"
-                  )}
-                />
+                {active ? (
+                  <FilledIcon className="size-6" />
+                ) : (
+                  <LineIcon className="size-6" strokeWidth={1.6} />
+                )}
                 <span className="text-[10px] font-semibold leading-none tracking-tight">
                   {label}
                 </span>
