@@ -80,12 +80,15 @@ export function ExhibitorsClient({
       </div>
 
       {/* The pavilions, by their pictures: tap one to see only its stalls,
-          tap it again for everyone. */}
+          tap it again for everyone. Pinned to the top once scrolled to, so
+          they stay to hand all the way down the list. */}
       {initialRows.length > 0 ? (
-        <div className="no-scrollbar -mx-3 mb-5 flex snap-x gap-3 overflow-x-auto px-3 pb-1 pt-1 sm:mx-0 sm:px-1">
+        <div className="sticky top-0 z-20 -mx-3 mb-4 bg-background pt-[env(safe-area-inset-top)] sm:mx-0">
+        <div className="no-scrollbar flex snap-x gap-3 overflow-x-auto px-3 pb-2 pt-2 sm:px-1">
           {present.map(({ p }) => (
             <PavilionTile key={p.key} p={p} active={only === p.key} onClick={() => setOnly(p.key)} />
           ))}
+        </div>
         </div>
       ) : null}
 
