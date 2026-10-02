@@ -572,6 +572,15 @@ export interface EventPressItem {
 
 export const EVENT_PRESS: EventPressItem[] = [
   {
+    outlet: "The India Decade",
+    headline:
+      "23 IITs, one stage: PanIIT summit in Vijayawada aims to make Andhra India's deep-tech capital",
+    summary:
+      "Chief Minister N Chandrababu Naidu is chief guest at Saturday's PanIIT Andhra Pradesh Summit, where organisers plan to unveil an IIT council for Amaravati, a deep-tech venture fund and a quantum launch named Q-Shiva.",
+    image: "/press/indiadecade-capital.webp",
+    href: "https://www.theindiadecade.com/technology/paniit-andhra-pradesh-summit-2026-vijayawada-23-iits-deep-tech-capital",
+  },
+  {
     outlet: "ThePrint",
     headline:
       "PanIIT summit in Andhra to rope in over 50 CEOs, 100 unicorn founders",
