@@ -821,8 +821,133 @@ function Slabs({ floor }: { floor: FloorKey }) {
           )}
         </group>
       ))}
-      {floor === "basement" ? <CarParkMarkings /> : null}
+      {floor === "basement" ? (
+        <>
+          <CarParkMarkings />
+          <ParkedCars />
+        </>
+      ) : null}
     </>
+  );
+}
+
+/**
+ * Cars in the basement's bays, about four in five of them taken: a sedan's
+ * side profile drawn out across its width, dark glass for the windows,
+ * wheels, and its lights. Everyday colours, mostly white, silver and grey.
+ * Instanced, so ninety cars cost a handful of draw calls; seeded, so the
+ * same cars are in the same bays every time.
+ */
+function ParkedCars() {
+  const body = useRef<THREE.InstancedMesh>(null);
+  const glass = useRef<THREE.InstancedMesh>(null);
+  const wheels = useRef<THREE.InstancedMesh>(null);
+  const lamps = useRef<THREE.InstancedMesh>(null);
+
+  const cars = useMemo(() => {
+    const sl = SCENE.floors.basement.slabs[0];
+    const inside = (x: number, z: number) => Math.abs(x - sl.x) < sl.w / 2 && Math.abs(z - sl.z) < sl.d / 2;
+    let seed = 20261003;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const colours = ["#F2F2EF", "#F2F2EF", "#F2F2EF", "#B9BDC2", "#B9BDC2", "#6E737A", "#2A2D31", "#1E2124", "#8E1B1B", "#1F3A68", "#5B5F55"];
+    const out: { x: number; z: number; turn: number; colour: string }[] = [];
+    for (const b of SCENE.parking) {
+      if (!inside(b.x, b.z)) continue;
+      const along = b.d >= b.w ? "z" : "x";
+      const long = Math.max(b.w, b.d);
+      const n = Math.max(1, Math.min(b.cars, Math.floor(long / 4.8)));
+      for (let i = 0; i < n; i++) {
+        if (rnd() > 0.8) continue;
+        const off = (i - (n - 1) / 2) * (long / n);
+        // nosed in or backed in, and never quite square in the bay
+        const flip = rnd() < 0.5 ? 0 : Math.PI;
+        const jitter = (rnd() - 0.5) * 0.06;
+        out.push({
+          x: b.x + (along === "x" ? off : (rnd() - 0.5) * 0.12),
+          z: b.z + (along === "z" ? off : (rnd() - 0.5) * 0.12),
+          turn: (along === "x" ? 0 : Math.PI / 2) + flip + jitter,
+          colour: colours[Math.floor(rnd() * colours.length)],
+        });
+      }
+    }
+    return out;
+  }, []);
+
+  const geo = useMemo(() => {
+    // A sedan in side view, nose to the +x end: 4.5 m long, 1.45 m tall.
+    const side = (pts: [number, number][]) => {
+      const sh = new THREE.Shape();
+      sh.moveTo(pts[0][0], pts[0][1]);
+      for (const [x, y] of pts.slice(1)) sh.lineTo(x, y);
+      return sh;
+    };
+    const lower = side([
+      [-2.25, 0.32], [2.25, 0.32], [2.27, 0.62], [2.12, 0.78], [0.95, 0.86], [-1.45, 0.88],
+      [-2.18, 0.84], [-2.27, 0.62],
+    ]);
+    const bodyGeo = new THREE.ExtrudeGeometry(lower, { depth: 1.76, bevelEnabled: true, bevelSize: 0.05, bevelThickness: 0.05, bevelSegments: 2 });
+    bodyGeo.translate(0, 0, -0.88);
+    // the roof and pillars, in the body colour, over the glass
+    const roofGeo = new THREE.BoxGeometry(1.5, 0.06, 1.42);
+    roofGeo.translate(-0.42, 1.43, 0);
+    const cabin = side([[0.95, 0.86], [0.25, 1.4], [-1.1, 1.4], [-1.62, 0.88]]);
+    const glassGeo = new THREE.ExtrudeGeometry(cabin, { depth: 1.5, bevelEnabled: false });
+    glassGeo.translate(0, 0, -0.75);
+    const wheel = new THREE.CylinderGeometry(0.33, 0.33, 0.24, 16);
+    wheel.rotateX(Math.PI / 2);
+    const lamp = new THREE.BoxGeometry(0.05, 0.12, 0.42);
+    return { body: mergeGeometries([bodyGeo.toNonIndexed(), roofGeo.toNonIndexed()]), glass: glassGeo, wheel, lamp };
+  }, []);
+
+  useLayoutEffect(() => {
+    const o = new THREE.Object3D();
+    const c = new THREE.Color();
+    const w = new THREE.Object3D();
+    cars.forEach((car, i) => {
+      o.position.set(car.x, 0, car.z);
+      o.rotation.set(0, car.turn, 0);
+      o.updateMatrix();
+      body.current?.setMatrixAt(i, o.matrix);
+      body.current?.setColorAt(i, c.set(car.colour));
+      glass.current?.setMatrixAt(i, o.matrix);
+      [[1.38, 0.82], [1.38, -0.82], [-1.42, 0.82], [-1.42, -0.82]].forEach(([dx, dz], k) => {
+        w.position.set(dx, 0.33, dz);
+        w.rotation.set(0, 0, 0);
+        w.updateMatrix();
+        w.matrix.premultiply(o.matrix);
+        wheels.current?.setMatrixAt(i * 4 + k, w.matrix);
+      });
+      [[2.27, 0.58, 0.55], [2.27, 0.58, -0.55], [-2.28, 0.64, 0.6], [-2.28, 0.64, -0.6]].forEach(([dx, dy, dz], k) => {
+        w.position.set(dx, dy, dz);
+        w.updateMatrix();
+        w.matrix.premultiply(o.matrix);
+        lamps.current?.setMatrixAt(i * 4 + k, w.matrix);
+        lamps.current?.setColorAt(i * 4 + k, c.set(k < 2 ? "#F4F1E6" : "#9E1A1A"));
+      });
+    });
+    for (const m of [body.current, glass.current, wheels.current, lamps.current]) {
+      if (!m) continue;
+      m.instanceMatrix.needsUpdate = true;
+      if (m.instanceColor) m.instanceColor.needsUpdate = true;
+      m.computeBoundingSphere();
+    }
+  }, [cars]);
+
+  return (
+    <group>
+      <instancedMesh ref={body} args={[geo.body, undefined, cars.length]} castShadow receiveShadow>
+        <meshStandardMaterial roughness={0.32} metalness={0.45} envMapIntensity={1.2} />
+      </instancedMesh>
+      <instancedMesh ref={glass} args={[geo.glass, undefined, cars.length]}>
+        <meshStandardMaterial color="#14181D" roughness={0.08} metalness={0.6} />
+      </instancedMesh>
+      <instancedMesh ref={wheels} args={[geo.wheel, undefined, cars.length * 4]} castShadow>
+        <meshStandardMaterial color="#17181A" roughness={0.85} />
+      </instancedMesh>
+      <instancedMesh ref={lamps} args={[geo.lamp, undefined, cars.length * 4]}>
+        <meshStandardMaterial roughness={0.3} />
+      </instancedMesh>
+    </group>
   );
 }
 
