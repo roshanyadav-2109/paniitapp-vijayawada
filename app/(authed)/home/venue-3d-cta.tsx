@@ -12,7 +12,7 @@ export function Venue3dCta() {
   return (
     <Link
       href="/map"
-      className="group block overflow-hidden rounded-xl bg-[#0F0F3D] text-white shadow-[0_10px_30px_-18px_rgba(11,11,46,0.8)]"
+      className="group block overflow-hidden rounded-xl bg-[#2A2C30] text-white shadow-[0_10px_30px_-18px_rgba(20,20,22,0.75)]"
     >
       <div className="relative aspect-[2/1] overflow-hidden">
         <Image
@@ -22,10 +22,10 @@ export function Venue3dCta() {
           sizes="(min-width: 768px) 720px, 100vw"
           className="object-cover object-[50%_45%] transition-transform duration-700 group-hover:scale-[1.03]"
         />
-        <span className="absolute left-3 top-3 inline-flex items-center rounded-full bg-[#0F0F3D]/70 px-2.5 py-1 text-[11px] font-medium tracking-wide ring-1 ring-white/25 backdrop-blur-sm">
+        <span className="absolute left-3 top-3 inline-flex items-center rounded-full bg-[#2A2C30]/70 px-2.5 py-1 text-[11px] font-medium tracking-wide ring-1 ring-white/25 backdrop-blur-sm">
           3D experience
         </span>
-        <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#0F0F3D] to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#2A2C30] to-transparent" />
       </div>
       <div className="flex items-end justify-between gap-3 px-4 pb-4 pt-1 sm:px-5 sm:pb-5">
         <div className="min-w-0">
@@ -36,7 +36,7 @@ export function Venue3dCta() {
         </div>
         <span
           aria-hidden
-          className="grid size-11 shrink-0 place-items-center rounded-full bg-white text-[#1B1464] transition-transform group-hover:translate-x-0.5"
+          className="grid size-11 shrink-0 place-items-center rounded-full bg-white text-[#2A2C30] transition-transform group-hover:translate-x-0.5"
         >
           <ArrowRight className="size-5" strokeWidth={2} />
         </span>
