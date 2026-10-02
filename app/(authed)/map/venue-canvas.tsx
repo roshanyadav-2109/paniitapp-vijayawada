@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { Environment, Lightformer, OrbitControls, useTexture } from "@react-three/drei";
+import { EffectComposer, N8AO, SMAA } from "@react-three/postprocessing";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
@@ -39,7 +40,7 @@ const ROOM_FLOOR: Record<string, string> = {
 
 const WALL_PAINT = "#F6F5F2";
 const HALL_WALL = "#E8DDC8";
-const GLASS = "#9FD4F1";
+const GLASS = "#D7E9EF";
 const COLUMN = "#E4E6EA";
 const INK = "#1E2433";
 const STAGE_TOP = "#8A6039";
@@ -89,6 +90,8 @@ export interface CanvasProps {
   inside: boolean;
   /** Which of INSIDE_VIEWS (lib/venue-3d) to stand at, when inside. */
   spot: number;
+  /** Held walking controls, inside: forward (1) or back (-1), and turning left (-1) or right (1). */
+  move: { f: number; t: number };
 }
 
 export default function VenueCanvas(props: CanvasProps) {
@@ -106,7 +109,9 @@ export default function VenueCanvas(props: CanvasProps) {
       className="touch-none"
     >
       <color attach="background" args={[props.floor === "basement" ? "#22262C" : "#DDE7F1"]} />
-      <hemisphereLight args={["#ffffff", "#8e98a8", props.floor === "basement" ? 0.75 : 0.42]} />
+      <hemisphereLight
+        args={["#ffffff", "#8e98a8", props.inside ? 0.62 : props.floor === "basement" ? 0.75 : 0.42]}
+      />
       {/* Soft light from every side and something for glass and polished
           stone to reflect: a few light panels rendered into an environment
           map on the device, so nothing is downloaded for it. */}
@@ -115,8 +120,16 @@ export default function VenueCanvas(props: CanvasProps) {
         <Lightformer form="rect" intensity={0.9} position={[-40, 12, 20]} rotation-y={Math.PI / 2} scale={[60, 14, 1]} color="#FFF4E6" />
         <Lightformer form="rect" intensity={0.7} position={[40, 12, -20]} rotation-y={-Math.PI / 2} scale={[60, 14, 1]} color="#E6F0FF" />
       </Environment>
-      <Sun />
+      <Sun inside={props.inside} />
       <Scene {...props} />
+      {/* Inside, soft shade where things meet — wall and floor, seat and
+          carpet — as a room has and a render without it lacks. */}
+      {props.inside ? (
+        <EffectComposer multisampling={0} enableNormalPass={false}>
+          <N8AO halfRes quality="performance" aoRadius={1.1} distanceFalloff={0.7} intensity={2.4} color="#2A2018" />
+          <SMAA />
+        </EffectComposer>
+      ) : null}
     </Canvas>
   );
 }
@@ -126,7 +139,7 @@ export default function VenueCanvas(props: CanvasProps) {
  * does not move, so its shadows are worked out once for each floor rather
  * than on every frame — which is what lets a phone afford them at all.
  */
-function Sun() {
+function Sun({ inside }: { inside: boolean }) {
   const light = useRef<THREE.DirectionalLight>(null);
   useLayoutEffect(() => {
     const l = light.current;
@@ -144,8 +157,11 @@ function Sun() {
     <>
       <directionalLight
         ref={light}
-        position={[46, 62, 40]}
-        intensity={2.6}
+        // Inside, under a roof, there is no sun: the light is the ceiling's,
+        // from straight above, its shadows falling straight down.
+        position={inside ? [3, 70, 2] : [46, 62, 40]}
+        intensity={inside ? 1.5 : 2.6}
+        color={inside ? "#FFF3E0" : "#FFFFFF"}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -173,7 +189,7 @@ function ShadowsOnce({ floor, inside = false }: { floor: FloorKey; inside?: bool
   return null;
 }
 
-function Scene({ floor, showPlan, occupied, selected, onSelect, focus, resetNonce, labelLayer, inside, spot }: CanvasProps) {
+function Scene({ floor, showPlan, occupied, selected, onSelect, focus, resetNonce, labelLayer, inside, spot, move }: CanvasProps) {
   const controls = useRef<OrbitControlsImpl | null>(null);
   const data = SCENE.floors[floor];
   const [walk, setWalk] = useState<Walk | null>(null);
@@ -296,12 +312,14 @@ function Scene({ floor, showPlan, occupied, selected, onSelect, focus, resetNonc
         rotateSpeed={inside ? 0.45 : 1}
         // Outside: never below the floor, never flat on it, as a plan seen
         // edge-on is a line. Inside: low enough to look up at the ceiling.
-        minPolarAngle={inside ? 0.3 : 0.08}
-        maxPolarAngle={inside ? Math.PI * 0.78 : Math.PI / 2.25}
+        // Inside, the head turns as a person's does: all the way round, but
+        // up or down only so far.
+        minPolarAngle={inside ? Math.PI / 2 - 0.62 : 0.08}
+        maxPolarAngle={inside ? Math.PI / 2 + 0.5 : Math.PI / 2.25}
         screenSpacePanning={false}
         enablePan={!inside}
       />
-      <CameraRig controls={controls} focus={focus} resetNonce={resetNonce} inside={inside} spot={spot} walk={walk} floor={floor} />
+      <CameraRig controls={controls} focus={focus} resetNonce={resetNonce} inside={inside} spot={spot} walk={walk} floor={floor} move={move} />
     </>
   );
 }
@@ -798,7 +816,7 @@ function CarParkMarkings() {
   const tex = useTexture(SCENE.floors.basement.live);
   useMemo(() => {
     tex.colorSpace = THREE.SRGBColorSpace;
-    tex.anisotropy = 8;
+    tex.anisotropy = 16;
   }, [tex]);
   return (
     <mesh rotation-x={-Math.PI / 2} position={[0, 0.004, 0]} receiveShadow>
@@ -926,7 +944,8 @@ function WallSet({
           <meshPhysicalMaterial
             color={GLASS}
             transparent
-            opacity={0.32}
+            opacity={0.18}
+            depthWrite={false}
             roughness={0.05}
             metalness={0.1}
             clearcoat={1}
@@ -1027,13 +1046,20 @@ function Hall({ ribs = true }: { ribs?: boolean }) {
 
   const chair = useMemo(() => {
     // Facing west, toward the stage: the back is on the east side.
-    const cushion = new THREE.BoxGeometry(0.44, 0.1, 0.48);
-    cushion.translate(0, 0.44, 0);
-    const back = new THREE.BoxGeometry(0.07, 0.56, 0.48);
-    back.translate(0.2, 0.74, 0);
-    const base = new THREE.BoxGeometry(0.3, 0.4, 0.36);
+    const cushion = new THREE.BoxGeometry(0.46, 0.11, 0.46);
+    cushion.translate(-0.02, 0.45, 0);
+    // The back leans away a little, as a hall seat's does.
+    const back = new THREE.BoxGeometry(0.08, 0.6, 0.46);
+    back.rotateZ(-0.14);
+    back.translate(0.23, 0.78, 0);
+    // An armrest on one side; the next seat's closes the other.
+    const arm = new THREE.BoxGeometry(0.42, 0.05, 0.05);
+    arm.translate(0.02, 0.66, 0.255);
+    const armPost = new THREE.BoxGeometry(0.05, 0.62, 0.05);
+    armPost.translate(-0.12, 0.33, 0.255);
+    const base = new THREE.BoxGeometry(0.3, 0.4, 0.34);
     base.translate(0.02, 0.2, 0);
-    return mergeGeometries([cushion, back, base]);
+    return mergeGeometries([cushion, back, arm, armPost, base]);
   }, []);
 
   useLayoutEffect(() => {
@@ -1146,13 +1172,15 @@ function StageDressing() {
     const palette = ["#F4E04D", "#FFFFFF", "#C2185B", "#8E44AD", "#F39C12", "#E84A5F", "#F8BBD0"];
     let seed = 11;
     const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
-    for (let z = platform.z - platform.d / 2 + 0.3; z < platform.z + platform.d / 2 - 0.3; z += 0.19) {
-      for (let row = 0; row < 3; row++) {
+    for (let z = platform.z - platform.d / 2 + 0.2; z < platform.z + platform.d / 2 - 0.2; z += 0.1) {
+      for (let row = 0; row < 4; row++) {
+        // Flowers come in runs of one colour, not confetti.
+        const run = Math.floor((z - platform.z) / 0.7 + row * 3);
         out.push({
-          x: front + 0.48 - row * 0.15,
-          y: 0.44 + row * 0.12 + rnd() * 0.06,
-          z: z + rnd() * 0.08,
-          c: palette[Math.floor(rnd() * palette.length)],
+          x: front + 0.5 - row * 0.12 + rnd() * 0.04,
+          y: 0.42 + row * 0.1 + rnd() * 0.05,
+          z: z + rnd() * 0.05,
+          c: palette[Math.abs(run) % palette.length],
         });
       }
     }
@@ -1208,10 +1236,14 @@ function StageDressing() {
         </mesh>
       ))}
 
-      {/* flower banks along the front edge */}
-      <mesh position={[front + 0.3, 0.2, platform.z]} receiveShadow>
-        <boxGeometry args={[0.55, 0.4, platform.d]} />
-        <meshStandardMaterial color="#3E6B2F" roughness={1} />
+      {/* flower banks along the front edge, in a bed of leaves */}
+      <mesh position={[front + 0.32, 0.22, platform.z]} receiveShadow>
+        <boxGeometry args={[0.6, 0.44, platform.d]} />
+        <meshStandardMaterial color="#2F5524" roughness={1} />
+      </mesh>
+      <mesh position={[front + 0.33, 0.47, platform.z]} rotation-x={Math.PI / 2} scale={[1, 1, 0.35]}>
+        <cylinderGeometry args={[0.32, 0.32, platform.d, 10, 1]} />
+        <meshStandardMaterial color="#3D6B2C" roughness={1} />
       </mesh>
       <Flowers at={flowers} />
 
@@ -1249,8 +1281,8 @@ function Flowers({ at }: { at: { x: number; y: number; z: number; c: string }[] 
   }, [at]);
   return (
     <instancedMesh ref={ref} args={[undefined, undefined, at.length]}>
-      <icosahedronGeometry args={[0.095, 1]} />
-      <meshStandardMaterial roughness={0.9} />
+      <dodecahedronGeometry args={[0.065, 0]} />
+      <meshStandardMaterial roughness={0.85} />
     </instancedMesh>
   );
 }
@@ -1358,7 +1390,7 @@ function HallInterior({ gallery = false }: { gallery?: boolean }) {
         const bh = b.y1 - b.y0;
         const y = b.y0 + bh / 2;
         const mat = b.glass ? (
-          <meshPhysicalMaterial color={GLASS} transparent opacity={0.22} roughness={0.05} depthWrite={false} side={THREE.DoubleSide} />
+          <meshPhysicalMaterial color={GLASS} transparent opacity={0.14} roughness={0.05} depthWrite={false} side={THREE.DoubleSide} />
         ) : (
           wall
         );
@@ -1510,7 +1542,20 @@ function legSeconds(metres: number) {
 
 /** How far ahead of the eye the camera turns about, inside. */
 const EYE_REACH = 0.08;
+/** Eye height of someone standing. */
 const EYE = 1.6;
+/** Walking, in metres a second, and turning, in radians a second. */
+const WALK_SPEED = 2.2;
+const TURN_SPEED = 1.3;
+const UP = new THREE.Vector3(0, 1, 0);
+const WALK_RAY = new THREE.Raycaster();
+
+/** The floor's height underfoot: the stage is a metre up, all else level. */
+function floorAt(floor: FloorKey, x: number, z: number) {
+  const pl = SCENE.stage.platform;
+  if (floor === "ground" && Math.abs(x - pl.x) < pl.w / 2 && Math.abs(z - pl.z) < pl.d / 2) return pl.h;
+  return 0;
+}
 
 /**
  * Tap the floor to walk there, as in a street view: anywhere you can see
@@ -1866,48 +1911,83 @@ function Stage() {
 /* First floor furniture                                               */
 /* ------------------------------------------------------------------ */
 
-/** Each board room: one long timber table and its 27 chairs. */
+/**
+ * Each board room: one long timber table on two pedestals, and its 27
+ * office chairs, each turned to the table.
+ */
 function BoardRooms() {
   const chairs = useRef<THREE.InstancedMesh>(null);
+  const frames = useRef<THREE.InstancedMesh>(null);
   const rooms = SCENE.boardRooms;
   const layout = useMemo(() => {
-    const out: [number, number][] = [];
+    const out: [number, number, number][] = [];
     for (const r of rooms) {
       const len = r.w * 0.78;
       const per = 13;
       for (let i = 0; i < per; i++) {
         const x = r.x - len / 2 + (len / (per - 1)) * i;
-        out.push([x, r.z - 1.05], [x, r.z + 1.05]);
+        out.push([x, r.z - 1.05, 0], [x, r.z + 1.05, Math.PI]);
       }
-      out.push([r.x - len / 2 - 0.9, r.z]); // at the head
+      out.push([r.x - len / 2 - 0.9, r.z, Math.PI / 2]); // at the head
     }
     return out;
   }, [rooms]);
 
+  // Facing +z: upholstered seat and back, on a post and a five-star base.
+  const { upholstery, frame } = useMemo(() => {
+    const seat = new THREE.BoxGeometry(0.48, 0.08, 0.46);
+    seat.translate(0, 0.47, 0.02);
+    const back = new THREE.BoxGeometry(0.46, 0.56, 0.06);
+    back.rotateX(-0.12);
+    back.translate(0, 0.82, -0.22);
+    const post = new THREE.CylinderGeometry(0.025, 0.025, 0.4, 8);
+    post.translate(0, 0.24, 0);
+    const legs: THREE.BufferGeometry[] = [];
+    for (let k = 0; k < 5; k++) {
+      const leg = new THREE.BoxGeometry(0.03, 0.03, 0.3);
+      leg.translate(0, 0.05, 0.15);
+      leg.rotateY((k / 5) * Math.PI * 2);
+      legs.push(leg);
+    }
+    return { upholstery: mergeGeometries([seat, back]), frame: mergeGeometries([post, ...legs]) };
+  }, []);
+
   useLayoutEffect(() => {
-    const m = chairs.current;
-    if (!m) return;
     const o = new THREE.Object3D();
-    layout.forEach(([x, z], i) => {
-      o.position.set(x, 0.45, z);
-      o.updateMatrix();
-      m.setMatrixAt(i, o.matrix);
-    });
-    m.instanceMatrix.needsUpdate = true;
-    m.computeBoundingSphere();
+    for (const m of [chairs.current, frames.current]) {
+      if (!m) continue;
+      layout.forEach(([x, z, turn], i) => {
+        o.position.set(x, 0, z);
+        o.rotation.set(0, turn, 0);
+        o.updateMatrix();
+        m.setMatrixAt(i, o.matrix);
+      });
+      m.instanceMatrix.needsUpdate = true;
+      m.computeBoundingSphere();
+    }
   }, [layout]);
 
   return (
     <>
       {rooms.map((r, i) => (
-        <mesh key={i} position={[r.x, 0.38, r.z]} castShadow receiveShadow>
-          <boxGeometry args={[r.w * 0.8, 0.76, 1.5]} />
-          <meshStandardMaterial color={TIMBER} roughness={0.55} />
-        </mesh>
+        <group key={i} position={[r.x, 0, r.z]}>
+          <mesh position={[0, 0.74, 0]} castShadow receiveShadow>
+            <boxGeometry args={[r.w * 0.8, 0.05, 1.5]} />
+            <meshStandardMaterial color={TIMBER} roughness={0.38} />
+          </mesh>
+          {[-1, 1].map((side) => (
+            <mesh key={side} position={[side * r.w * 0.27, 0.36, 0]} castShadow>
+              <boxGeometry args={[0.5, 0.72, 0.9]} />
+              <meshStandardMaterial color="#4A3322" roughness={0.5} />
+            </mesh>
+          ))}
+        </group>
       ))}
-      <instancedMesh ref={chairs} args={[undefined, undefined, layout.length]} castShadow>
-        <boxGeometry args={[0.5, 0.9, 0.5]} />
-        <meshStandardMaterial color={CHAIR} roughness={0.7} />
+      <instancedMesh ref={chairs} args={[upholstery, undefined, layout.length]} castShadow receiveShadow>
+        <meshStandardMaterial color={CHAIR} roughness={0.8} />
+      </instancedMesh>
+      <instancedMesh ref={frames} args={[frame, undefined, layout.length]} castShadow>
+        <meshStandardMaterial color="#9AA0A8" roughness={0.3} metalness={0.8} />
       </instancedMesh>
     </>
   );
@@ -2285,7 +2365,8 @@ function canvasTexture(
   draw(c.getContext("2d")!, w, h);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 4;
+  // Seen along the floor at eye height, a texture blurs unless filtered for it.
+  t.anisotropy = 16;
   return t;
 }
 
@@ -2391,6 +2472,7 @@ function CameraRig({
   spot,
   walk,
   floor,
+  move,
 }: {
   controls: React.RefObject<OrbitControlsImpl | null>;
   focus: CanvasProps["focus"];
@@ -2399,8 +2481,14 @@ function CameraRig({
   spot: number;
   walk: Walk | null;
   floor: FloorKey;
+  move: CanvasProps["move"];
 }) {
-  const { camera, size, invalidate } = useThree();
+  const { camera, size, invalidate, scene } = useThree();
+  const moveRef = useRef(move);
+  moveRef.current = move;
+  useEffect(() => {
+    if (move.f || move.t) invalidate();
+  }, [move.f, move.t, invalidate]);
   const flight = useRef<{
     fromPos: THREE.Vector3;
     fromTarget: THREE.Vector3;
@@ -2595,6 +2683,32 @@ function CameraRig({
 
   useFrame((_, dt) => {
     const c = controls.current;
+    const m = moveRef.current;
+    if (inside && c && !flight.current && (m.f || m.t)) {
+      // Walking: turn on the spot, step forward or back at a walking pace,
+      // and stop short of anything in the way (seats and the floor aside).
+      const step = Math.min(dt, 1 / 30);
+      const look = c.target.clone().sub(camera.position);
+      if (m.t) look.applyAxisAngle(UP, -m.t * TURN_SPEED * step);
+      if (m.f) {
+        const dir = new THREE.Vector3(look.x, 0, look.z).normalize().multiplyScalar(m.f);
+        const dist = WALK_SPEED * step;
+        const eye = camera.position.clone();
+        WALK_RAY.set(eye, dir);
+        WALK_RAY.far = dist + 0.45;
+        WALK_RAY.camera = camera;
+        const blocked = WALK_RAY.intersectObjects(scene.children, true).some(
+          (h) => !h.object.userData.ghost && !h.object.userData.walkable && (h.object as THREE.Mesh).isMesh
+        );
+        if (!blocked) {
+          camera.position.addScaledVector(dir, dist);
+          camera.position.y = floorAt(floor, camera.position.x, camera.position.z) + EYE;
+        }
+      }
+      c.target.copy(camera.position).add(look);
+      c.update();
+      invalidate();
+    }
     if (inside && c && !flight.current) {
       // However it is turned or zoomed, the camera stays in the room.
       // In the hall, up to its high ceiling; out on the floor, under its

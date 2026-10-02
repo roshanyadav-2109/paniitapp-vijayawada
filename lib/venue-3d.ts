@@ -523,21 +523,22 @@ export interface InsideView {
 }
 
 export const INSIDE_VIEWS: Record<FloorKey, readonly InsideView[]> = {
+  // Standing in the aisles, at eye height, looking straight ahead.
   ground: [
-    { name: "Back of hall", pos: [25.5, 3.4, -4.5], look: [-15, 3.2, -2.6] },
-    { name: "Middle", pos: [9, 1.7, 3.5], look: [-15, 3, -2.6] },
-    { name: "Front row", pos: [-6.4, 1.25, -7.5], look: [-16, 3.2, -2.6] },
-    { name: "On stage", pos: [-13.2, 2.75, -2.6], look: [20, 2.2, -5.6] },
+    { name: "Back of hall", pos: [25, 1.6, -5.6], look: [-15, 1.7, -3.5] },
+    { name: "Middle", pos: [9, 1.6, -5.6], look: [-15, 1.8, -3.5] },
+    { name: "Front row", pos: [-5.8, 1.6, -5.6], look: [-16, 2.1, -3] },
+    { name: "On stage", pos: [-13.2, 2.6, -2.6], look: [20, 2.4, -5.6] },
   ],
   first: [
-    { name: "Hall from above", pos: [6.85, 1.6, -21.05], look: [6.85, -4.2, -11] },
-    { name: "Board room 1", pos: [-31.6, 1.6, -11.86], look: [-46, 1.1, -11.86] },
-    { name: "Board room 2", pos: [-31.6, 1.6, -4.91], look: [-46, 1.1, -4.91] },
-    { name: "Reception", pos: [31.5, 1.6, 9], look: [31.5, 1.5, -6] },
+    { name: "Gallery", pos: [6.85, 1.6, -21.05], look: [6.85, 0.2, -10] },
+    { name: "Board room 1", pos: [-31.6, 1.6, -11.86], look: [-46, 1.5, -11.86] },
+    { name: "Board room 2", pos: [-31.6, 1.6, -4.91], look: [-46, 1.5, -4.91] },
+    { name: "Reception", pos: [31.5, 1.6, 9], look: [31.5, 1.6, -6] },
   ],
   basement: [
-    { name: "Car park", pos: [-6, 1.6, -4.5], look: [20, 1.3, -4.5] },
-    { name: "From the lifts", pos: [-38.5, 1.6, 7], look: [-10, 1.3, 0] },
-    { name: "Ramp up", pos: [43.2, 1.6, 16], look: [43.2, 1.8, -6] },
+    { name: "Car park", pos: [-6, 1.6, -4.5], look: [20, 1.6, -4.5] },
+    { name: "From the lifts", pos: [-38.5, 1.6, 7], look: [-10, 1.6, 0] },
+    { name: "Ramp up", pos: [43.2, 1.6, 16], look: [43.2, 1.6, -6] },
   ],
 };

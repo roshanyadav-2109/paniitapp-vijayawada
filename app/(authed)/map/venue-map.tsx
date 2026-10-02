@@ -3,8 +3,8 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { Layers, RotateCcw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Layers, RotateCcw } from "lucide-react";
 import { Loader2, MapPin, Search } from "@/components/icons";
 import {
   Sheet,
@@ -84,6 +84,53 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
   // and stands you in the main hall.
   const [inside, setInside] = useState(false);
   const [spot, setSpot] = useState(0);
+  // Walking inside: held buttons, or the arrow keys and WASD.
+  const [move, setMove] = useState({ f: 0, t: 0 });
+
+  useEffect(() => {
+    if (!inside) {
+      setMove({ f: 0, t: 0 });
+      return;
+    }
+    const held = new Set<string>();
+    const KEYS: Record<string, [number, number]> = {
+      ArrowUp: [1, 0], KeyW: [1, 0],
+      ArrowDown: [-1, 0], KeyS: [-1, 0],
+      ArrowLeft: [0, -1], KeyA: [0, -1],
+      ArrowRight: [0, 1], KeyD: [0, 1],
+    };
+    const apply = () => {
+      let f = 0;
+      let t = 0;
+      for (const k of held) {
+        f += KEYS[k][0];
+        t += KEYS[k][1];
+      }
+      setMove({ f: Math.sign(f), t: Math.sign(t) });
+    };
+    const down = (e: KeyboardEvent) => {
+      if (!(e.code in KEYS) || (e.target as HTMLElement)?.tagName === "INPUT") return;
+      e.preventDefault();
+      held.add(e.code);
+      apply();
+    };
+    const up = (e: KeyboardEvent) => {
+      if (!held.delete(e.code)) return;
+      apply();
+    };
+    const blur = () => {
+      held.clear();
+      apply();
+    };
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    window.addEventListener("blur", blur);
+    return () => {
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
+      window.removeEventListener("blur", blur);
+    };
+  }, [inside]);
   // The layer the canvas draws its floating labels into. A state, not a
   // ref, so the canvas hears about it once it exists.
   const [labelLayer, setLabelLayer] = useState<HTMLDivElement | null>(null);
@@ -153,6 +200,7 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
           labelLayer={labelLayer}
           inside={inside}
           spot={spot}
+          move={move}
         />
         <div ref={setLabelLayer} className="pointer-events-none absolute inset-0 z-[5] overflow-hidden" />
 
@@ -276,7 +324,7 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
         {/* which floor this is, where a lift would say it */}
         {inside ? (
           <p className="pointer-events-none absolute left-3 top-[100px] z-10 rounded-full bg-white/95 px-3 py-1 text-[12px] font-semibold text-brand-900 shadow-sm">
-            {FLOOR_NAMES[floor]} floor · tap {floor === "ground" ? "the floor or a door" : "the floor"} to walk · drag to look
+            {FLOOR_NAMES[floor]} floor · walk with the arrows or tap {floor === "ground" ? "the floor or a door" : "the floor"} · drag to look
           </p>
         ) : (
           <p className="pointer-events-none absolute left-3 top-[100px] z-10 rounded-full bg-white/95 px-3 py-1 text-[12px] font-semibold text-brand-900 shadow-sm">
@@ -294,6 +342,34 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
         >
           &copy; OpenStreetMap contributors
         </a>
+
+        {/* walk: hold to go forward or back, or to turn */}
+        {inside ? (
+          <div className="absolute bottom-12 right-3 z-10 grid grid-cols-3 gap-1 select-none">
+            {[
+              { k: "up", col: "col-start-2", f: 1, t: 0, Icon: ChevronUp, label: "Walk forward" },
+              { k: "left", col: "col-start-1", f: 0, t: -1, Icon: ChevronLeft, label: "Turn left" },
+              { k: "down", col: "col-start-2", f: -1, t: 0, Icon: ChevronDown, label: "Step back" },
+              { k: "right", col: "col-start-3", f: 0, t: 1, Icon: ChevronRight, label: "Turn right" },
+            ].map((b) => (
+              <button
+                key={b.k}
+                type="button"
+                aria-label={b.label}
+                className={`${b.col} ${b.k === "left" || b.k === "right" ? "row-start-2" : b.k === "down" ? "row-start-3" : "row-start-1"} grid size-11 touch-none place-items-center rounded-full border border-white/70 bg-white/90 text-brand-900 shadow-[0_4px_14px_rgba(15,23,42,0.14)] active:bg-brand-800 active:text-white`}
+                onPointerDown={(e) => {
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                  setMove({ f: b.f, t: b.t });
+                }}
+                onPointerUp={() => setMove({ f: 0, t: 0 })}
+                onPointerCancel={() => setMove({ f: 0, t: 0 })}
+                onContextMenu={(e) => e.preventDefault()}
+              >
+                <b.Icon className="size-5" strokeWidth={2.2} />
+              </button>
+            ))}
+          </div>
+        ) : null}
 
         {/* where to stand, inside */}
         {inside ? (
