@@ -7,13 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EVENT_ID } from "@/lib/event-config";
 import { GmailIcon, LinkedInIcon } from "@/components/features/social-icons";
-import {
-  FacebookLogo,
-  InstagramLogo,
-  LinkedInLogo,
-  XLogo,
-  YouTubeLogo,
-} from "@/components/features/brand-logos";
+import { FacebookMark, InstagramMark, LinkedInMark, XMark, YouTubeMark } from "@/components/features/official-marks";
 import { initials } from "@/lib/utils";
 import { ArrowUpRight } from "lucide-react";
 import { getViewer } from "@/lib/viewer";
@@ -55,11 +49,11 @@ interface TeamRow {
 }
 
 const SOCIALS: { key: keyof StallSocial; label: string; Logo: (p: { className?: string }) => React.ReactElement }[] = [
-  { key: "linkedin", label: "LinkedIn", Logo: LinkedInLogo },
-  { key: "x", label: "X", Logo: XLogo },
-  { key: "instagram", label: "Instagram", Logo: InstagramLogo },
-  { key: "youtube", label: "YouTube", Logo: YouTubeLogo },
-  { key: "facebook", label: "Facebook", Logo: FacebookLogo },
+  { key: "linkedin", label: "LinkedIn", Logo: LinkedInMark },
+  { key: "x", label: "X", Logo: XMark },
+  { key: "instagram", label: "Instagram", Logo: InstagramMark },
+  { key: "youtube", label: "YouTube", Logo: YouTubeMark },
+  { key: "facebook", label: "Facebook", Logo: FacebookMark },
 ];
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -195,7 +189,7 @@ export default async function ExhibitorDetailPage({
         </a>
       ) : null}
       {links.length > 0 ? (
-        <div className="mt-4 flex flex-wrap items-center gap-2.5">
+        <div className="mt-4 flex flex-wrap items-center gap-5">
           {links.map(({ key, label, Logo }) => (
             <a
               key={key}
@@ -205,7 +199,7 @@ export default async function ExhibitorDetailPage({
               aria-label={`${exhibitor.name} on ${label}`}
               className="inline-flex transition-opacity hover:opacity-80"
             >
-              <Logo className="size-10" />
+              <Logo className="size-7" />
             </a>
           ))}
         </div>
