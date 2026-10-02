@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { X } from "@/components/icons";
 
 /**
@@ -24,13 +24,23 @@ export function openPhoto(photo: Photo) {
 
 export function PhotoViewer() {
   const [photo, setPhoto] = useState<Photo | null>(null);
+  // Set while a back() is on its way, so a second close in the same tap
+  // (the button sits inside the backdrop, which also closes) cannot go back
+  // a second step and leave the screen the photo was opened from.
+  const closing = useRef(false);
 
   useEffect(() => {
     const onOpen = (e: Event) => {
       setPhoto((e as CustomEvent<Photo>).detail);
-      window.history.pushState({ photoViewer: true }, "");
+      closing.current = false;
+      // Keep the router's own state on the entry: Next reloads the page on a
+      // history entry that lacks it.
+      window.history.pushState({ ...(window.history.state ?? {}), photoViewer: true }, "");
     };
-    const onPop = () => setPhoto(null);
+    const onPop = () => {
+      closing.current = false;
+      setPhoto(null);
+    };
     window.addEventListener(EVENT, onOpen);
     window.addEventListener("popstate", onPop);
     return () => {
@@ -42,8 +52,11 @@ export function PhotoViewer() {
   // Closing by tap or Escape unwinds the history entry opening added; the
   // popstate that follows is what actually clears the photo.
   const close = useCallback(() => {
-    if (window.history.state?.photoViewer) window.history.back();
-    else setPhoto(null);
+    if (closing.current) return;
+    if (window.history.state?.photoViewer) {
+      closing.current = true;
+      window.history.back();
+    } else setPhoto(null);
   }, []);
 
   useEffect(() => {
@@ -73,7 +86,7 @@ export function PhotoViewer() {
       <div className="flex items-center gap-3 px-4 pb-3 pt-[max(env(safe-area-inset-top),12px)] text-white">
         <button
           type="button"
-          onClick={close}
+          onClick={(e) => { e.stopPropagation(); close(); }}
           aria-label="Close"
           className="-ml-1 grid size-10 place-items-center rounded-full hover:bg-white/10"
         >
