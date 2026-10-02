@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Loader2 } from "@/components/icons";
 
 /**
@@ -23,15 +23,73 @@ function explain(code: string): string {
   }
 }
 
+/** The slice of Google's script this file uses. */
+interface GoogleIdApi {
+  accounts?: {
+    id?: {
+      initialize: (opts: {
+        client_id: string;
+        nonce?: string;
+        use_fedcm_for_prompt?: boolean;
+        itp_support?: boolean;
+        auto_select?: boolean;
+        cancel_on_tap_outside?: boolean;
+        callback: (res: { credential?: string }) => void;
+      }) => void;
+      prompt: (listener?: (n: { isSkippedMoment?: () => boolean }) => void) => void;
+    };
+  };
+}
+
+const GIS_SRC = "https://accounts.google.com/gsi/client";
+
+function loadGis(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const ready = () => !!(window as unknown as { google?: GoogleIdApi }).google?.accounts?.id;
+    if (ready()) return resolve();
+    if (!document.querySelector(`script[src="${GIS_SRC}"]`)) {
+      const s = document.createElement("script");
+      s.src = GIS_SRC;
+      s.async = true;
+      s.onerror = () => reject(new Error("gis_unavailable"));
+      document.head.appendChild(s);
+    }
+    const started = Date.now();
+    const wait = () =>
+      ready() ? resolve() : Date.now() - started > 8000 ? reject(new Error("gis_timeout")) : setTimeout(wait, 60);
+    wait();
+  });
+}
+
+/** Where the visitor goes once they are in; the server checks it again. */
+function nextPath(): string {
+  const back = new URLSearchParams(window.location.search).get("redirect");
+  return back && back.startsWith("/") && !back.startsWith("//") ? back : "/home";
+}
+
+/** A prepared sign-in waits an hour on the server; well before that, renew. */
+const STALE_AFTER_MS = 40 * 60 * 1000;
+
 /**
- * One button of our own. Google's script used to draw its own button and
- * put its account dialog over the page, which blocked the screen and named
- * the wrong address; this goes straight to Google's sign-in and comes back
- * to whichever address the visitor started on.
+ * Our own button, signing in inside the app.
+ *
+ * A trip to Google's sign-in page leaves the installed app for a page with
+ * an address bar, which is what made signing in look like a website. Tapped,
+ * this asks Chrome for Google's own account sheet instead (FedCM): it rises
+ * over the app, and choosing an account signs in without leaving it. Nothing
+ * is shown before the tap. Where the sheet cannot be shown (an older
+ * browser, Chrome's cool-down after it was dismissed, Google unreachable)
+ * the button falls back to the sign-in page, as does "Sign in another way".
  */
 export function SignInForm() {
   const [oauthError, setOauthError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  const [busy, setBusy] = useState(false);
+  const prepared = useRef<{ state: string; at: number } | null>(null);
+  const preparing = useRef<Promise<boolean> | null>(null);
+  // Set when a tap asked for the sheet; a second tap with nothing to show
+  // for the first goes to the sign-in page rather than asking again.
+  const askedSheet = useRef(false);
 
   useEffect(() => {
     const err = new URLSearchParams(window.location.search).get("error");
@@ -40,28 +98,114 @@ export function SignInForm() {
       console.warn("[sign-in]", err);
       setOauthError(explain(decodeURIComponent(err)));
     }
+    void prepare();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function go() {
+  /** Ask the server for a state and nonce and hand Google the nonce, ahead
+   *  of the tap so the sheet opens straight away. */
+  function prepare(): Promise<boolean> {
+    if (prepared.current && Date.now() - prepared.current.at < STALE_AFTER_MS) return Promise.resolve(true);
+    if (preparing.current) return preparing.current;
+    preparing.current = (async () => {
+      try {
+        const res = await fetch(`/api/auth/google/prepare?next=${encodeURIComponent(nextPath())}`, {
+          cache: "no-store",
+        });
+        if (!res.ok) return false;
+        const { clientId, state, hashedNonce } = (await res.json()) as {
+          clientId: string;
+          state: string;
+          hashedNonce: string;
+        };
+        await loadGis();
+        const google = (window as unknown as { google?: GoogleIdApi }).google;
+        if (!google?.accounts?.id) return false;
+        google.accounts.id.initialize({
+          client_id: clientId,
+          nonce: hashedNonce,
+          use_fedcm_for_prompt: true,
+          itp_support: true,
+          auto_select: false,
+          cancel_on_tap_outside: true,
+          callback: ({ credential }) => {
+            if (credential) void finish(credential, state);
+          },
+        });
+        prepared.current = { state, at: Date.now() };
+        return true;
+      } catch {
+        return false;
+      } finally {
+        preparing.current = null;
+      }
+    })();
+    return preparing.current;
+  }
+
+  async function finish(credential: string, state: string) {
+    setBusy(true);
     setOauthError(null);
+    try {
+      const res = await fetch("/api/auth/google/id-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_token: credential, state }),
+      });
+      const payload = (await res.json().catch(() => null)) as { redirectTo?: string; error?: string } | null;
+      if (!res.ok || !payload?.redirectTo) throw new Error(payload?.error || "google_sign_in_failed");
+      window.location.replace(payload.redirectTo);
+    } catch (e) {
+      setBusy(false);
+      setOauthError(explain(e instanceof Error ? e.message : "google_sign_in_failed"));
+      prepared.current = null;
+      void prepare();
+    }
+  }
+
+  /** The sign-in page: the way that always works, in a page of its own. */
+  function viaPage() {
     start(() => {
-      // Back to whatever the visitor was reading; the server checks it again.
-      const back = new URLSearchParams(window.location.search).get("redirect");
-      const next = back && back.startsWith("/") && !back.startsWith("//") ? back : "/home";
-      window.location.href = `/auth/google/start?next=${encodeURIComponent(next)}`;
+      window.location.href = `/auth/google/start?next=${encodeURIComponent(nextPath())}`;
     });
   }
+
+  async function go() {
+    setOauthError(null);
+    // No FedCM in this browser, or the sheet already failed to appear: the
+    // page is the way in.
+    if (!("IdentityCredential" in window) || askedSheet.current) return viaPage();
+    askedSheet.current = true;
+    const ok = await prepare();
+    const google = (window as unknown as { google?: GoogleIdApi }).google;
+    if (!ok || !google?.accounts?.id) return viaPage();
+    google.accounts.id.prompt((n) => {
+      // Skipped: the sheet could not be shown here. Use the page instead.
+      if (n?.isSkippedMoment?.()) viaPage();
+    });
+  }
+
+  const working = pending || busy;
 
   return (
     <div className="flex flex-col gap-4">
       <button
         type="button"
-        onClick={go}
-        disabled={pending}
+        onClick={() => void go()}
+        disabled={working}
         className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-md border border-rule bg-white px-5 text-sm font-semibold text-brand-950 shadow-sm transition-colors hover:bg-paper-deep disabled:opacity-60"
       >
-        {pending ? <Loader2 className="size-4 animate-spin text-brand-800" /> : <GoogleIcon />}
-        Continue with Google
+        {working ? <Loader2 className="size-4 animate-spin text-brand-800" /> : <GoogleIcon />}
+        {busy ? "Signing you in…" : "Continue with Google"}
+      </button>
+
+      <button
+        type="button"
+        onClick={viaPage}
+        disabled={working}
+        className="-mt-1 self-center text-[12.5px] text-brand-900/60 underline-offset-2 hover:underline disabled:opacity-50"
+      >
+        Sign in another way
       </button>
 
       {oauthError ? (
