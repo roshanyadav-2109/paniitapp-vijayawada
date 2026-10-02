@@ -41,6 +41,7 @@ import { dayIST, timeIST } from "@/lib/date";
 import { createClient } from "@/lib/supabase/client";
 import { cn, initials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { sendOrQueue } from "@/components/features/outbox";
 import {
   addComment,
   createPost,
@@ -269,15 +270,25 @@ function Composer({
   function submit() {
     if (!canSubmit || pending) return;
     startTransition(async () => {
-      const res = await createPost(
-        body,
-        isPoll ? options : undefined,
-        media ?? undefined,
-        sessionId,
-        isAdmin && postAs === "team",
-        postAs !== "me" && postAs !== "team" ? postAs : undefined
-      );
-      if ("error" in res) {
+      const send = () =>
+        createPost(
+          body,
+          isPoll ? options : undefined,
+          media ?? undefined,
+          sessionId,
+          isAdmin && postAs === "team",
+          postAs !== "me" && postAs !== "team" ? postAs : undefined
+        );
+      // A plain post of your own can wait for signal; one with a photo, or
+      // posted for the team or a stall, needs the network now.
+      const res =
+        !media && postAs === "me"
+          ? await sendOrQueue(
+              { kind: "post", body, options: isPoll ? options : undefined, sessionId },
+              send
+            )
+          : await send();
+      if (res !== "queued" && "error" in res) {
         toast({ title: "Could not post", description: res.error, variant: "destructive" });
         return;
       }
@@ -859,8 +870,10 @@ function Poll({
     setVoted(optionId);
     move(1);
     startTransition(async () => {
-      const res = await votePoll(post.id, optionId);
-      if ("error" in res) {
+      const res = await sendOrQueue({ kind: "vote", postId: post.id, optionId }, () =>
+        votePoll(post.id, optionId)
+      );
+      if (res !== "queued" && "error" in res) {
         setVoted(before);
         move(-1);
         if (res.error === "unauth") router.push("/login?redirect=%2Fdiscuss");
@@ -1039,7 +1052,13 @@ function Comments({
     const text = body.trim();
     if (!text || pending) return;
     startTransition(async () => {
-      const res = await addComment(postId, text);
+      const res = await sendOrQueue({ kind: "comment", postId, body: text }, () =>
+        addComment(postId, text)
+      );
+      if (res === "queued") {
+        setBody("");
+        return;
+      }
       if ("error" in res) return;
       setBody("");
       setRows(await load());

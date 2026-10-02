@@ -14,6 +14,7 @@ import { EmptyArt } from "@/components/features/empty-art";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/client";
 import { sendMessage } from "@/app/actions/send-message";
+import { sendOrQueue } from "@/components/features/outbox";
 import { cn, initials } from "@/lib/utils";
 
 export interface ChatMessage {
@@ -235,7 +236,11 @@ export function ConversationView({
       inputRef.current.style.height = "auto";
     }
     startTransition(async () => {
-      const res = await sendMessage({ recipient_id: peer.id, body });
+      const res = await sendOrQueue({ kind: "message", recipientId: peer.id, body }, () =>
+        sendMessage({ recipient_id: peer.id, body })
+      );
+      // Kept for later: the message stays on screen as sent-pending.
+      if (res === "queued") return;
       if ("error" in res) {
         setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
         setDraft(body);
