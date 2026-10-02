@@ -39,11 +39,21 @@ export async function loadPosts(sessionId: string | null): Promise<LoadedPosts> 
       .order("created_at", { ascending: false })
       .limit(PAGE_SIZE);
     if (error) out.errored = true;
-    out.posts = ((data as unknown as PostRow[] | null) ?? []).map((p) => ({
-      ...p,
-      media_url: p.media_url ?? null,
-      media_type: p.media_type ?? null,
-    }));
+    out.posts = ((data as unknown as PostRow[] | null) ?? []).map((p) => {
+      // A post made as the summit team says nothing about which admin wrote
+      // it: no name, photo or title reaches the page, only that it is the
+      // team's. The id stays, so its author can still delete it.
+      const raw = Array.isArray(p.author) ? p.author[0] : p.author;
+      const asTeam = !!p.as_team && (raw?.role === "admin" || raw?.role === "organizer");
+      return {
+        ...p,
+        author: asTeam
+          ? ({ id: null, full_name: null, designation: null, company: null, photo_url: null, role: "admin" } as unknown as PostRow["author"])
+          : p.author,
+        media_url: p.media_url ?? null,
+        media_type: p.media_type ?? null,
+      };
+    });
 
     if (user && out.posts.length > 0) {
       const ids = out.posts.map((p) => p.id);

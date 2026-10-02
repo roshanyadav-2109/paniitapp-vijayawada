@@ -457,6 +457,25 @@ function Composer({ sessionId, isAdmin = false }: { sessionId?: string; isAdmin?
 
 const TEAM_NAME = "PanIIT AP Summit Team";
 
+/** A link to the author's profile, or plain text where there is none to
+ *  give (the summit team's posts). */
+function AuthorLink({
+  href,
+  className,
+  children,
+}: {
+  href: string | null;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  if (!href) return <span className={className}>{children}</span>;
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  );
+}
+
 /** The organisers' mark: a solid blue badge with a white tick, read at a
  *  glance the way the verified mark on X is. */
 function VerifiedTick() {
@@ -546,7 +565,9 @@ function PostCard({
   return (
     <li className="rounded-lg border border-rule bg-white p-3.5">
       <div className="flex items-start gap-2.5">
-        <Link href={`/attendees/${post.author_id}`} className="shrink-0">
+        {/* The team's posts lead nowhere: tapping the mark or the name must
+            not open the profile of the admin who wrote it. */}
+        <AuthorLink href={team ? null : `/attendees/${post.author_id}`} className="shrink-0">
           {/* Square, as on the networking cards: at this size a circle crops
               the top of a head off every portrait. */}
           <Avatar className="size-9 rounded-md ring-1 ring-rule">
@@ -567,15 +588,18 @@ function PostCard({
               {initials(a?.full_name ?? null)}
             </AvatarFallback>
           </Avatar>
-        </Link>
+        </AuthorLink>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <Link
-              href={`/attendees/${post.author_id}`}
-              className="truncate text-[13px] font-semibold text-brand-950 hover:underline"
+            <AuthorLink
+              href={team ? null : `/attendees/${post.author_id}`}
+              className={cn(
+                "truncate text-[13px] font-semibold text-brand-950",
+                !team && "hover:underline"
+              )}
             >
               {team ? TEAM_NAME : a?.full_name ?? "Attendee"}
-            </Link>
+            </AuthorLink>
             {team ? (
               <VerifiedTick />
             ) : null}
