@@ -180,7 +180,36 @@ function Scene({ floor, showPlan, occupied, selected, onSelect, focus, resetNonc
 
   return (
     <>
-      {inside ? (
+      {inside && floor === "first" ? (
+        // Upstairs, under its ceiling: the board rooms and lounges, and the
+        // hall below seen through glass.
+        <>
+          <Outside floor="first" />
+          <Slabs floor="first" />
+          <Rooms floor="first" />
+          <Walls floor="first" />
+          <Columns floor="first" />
+          <BoardRooms />
+          <group position={[0, -STOREY, 0]}>
+            <Hall ribs={false} />
+            <Stage />
+            <HallInterior gallery />
+          </group>
+          <FloorCeiling y={CEILING.first} />
+          <FloorWalk onWalk={(steps) => setWalk({ steps, nonce: Date.now() })} />
+        </>
+      ) : inside && floor === "basement" ? (
+        // The car park, under its slab.
+        <>
+          <Outside floor="basement" />
+          <Slabs floor="basement" />
+          <Rooms floor="basement" />
+          <Walls floor="basement" />
+          <Columns floor="basement" />
+          <FloorCeiling y={CEILING.basement} hole={false} />
+          <FloorWalk onWalk={(steps) => setWalk({ steps, nonce: Date.now() })} />
+        </>
+      ) : inside ? (
         // Roof on: the hall closed in, and the floor round it under its
         // ceiling, its doors open to walk through.
         <>
@@ -272,7 +301,7 @@ function Scene({ floor, showPlan, occupied, selected, onSelect, focus, resetNonc
         screenSpacePanning={false}
         enablePan={!inside}
       />
-      <CameraRig controls={controls} focus={focus} resetNonce={resetNonce} inside={inside} spot={spot} walk={walk} />
+      <CameraRig controls={controls} focus={focus} resetNonce={resetNonce} inside={inside} spot={spot} walk={walk} floor={floor} />
     </>
   );
 }
@@ -1237,6 +1266,8 @@ const ROOM = { x0: -19.8, x1: 27.05, z0: -21.51, z1: 10.69, h: 10.2 };
 const HALL_WALL_TOP = 4.5;
 /** The ceiling over the rest of the ground floor, just over its 3.2 m walls. */
 const FLOOR_CEILING = 3.3;
+/** Each floor's ceiling, just over its walls: 3.2 m above, 3 m in the basement. */
+const CEILING: Record<FloorKey, number> = { ground: FLOOR_CEILING, first: FLOOR_CEILING, basement: 3.1 };
 /** The stage wings have no tall wall in the drawing: closed in up to here. */
 const WING_END = { north: -11.0, south: -8.38 };
 
@@ -1249,14 +1280,24 @@ function inHall(x: number, z: number) {
   return x > ROOM.x0 && x < ROOM.x1 && z > ROOM.z0 && z < ROOM.z1;
 }
 
-function HallInterior() {
+/**
+ * From the first floor the hall is seen through glass: its walls at that
+ * level are windows onto it, under the solid wall above.
+ */
+function HallInterior({ gallery = false }: { gallery?: boolean }) {
   const { x0, x1, z0, z1, h } = ROOM;
   const w = x1 - x0;
   const d = z1 - z0;
   const cx = (x0 + x1) / 2;
   const cz = (z0 + z1) / 2;
   const R = 2.2;
-  const band = h - HALL_WALL_TOP;
+  const bands = gallery
+    ? [
+        { y0: HALL_WALL_TOP, y1: STOREY, glass: false },
+        { y0: STOREY, y1: STOREY + FLOOR_CEILING, glass: true },
+        { y0: STOREY + FLOOR_CEILING, y1: h, glass: false },
+      ]
+    : [{ y0: HALL_WALL_TOP, y1: h, glass: false }];
 
   // Seven arches across the hall, each a cream band edged both sides in
   // warm light, running just under the lowered ceiling and framing it.
@@ -1311,19 +1352,33 @@ function HallInterior() {
   const southWing = WING_END.south - x0;
   return (
     <group>
-      {/* the band of wall above the drawing's walls, all four sides */}
-      <mesh position={[cx, HALL_WALL_TOP + band / 2, z0]}>
-        <planeGeometry args={[w, band]} />
-        {wall}
-      </mesh>
-      <mesh position={[cx, HALL_WALL_TOP + band / 2, z1]}>
-        <planeGeometry args={[w, band]} />
-        {wall}
-      </mesh>
-      <mesh position={[x1, HALL_WALL_TOP + band / 2, cz]} rotation-y={Math.PI / 2}>
-        <planeGeometry args={[d, band]} />
-        {wall}
-      </mesh>
+      {/* the wall above the drawing's walls on three sides, or glass at
+          first-floor level when seen from there */}
+      {bands.map((b) => {
+        const bh = b.y1 - b.y0;
+        const y = b.y0 + bh / 2;
+        const mat = b.glass ? (
+          <meshPhysicalMaterial color={GLASS} transparent opacity={0.22} roughness={0.05} depthWrite={false} side={THREE.DoubleSide} />
+        ) : (
+          wall
+        );
+        return (
+          <group key={b.y0}>
+            <mesh position={[cx, y, z0]}>
+              <planeGeometry args={[w, bh]} />
+              {mat}
+            </mesh>
+            <mesh position={[cx, y, z1]}>
+              <planeGeometry args={[w, bh]} />
+              {mat}
+            </mesh>
+            <mesh position={[x1, y, cz]} rotation-y={Math.PI / 2}>
+              <planeGeometry args={[d, bh]} />
+              {mat}
+            </mesh>
+          </group>
+        );
+      })}
       {/* the stage wall, full height, and the wings either side of the stage */}
       <mesh position={[x0, h / 2, cz]} rotation-y={Math.PI / 2}>
         <planeGeometry args={[d, h]} />
@@ -1384,7 +1439,7 @@ function HallInterior() {
  * A ceiling over the rest of the ground floor, open over the hall, with its
  * downlights: walking out of the hall, you are indoors still.
  */
-function FloorCeiling() {
+function FloorCeiling({ y = FLOOR_CEILING, hole = true }: { y?: number; hole?: boolean }) {
   const geo = useMemo(() => {
     const W = SCENE.extent.w / 2;
     const D = SCENE.extent.d / 2;
@@ -1395,7 +1450,7 @@ function FloorCeiling() {
       new THREE.Vector2(-W, D),
     ]);
     // Shape y is world -z once laid flat.
-    s.holes.push(
+    if (hole) s.holes.push(
       new THREE.Path([
         new THREE.Vector2(ROOM.x0, -ROOM.z0),
         new THREE.Vector2(ROOM.x0, -ROOM.z1),
@@ -1406,7 +1461,7 @@ function FloorCeiling() {
     const g = new THREE.ShapeGeometry(s);
     g.rotateX(-Math.PI / 2);
     return g;
-  }, []);
+  }, [hole]);
 
   const spots = useMemo(() => {
     const out: [number, number][] = [];
@@ -1414,29 +1469,29 @@ function FloorCeiling() {
     const D = SCENE.extent.d / 2;
     for (let x = -W + 2; x < W - 1; x += 3.6) {
       for (let z = -D + 2; z < D - 1; z += 3.6) {
-        if (!inHall(x, z)) out.push([x, z]);
+        if (!hole || !inHall(x, z)) out.push([x, z]);
       }
     }
     return out;
-  }, []);
+  }, [hole]);
   const ref = useRef<THREE.InstancedMesh>(null);
   useLayoutEffect(() => {
     const m = ref.current;
     if (!m) return;
     const o = new THREE.Object3D();
     spots.forEach(([x, z], i) => {
-      o.position.set(x, FLOOR_CEILING - 0.01, z);
+      o.position.set(x, y - 0.01, z);
       o.rotation.set(Math.PI / 2, 0, 0);
       o.updateMatrix();
       m.setMatrixAt(i, o.matrix);
     });
     m.instanceMatrix.needsUpdate = true;
     m.computeBoundingSphere();
-  }, [spots]);
+  }, [spots, y]);
 
   return (
     <>
-      <mesh geometry={geo} position={[0, FLOOR_CEILING, 0]}>
+      <mesh geometry={geo} position={[0, y, 0]}>
         {/* lit from below by its lamps, not dark against the sun above it */}
         <meshStandardMaterial color="#EEEAE2" emissive="#EEEAE2" emissiveIntensity={0.55} roughness={0.95} side={THREE.DoubleSide} />
       </mesh>
@@ -1478,7 +1533,8 @@ function FloorWalk({ onWalk }: { onWalk: (steps: Walk["steps"]) => void }) {
           .intersectObjects(scene.children, true)
           .find((h) => !h.object.userData.ghost && (h.object as THREE.Mesh).isMesh && h.object.visible);
         if (!first) return;
-        const ok = first.object.userData.walkable || first.point.y < 0.3;
+        // Floor of this storey only: not the hall seen below from upstairs.
+        const ok = first.point.y > -0.3 && (first.object.userData.walkable || first.point.y < 0.3);
         if (!ok) return;
         const x = first.point.x;
         const z = first.point.z;
@@ -2334,6 +2390,7 @@ function CameraRig({
   inside,
   spot,
   walk,
+  floor,
 }: {
   controls: React.RefObject<OrbitControlsImpl | null>;
   focus: CanvasProps["focus"];
@@ -2341,6 +2398,7 @@ function CameraRig({
   inside: boolean;
   spot: number;
   walk: Walk | null;
+  floor: FloorKey;
 }) {
   const { camera, size, invalidate } = useThree();
   const flight = useRef<{
@@ -2455,7 +2513,8 @@ function CameraRig({
   useEffect(() => {
     if (resetNonce === 0) return;
     if (inside) {
-      const v = INSIDE_VIEWS[spot] ?? INSIDE_VIEWS[0];
+      const views = INSIDE_VIEWS[floor];
+      const v = views[spot] ?? views[0];
       fly(new THREE.Vector3(...v.pos), new THREE.Vector3(...v.look));
       return;
     }
@@ -2467,6 +2526,7 @@ function CameraRig({
   // Stepping in: a closer near plane, for chairs at arm's length, and off to
   // the chosen spot. Stepping out: back to the whole venue.
   const wasInside = useRef(inside);
+  const wasFloor = useRef(floor);
   useEffect(() => {
     const cam = camera as THREE.PerspectiveCamera;
     // A wider lens in the room, as the eye has: on a phone held upright the
@@ -2475,12 +2535,13 @@ function CameraRig({
     cam.near = inside ? 0.1 : 0.5;
     cam.updateProjectionMatrix();
     if (inside) {
-      const v = INSIDE_VIEWS[spot] ?? INSIDE_VIEWS[0];
+      const views = INSIDE_VIEWS[floor];
+      const v = views[spot] ?? views[0];
       const to = new THREE.Vector3(...v.pos);
       const look = new THREE.Vector3(...v.look);
-      if (!wasInside.current) {
-        // From outside, appear at the spot at once: a flight from the sky
-        // would pass through the roof.
+      if (!wasInside.current || wasFloor.current !== floor) {
+        // From outside, or by the lift from another floor, appear at the
+        // spot at once: a flight would pass through a roof or a slab.
         camera.position.copy(to);
         controls.current?.target.copy(to).addScaledVector(look.sub(to).normalize(), EYE_REACH);
         controls.current?.update();
@@ -2498,8 +2559,9 @@ function CameraRig({
       invalidate();
     }
     wasInside.current = inside;
+    wasFloor.current = floor;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inside, spot]);
+  }, [inside, spot, floor]);
 
   useEffect(() => {
     if (!focus) return;
@@ -2538,12 +2600,12 @@ function CameraRig({
       // In the hall, up to its high ceiling; out on the floor, under its
       // low one and within the building.
       const p = camera.position;
-      if (inHall(p.x, p.z)) {
+      if (floor === "ground" && inHall(p.x, p.z)) {
         p.y = THREE.MathUtils.clamp(p.y, 1, ROOM.h - 1.2);
       } else {
         p.x = THREE.MathUtils.clamp(p.x, -SCENE.extent.w / 2 + 1, SCENE.extent.w / 2 - 1);
         p.z = THREE.MathUtils.clamp(p.z, -SCENE.extent.d / 2 + 1, SCENE.extent.d / 2 - 1);
-        p.y = THREE.MathUtils.clamp(p.y, 1, FLOOR_CEILING - 0.4);
+        p.y = THREE.MathUtils.clamp(p.y, 1, CEILING[floor] - 0.4);
       }
     }
     const f = flight.current;

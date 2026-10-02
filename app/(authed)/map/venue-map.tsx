@@ -201,8 +201,9 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
         </div>
 
         {/* Floors, top to bottom as a lift panel reads, and the drawing
-            behind them as a layer to switch on. */}
-        <div className={`absolute right-3 top-16 z-10 flex-col items-center gap-2 ${inside ? "hidden" : "flex"}`}>
+            behind them as a layer to switch on. Inside, the panel is the
+            lift: it takes you up or down to that floor. */}
+        <div className="absolute right-3 top-16 z-10 flex flex-col items-center gap-2">
           <div className="flex flex-col overflow-hidden rounded-2xl border border-white/70 bg-white/95 shadow-[0_4px_14px_rgba(15,23,42,0.12)]">
             {[...FLOOR_ORDER].reverse().map((f) => (
               <button
@@ -210,6 +211,7 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
                 type="button"
                 onClick={() => {
                   setFloor(f);
+                  setSpot(0);
                   setSelected(null);
                 }}
                 aria-label={`${FLOOR_NAMES[f]} floor`}
@@ -226,6 +228,7 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
           </div>
           <button
             type="button"
+            hidden={inside}
             onClick={() => setShowPlan((v) => !v)}
             aria-label={showPlan ? "Hide the floor plan" : "Show the floor plan"}
             aria-pressed={showPlan}
@@ -247,7 +250,7 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
         >
           {[
             { on: false, label: "Roof open" },
-            { on: true, label: "Inside hall" },
+            { on: true, label: "Inside" },
           ].map((v) => (
             <button
               key={v.label}
@@ -256,7 +259,7 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
               aria-checked={inside === v.on}
               onClick={() => {
                 setSelected(null);
-                if (v.on) setFloor("ground");
+                setSpot(0);
                 setInside(v.on);
               }}
               className={
@@ -273,7 +276,7 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
         {/* which floor this is, where a lift would say it */}
         {inside ? (
           <p className="pointer-events-none absolute left-3 top-[100px] z-10 rounded-full bg-white/95 px-3 py-1 text-[12px] font-semibold text-brand-900 shadow-sm">
-            Tap the floor or a door to walk · drag to look
+            {FLOOR_NAMES[floor]} floor · tap {floor === "ground" ? "the floor or a door" : "the floor"} to walk · drag to look
           </p>
         ) : (
           <p className="pointer-events-none absolute left-3 top-[100px] z-10 rounded-full bg-white/95 px-3 py-1 text-[12px] font-semibold text-brand-900 shadow-sm">
@@ -295,7 +298,7 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
         {/* where to stand, inside */}
         {inside ? (
           <div className="no-scrollbar absolute inset-x-0 bottom-2 z-10 flex gap-1.5 overflow-x-auto px-3">
-            {INSIDE_VIEWS.map((v, i) => (
+            {INSIDE_VIEWS[floor].map((v, i) => (
               <button
                 key={v.name}
                 type="button"

@@ -513,12 +513,31 @@ export const ZONE_NAMES: Record<StallZone, string> = {
 };
 
 /**
- * Where to stand inside the main hall with its roof on, and what to look at
- * from there: metres in the 3D scene's frame.
+ * Where to stand inside, floor by floor, with the roof on, and what to look
+ * at from there: metres in the 3D scene's frame, eye height over the floor.
  */
-export const INSIDE_VIEWS: readonly { name: string; pos: [number, number, number]; look: [number, number, number] }[] = [
-  { name: "Back of hall", pos: [25.5, 3.4, -4.5], look: [-15, 3.2, -2.6] },
-  { name: "Middle", pos: [9, 1.7, 3.5], look: [-15, 3, -2.6] },
-  { name: "Front row", pos: [-6.4, 1.25, -7.5], look: [-16, 3.2, -2.6] },
-  { name: "On stage", pos: [-13.2, 2.75, -2.6], look: [20, 2.2, -5.6] },
-];
+export interface InsideView {
+  name: string;
+  pos: [number, number, number];
+  look: [number, number, number];
+}
+
+export const INSIDE_VIEWS: Record<FloorKey, readonly InsideView[]> = {
+  ground: [
+    { name: "Back of hall", pos: [25.5, 3.4, -4.5], look: [-15, 3.2, -2.6] },
+    { name: "Middle", pos: [9, 1.7, 3.5], look: [-15, 3, -2.6] },
+    { name: "Front row", pos: [-6.4, 1.25, -7.5], look: [-16, 3.2, -2.6] },
+    { name: "On stage", pos: [-13.2, 2.75, -2.6], look: [20, 2.2, -5.6] },
+  ],
+  first: [
+    { name: "Hall from above", pos: [6.85, 1.6, -21.05], look: [6.85, -4.2, -11] },
+    { name: "Board room 1", pos: [-31.6, 1.6, -11.86], look: [-46, 1.1, -11.86] },
+    { name: "Board room 2", pos: [-31.6, 1.6, -4.91], look: [-46, 1.1, -4.91] },
+    { name: "Reception", pos: [31.5, 1.6, 9], look: [31.5, 1.5, -6] },
+  ],
+  basement: [
+    { name: "Car park", pos: [-6, 1.6, -4.5], look: [20, 1.3, -4.5] },
+    { name: "From the lifts", pos: [-38.5, 1.6, 7], look: [-10, 1.3, 0] },
+    { name: "Ramp up", pos: [43.2, 1.6, 16], look: [43.2, 1.8, -6] },
+  ],
+};
