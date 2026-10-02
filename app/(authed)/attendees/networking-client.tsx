@@ -369,15 +369,10 @@ export function NetworkingClient({
         ) : null}
       </div>
 
-      {/* Signed in but nothing to match on yet: say what would fix that,
-          above the people we can show meanwhile. With a few real matches
-          only, a lighter nudge to add more. */}
-      {tab === "foryou" && userId ? (
-        !canMatch ? (
-          <AddInterestsCard />
-        ) : recommended.filter((r) => r.matchReasons.length > 0).length < 3 ? (
-          <AddInterestsCard slim />
-        ) : null
+      {/* Signed in with nothing (or next to nothing) to match on: what
+          would fix it, above the people we can show meanwhile. */}
+      {tab === "foryou" && userId && (!canMatch || recommended.filter((r) => r.matchReasons.length > 0).length < 3) ? (
+        <AddInterestsCard />
       ) : null}
 
       {/* List */}
@@ -447,44 +442,24 @@ export function NetworkingClient({
 }
 
 /**
- * The way to better matches: interests, what you're looking for and what you
- * can offer, which is all the matching has to go on.
+ * The way to better matches, in the app's own empty-state manner: its
+ * illustration, one line, and the button that does it.
  */
-function AddInterestsCard({ slim = false }: { slim?: boolean }) {
-  if (slim) {
-    return (
-      <Link
-        href="/me/edit#interests"
-        className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-brand-800/15 bg-brand-50/60 px-3.5 py-3 text-[13px] text-brand-950 transition-colors hover:bg-brand-50"
-      >
-        <span>Add a few more interests for sharper matches.</span>
-        <span className="shrink-0 font-semibold text-brand-800">Add interests</span>
-      </Link>
-    );
-  }
+function AddInterestsCard() {
   return (
-    <div className="relative mb-4 overflow-hidden rounded-xl bg-[#14125A] p-4 text-white shadow-[0_10px_28px_-18px_rgba(20,18,90,0.9)] sm:p-5">
-      {/* the matching, drawn: three people, two of them joined */}
-      <svg aria-hidden viewBox="0 0 120 80" className="absolute -right-3 -top-2 h-24 w-36 opacity-25">
-        <g fill="none" stroke="white" strokeWidth="1.6">
-          <circle cx="24" cy="40" r="11" />
-          <circle cx="96" cy="22" r="11" />
-          <circle cx="92" cy="62" r="11" />
-          <path d="M35 37 85 25M35 43l46 16" strokeDasharray="3 4" />
-        </g>
-      </svg>
-      <h2 className="relative text-[17px] font-semibold leading-tight">Add your interests to get matched</h2>
-      <p className="relative mt-1.5 max-w-[42ch] text-[13px] leading-snug text-white/80">
-        Pick what you work on and what you&apos;re looking for. We&apos;ll line up people with the same
-        interests, and people who can help with what you need.
-      </p>
-      <Link
-        href="/me/edit#interests"
-        className="relative mt-3.5 inline-flex h-10 items-center rounded-md bg-white px-4 text-[13px] font-semibold text-[#14125A] transition-colors hover:bg-white/90"
-      >
-        Add interests
-      </Link>
-      <p className="relative mt-3 text-[11.5px] text-white/60">Meanwhile, some people worth meeting:</p>
+    <div className="mb-3 flex items-center gap-3.5 rounded-lg border border-rule bg-white p-3.5">
+      <EmptyArt name="empty-profile" className="size-14" />
+      <div className="min-w-0 flex-1">
+        <p className="text-[13.5px] leading-snug text-brand-950">
+          Start getting recommendations based on your interests.
+        </p>
+        <Link
+          href="/me/edit#interests"
+          className="mt-2.5 inline-flex h-9 items-center rounded-md bg-brand-800 px-4 text-[13px] font-medium text-white transition-colors hover:bg-brand-900"
+        >
+          Add interests
+        </Link>
+      </div>
     </div>
   );
 }
