@@ -1,4 +1,6 @@
 import Image from "next/image";
+import { ManageStall } from "./manage-stall";
+import { rethrowIfRedirect } from "@/lib/redirect";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Store, ExternalLink, MapPin } from "@/components/icons";
@@ -41,6 +43,10 @@ export default async function ExhibitorDetailPage({
   const { id } = await params;
   let exhibitor: ExhibitorDetail | null = null;
   let team: TeamRow[] = [];
+  // The viewer's own place at this stall, if they have one, and its
+  // access list for the owner's team panel.
+  let myRole: "owner" | "member" | null = null;
+  let access: { email: string; role: "owner" | "member" }[] = [];
 
   try {
     const supabase = await createClient();
@@ -62,7 +68,23 @@ export default async function ExhibitorDetailPage({
       .order("display_order", { ascending: true })
       .order("full_name", { ascending: true });
     team = (t as TeamRow[] | null) ?? [];
-  } catch {
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const email = user?.email?.toLowerCase();
+    if (email) {
+      const { data: acc } = await supabase
+        .from("exhibitor_access")
+        .select("email, role")
+        .eq("exhibitor_id", id)
+        .order("role", { ascending: false })
+        .order("email", { ascending: true });
+      access = (acc as typeof access | null) ?? [];
+      myRole = access.find((a) => a.email === email)?.role ?? null;
+    }
+  } catch (err) {
+    rethrowIfRedirect(err);
     notFound();
   }
 
@@ -70,6 +92,21 @@ export default async function ExhibitorDetailPage({
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4 pb-12">
+      {myRole ? (
+        <ManageStall
+          id={exhibitor.id}
+          role={myRole}
+          team={access}
+          initial={{
+            name: exhibitor.name,
+            tagline: exhibitor.tagline ?? "",
+            about: exhibitor.about ?? "",
+            website: exhibitor.website ?? "",
+            category: exhibitor.category ?? "",
+            logo_url: exhibitor.logo_url ?? "",
+          }}
+        />
+      ) : null}
       {/* Cover + logo */}
       <section className="overflow-hidden rounded-lg border border-rule bg-white">
         {exhibitor.cover_url ? (

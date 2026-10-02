@@ -153,6 +153,9 @@ export interface ExhibitorInput {
   website: string;
   logo_url: string;
   is_published: boolean;
+  /** Who runs the stall: signed in with this email they edit it and add
+   *  their team. Empty leaves it with the organisers alone. */
+  owner_email: string;
 }
 
 export async function saveExhibitor(input: ExhibitorInput): Promise<AdminResult> {
@@ -178,8 +181,21 @@ export async function saveExhibitor(input: ExhibitorInput): Promise<AdminResult>
     ? await ctx.supabase.from("exhibitors").update(row).eq("id", input.id).select("id").single()
     : await ctx.supabase.from("exhibitors").insert(row).select("id").single();
   if (error) return { error: error.message };
+  const id = (data as { id: string }).id;
+
+  // One owner per stall: the email given replaces whoever it was before.
+  const owner = input.owner_email.trim().toLowerCase();
+  if (owner && !EMAIL.test(owner)) return { error: "The owner email does not look right." };
+  await ctx.supabase.from("exhibitor_access").delete().eq("exhibitor_id", id).eq("role", "owner");
+  if (owner) {
+    await ctx.supabase.from("exhibitor_access").delete().eq("exhibitor_id", id).eq("email", owner);
+    const { error: oErr } = await ctx.supabase
+      .from("exhibitor_access")
+      .insert({ exhibitor_id: id, email: owner, role: "owner", added_by: ctx.user.id });
+    if (oErr) return { error: oErr.message };
+  }
   expoChanged();
-  return { ok: true, id: (data as { id: string }).id };
+  return { ok: true, id };
 }
 
 export async function deleteExhibitor(id: string): Promise<AdminResult> {

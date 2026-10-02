@@ -16,6 +16,8 @@ export interface AdminStall {
   website: string | null;
   logo_url: string | null;
   is_published: boolean | null;
+  /** Signed in with this email, they edit the stall and add their team. */
+  owner_email?: string | null;
 }
 
 const FIELD =
@@ -33,6 +35,7 @@ function toInput(s?: AdminStall): ExhibitorInput {
     website: s?.website ?? "",
     logo_url: s?.logo_url ?? "",
     is_published: s ? !!s.is_published : true,
+    owner_email: s?.owner_email ?? "",
   };
 }
 
@@ -221,6 +224,16 @@ function StallEditor({ s, onDone }: { s?: AdminStall; onDone: () => void }) {
           onChange={(e) => set("about", e.target.value)}
           rows={3}
           className="w-full rounded-md border border-rule bg-white px-3 py-2 text-[14px] text-brand-950 outline-none focus:border-brand-300"
+        />
+      </Labelled>
+      <Labelled label="Owner email (they can edit this stall and add their team)">
+        <input
+          type="email"
+          inputMode="email"
+          value={f.owner_email}
+          onChange={(e) => set("owner_email", e.target.value)}
+          placeholder="founder@company.com"
+          className={FIELD}
         />
       </Labelled>
       <Labelled label="Website">

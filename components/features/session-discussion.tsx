@@ -1,4 +1,5 @@
 import { getViewer } from "@/lib/viewer";
+import { getMyExhibitors } from "@/lib/exhibitor-access";
 import { DiscussClient } from "@/app/(authed)/discuss/discuss-client";
 import { RealtimeRefresh } from "@/components/features/realtime-refresh";
 import { loadPosts } from "@/app/(authed)/discuss/load-posts";
@@ -31,6 +32,7 @@ export async function SessionDiscussion({ sessionId }: { sessionId: string }) {
         errored={errored}
         sessionId={sessionId}
         isAdmin={(await getViewer()).isAdmin}
+        myExhibitors={await getMyExhibitors()}
       />
     </>
   );

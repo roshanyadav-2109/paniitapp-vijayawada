@@ -1,4 +1,5 @@
 import { LoginCta } from "@/components/features/login-cta";
+import { getMyExhibitors } from "@/lib/exhibitor-access";
 import { RealtimeRefresh } from "@/components/features/realtime-refresh";
 import { getViewer, isSignedIn } from "@/lib/viewer";
 import { emptied } from "@/lib/dev-empty";
@@ -48,6 +49,7 @@ export default async function DiscussPage() {
         userId={userId}
         errored={errored}
         isAdmin={(await getViewer()).isAdmin}
+        myExhibitors={await getMyExhibitors()}
       />
     </div>
   );

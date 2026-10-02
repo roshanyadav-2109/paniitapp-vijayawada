@@ -72,6 +72,9 @@ export interface PostRow {
   kind: "text" | "poll";
   /** Posted by an admin under the summit team's name. */
   as_team?: boolean | null;
+  /** Posted as an exhibitor: the company shows, and links to its page. */
+  as_exhibitor_id?: string | null;
+  exhibitor?: PostExhibitor | PostExhibitor[] | null;
   /** Cloudinary URL of an attached photo or clip, and which it is. */
   media_url: string | null;
   media_type: "image" | "video" | null;
@@ -132,6 +135,7 @@ export function DiscussClient({
   errored,
   sessionId,
   isAdmin = false,
+  myExhibitors = [],
 }: {
   posts: PostRow[];
   likedIds: string[];
@@ -142,6 +146,8 @@ export function DiscussClient({
   isAdmin?: boolean;
   /** A session's own discussion, on its page; none for the Discuss feed. */
   sessionId?: string;
+  /** Stalls the viewer runs or works on: they can post as these. */
+  myExhibitors?: PostAsExhibitor[];
 }) {
   const liked = useMemo(() => new Set(likedIds), [likedIds]);
 
@@ -160,7 +166,7 @@ export function DiscussClient({
           Log in to join the discussion
         </button>
       ) : (
-        <Composer sessionId={sessionId} isAdmin={isAdmin} />
+        <Composer sessionId={sessionId} isAdmin={isAdmin} myExhibitors={myExhibitors} />
       )}
 
       {errored ? (
@@ -200,13 +206,25 @@ export function DiscussClient({
 /* Composer                                                            */
 /* ------------------------------------------------------------------ */
 
-function Composer({ sessionId, isAdmin = false }: { sessionId?: string; isAdmin?: boolean }) {
+function Composer({
+  sessionId,
+  isAdmin = false,
+  myExhibitors = [],
+}: {
+  sessionId?: string;
+  isAdmin?: boolean;
+  myExhibitors?: PostAsExhibitor[];
+}) {
   const router = useRouter();
   const { toast } = useToast();
   const [body, setBody] = useState("");
   const [isPoll, setIsPoll] = useState(false);
   // Admins pick, per post, whose name it goes out under.
-  const [asTeam, setAsTeam] = useState(true);
+  // Whose name the post goes out under: "me", "team" (admins) or a stall's
+  // id. Admins start on the team, exhibitors on their stall.
+  const [postAs, setPostAs] = useState<string>(
+    isAdmin ? "team" : myExhibitors[0]?.id ?? "me"
+  );
   const [options, setOptions] = useState<string[]>(["", ""]);
   const [pending, startTransition] = useTransition();
   const [media, setMedia] = useState<UploadedMedia | null>(null);
@@ -256,7 +274,8 @@ function Composer({ sessionId, isAdmin = false }: { sessionId?: string; isAdmin?
         isPoll ? options : undefined,
         media ?? undefined,
         sessionId,
-        isAdmin && asTeam
+        isAdmin && postAs === "team",
+        postAs !== "me" && postAs !== "team" ? postAs : undefined
       );
       if ("error" in res) {
         toast({ title: "Could not post", description: res.error, variant: "destructive" });
@@ -272,39 +291,26 @@ function Composer({ sessionId, isAdmin = false }: { sessionId?: string; isAdmin?
 
   return (
     <div className="rounded-lg border border-rule bg-white p-3">
-      {isAdmin ? (
-        <div role="radiogroup" aria-label="Post as" className="mb-2.5 flex items-center gap-1.5">
-          <span className="mr-0.5 text-[12px] text-brand-900/60">Post as</span>
-          <button
-            type="button"
-            role="radio"
-            aria-checked={asTeam}
-            onClick={() => setAsTeam(true)}
-            className={cn(
-              "inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-[12px] font-medium transition-colors",
-              asTeam
-                ? "border-brand-800 bg-brand-800 text-white"
-                : "border-rule bg-white text-brand-900 hover:bg-paper"
-            )}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={TEAM_LOGO} alt="" className="size-4 rounded-sm bg-white object-contain" />
-            {TEAM_NAME}
-          </button>
-          <button
-            type="button"
-            role="radio"
-            aria-checked={!asTeam}
-            onClick={() => setAsTeam(false)}
-            className={cn(
-              "inline-flex h-8 items-center rounded-full border px-2.5 text-[12px] font-medium transition-colors",
-              !asTeam
-                ? "border-brand-800 bg-brand-800 text-white"
-                : "border-rule bg-white text-brand-900 hover:bg-paper"
-            )}
-          >
+      {isAdmin || myExhibitors.length > 0 ? (
+        <div
+          role="radiogroup"
+          aria-label="Post as"
+          className="no-scrollbar -mx-3 mb-2.5 flex items-center gap-1.5 overflow-x-auto px-3"
+        >
+          <span className="mr-0.5 shrink-0 text-[12px] text-brand-900/60">Post as</span>
+          {isAdmin ? (
+            <PostAsChip on={postAs === "team"} onClick={() => setPostAs("team")} logo={TEAM_LOGO}>
+              {TEAM_NAME}
+            </PostAsChip>
+          ) : null}
+          {myExhibitors.map((x) => (
+            <PostAsChip key={x.id} on={postAs === x.id} onClick={() => setPostAs(x.id)} logo={x.logo_url}>
+              {x.name}
+            </PostAsChip>
+          ))}
+          <PostAsChip on={postAs === "me"} onClick={() => setPostAs("me")}>
             My name
-          </button>
+          </PostAsChip>
         </div>
       ) : null}
       <textarea
@@ -457,6 +463,50 @@ function Composer({ sessionId, isAdmin = false }: { sessionId?: string; isAdmin?
 
 const TEAM_NAME = "PanIIT AP Summit Team";
 
+interface PostExhibitor {
+  id: string;
+  name: string;
+  logo_url: string | null;
+  booth_number: string | null;
+}
+
+export interface PostAsExhibitor {
+  id: string;
+  name: string;
+  logo_url: string | null;
+}
+
+function PostAsChip({
+  on,
+  onClick,
+  logo,
+  children,
+}: {
+  on: boolean;
+  onClick: () => void;
+  logo?: string | null;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={on}
+      onClick={onClick}
+      className={cn(
+        "inline-flex h-8 max-w-[220px] shrink-0 items-center gap-1.5 rounded-full border px-2.5 text-[12px] font-medium transition-colors",
+        on ? "border-brand-800 bg-brand-800 text-white" : "border-rule bg-white text-brand-900 hover:bg-paper"
+      )}
+    >
+      {logo ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={logo} alt="" className="size-4 shrink-0 rounded-sm bg-white object-contain" />
+      ) : null}
+      <span className="truncate">{children}</span>
+    </button>
+  );
+}
+
 /** A link to the author's profile, or plain text where there is none to
  *  give (the summit team's posts). */
 function AuthorLink({
@@ -519,6 +569,10 @@ function PostCard({
   // An admin's post goes out under the summit team's name and mark when
   // they chose that while posting; otherwise under their own name.
   const team = !!post.as_team && (a?.role === "organizer" || a?.role === "admin");
+  // Posted as a stall: its logo and name, leading to its page.
+  const stall = post.as_exhibitor_id
+    ? (Array.isArray(post.exhibitor) ? post.exhibitor[0] : post.exhibitor) ?? null
+    : null;
   const isMine = userId != null && post.author_id === userId;
   const canDelete = isMine || isAdmin;
   // Deleting takes two taps: the first turns the bin into a red Delete.
@@ -567,11 +621,22 @@ function PostCard({
       <div className="flex items-start gap-2.5">
         {/* The team's posts lead nowhere: tapping the mark or the name must
             not open the profile of the admin who wrote it. */}
-        <AuthorLink href={team ? null : `/attendees/${post.author_id}`} className="shrink-0">
+        <AuthorLink
+          href={stall ? `/exhibitors/${stall.id}` : team ? null : `/attendees/${post.author_id}`}
+          className="shrink-0"
+        >
           {/* Square, as on the networking cards: at this size a circle crops
               the top of a head off every portrait. */}
           <Avatar className="size-9 rounded-md ring-1 ring-rule">
-            {team ? (
+            {stall ? (
+              stall.logo_url ? (
+                <AvatarImage
+                  src={stall.logo_url}
+                  alt={stall.name}
+                  className="rounded-md bg-white object-contain p-0.5"
+                />
+              ) : null
+            ) : team ? (
               <AvatarImage
                 src={TEAM_LOGO}
                 alt={TEAM_NAME}
@@ -592,13 +657,13 @@ function PostCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <AuthorLink
-              href={team ? null : `/attendees/${post.author_id}`}
+              href={stall ? `/exhibitors/${stall.id}` : team ? null : `/attendees/${post.author_id}`}
               className={cn(
                 "truncate text-[13px] font-semibold text-brand-950",
                 !team && "hover:underline"
               )}
             >
-              {team ? TEAM_NAME : a?.full_name ?? "Attendee"}
+              {stall ? stall.name : team ? TEAM_NAME : a?.full_name ?? "Attendee"}
             </AuthorLink>
             {team ? (
               <VerifiedTick />
@@ -609,7 +674,11 @@ function PostCard({
               </span>
             ) : null}
           </div>
-          {team ? (
+          {stall ? (
+            <p className="truncate text-[11px] text-brand-950">
+              Exhibitor{stall.booth_number ? ` · Stall ${stall.booth_number}` : ""}
+            </p>
+          ) : team ? (
             <p className="truncate text-[11px] text-brand-950">Organiser</p>
           ) : a?.designation || a?.company ? (
             <p className="truncate text-[11px] text-brand-950">

@@ -31,8 +31,12 @@ export async function createPost(
   sessionId?: string,
   /** Admins only: post under the summit team's name and mark. The
    *  database drops it for anyone else (0029_post_as_team.sql). */
-  asTeam = false
+  asTeam = false,
+  /** Post as this exhibitor; the database drops it for anyone who is not
+   *  on that stall's team (0030_exhibitor_access.sql). */
+  asExhibitorId?: string
 ): Promise<ActionResult> {
+  if (asExhibitorId && !z.string().uuid().safeParse(asExhibitorId).success) return { error: "invalid" };
   if (sessionId && !z.string().uuid().safeParse(sessionId).success) return { error: "invalid" };
   const cleaned = (options ?? []).map((o) => o.trim()).filter(Boolean);
   const parsed = PostSchema.safeParse({ body, options: cleaned, media });
@@ -69,6 +73,7 @@ export async function createPost(
     kind: isPoll ? "poll" : "text",
     ...(sessionId ? { session_id: sessionId } : {}),
     ...(asTeam ? { as_team: true } : {}),
+    ...(asExhibitorId ? { as_exhibitor_id: asExhibitorId } : {}),
     ...(attachment
       ? { media_url: attachment.url, media_type: attachment.type }
       : {}),
