@@ -211,14 +211,14 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
         <div ref={setLabelLayer} className="pointer-events-none absolute inset-0 z-[5] overflow-hidden" />
 
         {/* search */}
-        <div className="absolute inset-x-3 top-3 z-20 flex gap-2 sm:left-4 sm:right-auto sm:w-[480px]">
+        <div className="absolute inset-x-3 top-3 z-20 flex gap-2 sm:left-4 sm:right-auto sm:w-[520px]">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-brand-900/45" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Find a stall or a company"
-              className="h-10 w-full min-w-0 rounded-full border border-white/70 bg-white/95 pl-9 pr-3 text-[16px] text-brand-950 shadow-[0_4px_14px_rgba(15,23,42,0.12)] outline-none placeholder:text-brand-900/45 focus:border-brand-300 sm:text-[14px]"
+              placeholder="Search stalls"
+              className="h-10 w-full min-w-0 rounded-full border border-white/70 bg-white/95 pl-9 pr-3 text-[16px] text-brand-950 shadow-[0_4px_14px_rgba(15,23,42,0.12)] outline-none placeholder:text-brand-900/50 focus:border-brand-300"
             />
             {matches.length > 0 ? (
               <ul className="absolute inset-x-0 top-11 overflow-hidden rounded-xl border border-rule bg-white shadow-lg">
@@ -274,8 +274,8 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
                 }}
                 className={
                   inside === v.on
-                    ? "h-8 rounded-full bg-brand-800 px-3 text-[12.5px] font-medium text-white"
-                    : "h-8 rounded-full px-3 text-[12.5px] font-medium text-brand-900"
+                    ? "h-8 rounded-full bg-brand-800 px-3.5 text-[14.5px] font-medium text-white"
+                    : "h-8 rounded-full px-3.5 text-[14.5px] font-medium text-brand-900"
                 }
               >
                 {v.label}
