@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { Environment, Lightformer, OrbitControls, useTexture } from "@react-three/drei";
 import * as THREE from "three";
@@ -176,15 +176,35 @@ function ShadowsOnce({ floor, inside = false }: { floor: FloorKey; inside?: bool
 function Scene({ floor, showPlan, occupied, selected, onSelect, focus, resetNonce, labelLayer, inside, spot }: CanvasProps) {
   const controls = useRef<OrbitControlsImpl | null>(null);
   const data = SCENE.floors[floor];
+  const [walk, setWalk] = useState<Walk | null>(null);
 
   return (
     <>
       {inside ? (
-        // The hall alone, roof on: nothing outside it can be seen from in here.
+        // Roof on: the hall closed in, and the floor round it under its
+        // ceiling, its doors open to walk through.
         <>
-          <HallInterior />
+          <Outside floor="ground" />
+          <Slabs floor="ground" />
+          <Rooms floor="ground" />
+          <Walls floor="ground" />
+          <Columns floor="ground" />
           <Hall ribs={false} />
           <Stage />
+          {STALLS.map((s) => (
+            <Booth
+              key={s.code}
+              stall={s}
+              holder={occupied[s.code] ?? null}
+              selected={selected === s.code}
+              onSelect={onSelect}
+            />
+          ))}
+          <Backdrops />
+          <HallInterior />
+          <FloorCeiling />
+          <Doors onWalk={(steps) => setWalk({ steps, nonce: Date.now() })} />
+          <FloorWalk onWalk={(steps) => setWalk({ steps, nonce: Date.now() })} />
         </>
       ) : (
         <>
@@ -239,16 +259,20 @@ function Scene({ floor, showPlan, occupied, selected, onSelect, focus, resetNonc
         makeDefault
         enableDamping
         dampingFactor={0.12}
-        minDistance={inside ? 1 : 8}
-        maxDistance={inside ? 42 : 480}
+        // Inside, the camera turns about a point just in front of it: a drag
+        // looks around from where you stand, and you move by tapping.
+        minDistance={inside ? EYE_REACH : 8}
+        maxDistance={inside ? EYE_REACH : 480}
+        enableZoom={!inside}
+        rotateSpeed={inside ? 0.45 : 1}
         // Outside: never below the floor, never flat on it, as a plan seen
         // edge-on is a line. Inside: low enough to look up at the ceiling.
-        minPolarAngle={inside ? 0.25 : 0.08}
-        maxPolarAngle={inside ? Math.PI * 0.62 : Math.PI / 2.25}
+        minPolarAngle={inside ? 0.3 : 0.08}
+        maxPolarAngle={inside ? Math.PI * 0.78 : Math.PI / 2.25}
         screenSpacePanning={false}
         enablePan={!inside}
       />
-      <CameraRig controls={controls} focus={focus} resetNonce={resetNonce} inside={inside} spot={spot} />
+      <CameraRig controls={controls} focus={focus} resetNonce={resetNonce} inside={inside} spot={spot} walk={walk} />
     </>
   );
 }
@@ -1000,7 +1024,7 @@ function Hall({ ribs = true }: { ribs?: boolean }) {
   return (
     <group>
       <FinishedFloor kind="carpet" x={c.x} z={c.z} w={c.w} d={c.d} y={0.02} colour={HALL_CARPET} />
-      <instancedMesh ref={seats} args={[chair, undefined, count]} castShadow receiveShadow>
+      <instancedMesh ref={seats} args={[chair, undefined, count]} castShadow receiveShadow userData={{ walkable: true }}>
         <meshStandardMaterial color={SEAT} roughness={0.8} />
       </instancedMesh>
       {ribs ? <HallRibs /> : null}
@@ -1204,10 +1228,26 @@ function Flowers({ at }: { at: { x: number; y: number; z: number; c: string }[] 
 
 /**
  * The hall closed in, as it is when you stand in it: double height, from the
- * stage wall to the back wall. Inside faces only, and none of it casts a
- * shadow, so the sun still lights the room as its lamps would.
+ * stage wall to the back wall. Its walls up to 4.5 m are the drawing's own,
+ * doorways and all; above them a band of wall runs up to the ceiling. None of
+ * it casts a shadow, so the sun still lights the room as its lamps would.
  */
-const ROOM = { x0: -19.8, x1: 27.4, z0: -21.6, z1: 10.7, h: 10.2 };
+const ROOM = { x0: -19.8, x1: 27.05, z0: -21.51, z1: 10.69, h: 10.2 };
+/** The drawing's hall walls stop at 4.5 m; the band above starts there. */
+const HALL_WALL_TOP = 4.5;
+/** The ceiling over the rest of the ground floor, just over its 3.2 m walls. */
+const FLOOR_CEILING = 3.3;
+/** The stage wings have no tall wall in the drawing: closed in up to here. */
+const WING_END = { north: -11.0, south: -8.38 };
+
+export interface Walk {
+  steps: { pos: [number, number, number]; look: [number, number, number] }[];
+  nonce: number;
+}
+
+function inHall(x: number, z: number) {
+  return x > ROOM.x0 && x < ROOM.x1 && z > ROOM.z0 && z < ROOM.z1;
+}
 
 function HallInterior() {
   const { x0, x1, z0, z1, h } = ROOM;
@@ -1216,12 +1256,12 @@ function HallInterior() {
   const cx = (x0 + x1) / 2;
   const cz = (z0 + z1) / 2;
   const R = 2.2;
+  const band = h - HALL_WALL_TOP;
 
-  // Seven arches across the hall, nearer together toward the stage as the
-  // ribs in the hall are, each a cream band edged both sides in warm light.
+  // Seven arches across the hall, each a cream band edged both sides in
+  // warm light, running just under the lowered ceiling and framing it.
   const ribXs = useMemo(() => [-8.5, -2.5, 3.5, 9.5, 15.5, 21, 26.2], []);
-  const { band, glow } = useMemo(() => {
-    // The arches run just under the lowered ceiling, framing it.
+  const { rib, glow } = useMemo(() => {
     const top = h - 0.75;
     const pts: THREE.Vector3[] = [];
     const push = (y: number, z: number) => pts.push(new THREE.Vector3(0, y, z));
@@ -1239,7 +1279,7 @@ function HallInterior() {
     push(0.05, z1 - 0.25);
     const path = new THREE.CatmullRomCurve3(pts, false, "centripetal");
     return {
-      band: new THREE.TubeGeometry(path, 240, 0.26, 4, false),
+      rib: new THREE.TubeGeometry(path, 240, 0.26, 4, false),
       glow: new THREE.TubeGeometry(path, 240, 0.045, 5, false),
     };
   }, [z0, z1, d, h]);
@@ -1266,30 +1306,43 @@ function HallInterior() {
     m.computeBoundingSphere();
   }, [downlights, h]);
 
-  // Doors along both long walls, between the arches, and over each its sign.
-  const doors = useMemo(() => {
-    const out: { x: number; z: number; turn: number }[] = [];
-    for (const x of [0.5, 12.5, 23.6]) {
-      out.push({ x, z: z0 + 0.02, turn: 0 });
-      out.push({ x, z: z1 - 0.02, turn: Math.PI });
-    }
-    return out;
-  }, [z0, z1]);
-
+  const wall = <meshStandardMaterial color="#E8DDC8" roughness={0.9} side={THREE.DoubleSide} />;
+  const northWing = WING_END.north - x0;
+  const southWing = WING_END.south - x0;
   return (
     <group>
-      {/* the room: inside faces only */}
-      <mesh position={[cx, h / 2 - 0.01, cz]}>
-        <boxGeometry args={[w, h + 0.02, d]} />
-        <meshStandardMaterial attach="material-0" color="#E6DAC3" roughness={0.9} side={THREE.BackSide} />
-        <meshStandardMaterial attach="material-1" color="#D6C8AE" roughness={0.9} side={THREE.BackSide} />
-        <meshStandardMaterial attach="material-2" color="#F1EBDF" roughness={0.95} side={THREE.BackSide} />
-        <meshStandardMaterial attach="material-3" color={HALL_CARPET} roughness={1} side={THREE.BackSide} />
-        <meshStandardMaterial attach="material-4" color="#E8DDC8" roughness={0.9} side={THREE.BackSide} />
-        <meshStandardMaterial attach="material-5" color="#E8DDC8" roughness={0.9} side={THREE.BackSide} />
+      {/* the band of wall above the drawing's walls, all four sides */}
+      <mesh position={[cx, HALL_WALL_TOP + band / 2, z0]}>
+        <planeGeometry args={[w, band]} />
+        {wall}
+      </mesh>
+      <mesh position={[cx, HALL_WALL_TOP + band / 2, z1]}>
+        <planeGeometry args={[w, band]} />
+        {wall}
+      </mesh>
+      <mesh position={[x1, HALL_WALL_TOP + band / 2, cz]} rotation-y={Math.PI / 2}>
+        <planeGeometry args={[d, band]} />
+        {wall}
+      </mesh>
+      {/* the stage wall, full height, and the wings either side of the stage */}
+      <mesh position={[x0, h / 2, cz]} rotation-y={Math.PI / 2}>
+        <planeGeometry args={[d, h]} />
+        <meshStandardMaterial color="#D6C8AE" roughness={0.9} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh position={[x0 + northWing / 2, HALL_WALL_TOP / 2, z0]}>
+        <planeGeometry args={[northWing, HALL_WALL_TOP]} />
+        {wall}
+      </mesh>
+      <mesh position={[x0 + southWing / 2, HALL_WALL_TOP / 2, z1]}>
+        <planeGeometry args={[southWing, HALL_WALL_TOP]} />
+        {wall}
       </mesh>
 
-      {/* the lowered ceiling between the arches, set with downlights */}
+      {/* the ceiling, and lowered between the arches, set with downlights */}
+      <mesh position={[cx, h, cz]} rotation-x={Math.PI / 2}>
+        <planeGeometry args={[w, d]} />
+        <meshStandardMaterial color="#F1EBDF" roughness={0.95} side={THREE.DoubleSide} />
+      </mesh>
       <mesh position={[cx + 1, h - 0.4, cz]} rotation-x={Math.PI / 2}>
         <planeGeometry args={[w - 6, d - 2 * R - 1.2]} />
         <meshStandardMaterial color="#F4EFE6" roughness={0.95} side={THREE.DoubleSide} />
@@ -1302,7 +1355,7 @@ function HallInterior() {
       {/* the arches */}
       {ribXs.map((x) => (
         <group key={x} position={[x, 0, 0]}>
-          <mesh geometry={band}>
+          <mesh geometry={rib}>
             <meshStandardMaterial color="#EFE5D0" roughness={0.6} />
           </mesh>
           {[-0.3, 0.3].map((dx) => (
@@ -1310,24 +1363,6 @@ function HallInterior() {
               <meshStandardMaterial color="#FFE9BE" emissive="#FFD58A" emissiveIntensity={1.8} toneMapped={false} />
             </mesh>
           ))}
-        </group>
-      ))}
-
-      {/* timber doors and green exit signs */}
-      {doors.map((dr) => (
-        <group key={`${dr.x}-${dr.z}`} position={[dr.x, 0, dr.z]} rotation-y={dr.turn}>
-          <mesh position={[0, 1.25, 0.03]}>
-            <boxGeometry args={[2, 2.5, 0.06]} />
-            <meshStandardMaterial color="#6B4A2E" roughness={0.55} />
-          </mesh>
-          <mesh position={[0, 1.25, 0.065]}>
-            <boxGeometry args={[0.03, 2.5, 0.01]} />
-            <meshStandardMaterial color="#3A2818" />
-          </mesh>
-          <mesh position={[0, 2.95, 0.06]}>
-            <boxGeometry args={[0.7, 0.24, 0.05]} />
-            <meshBasicMaterial color="#19B35A" toneMapped={false} />
-          </mesh>
         </group>
       ))}
 
@@ -1342,6 +1377,362 @@ function HallInterior() {
         <pointLight key={x} position={[x, h - 1.5, cz]} intensity={60} distance={0} decay={1.4} color="#FFE7C2" />
       ))}
     </group>
+  );
+}
+
+/**
+ * A ceiling over the rest of the ground floor, open over the hall, with its
+ * downlights: walking out of the hall, you are indoors still.
+ */
+function FloorCeiling() {
+  const geo = useMemo(() => {
+    const W = SCENE.extent.w / 2;
+    const D = SCENE.extent.d / 2;
+    const s = new THREE.Shape([
+      new THREE.Vector2(-W, -D),
+      new THREE.Vector2(W, -D),
+      new THREE.Vector2(W, D),
+      new THREE.Vector2(-W, D),
+    ]);
+    // Shape y is world -z once laid flat.
+    s.holes.push(
+      new THREE.Path([
+        new THREE.Vector2(ROOM.x0, -ROOM.z0),
+        new THREE.Vector2(ROOM.x0, -ROOM.z1),
+        new THREE.Vector2(ROOM.x1, -ROOM.z1),
+        new THREE.Vector2(ROOM.x1, -ROOM.z0),
+      ])
+    );
+    const g = new THREE.ShapeGeometry(s);
+    g.rotateX(-Math.PI / 2);
+    return g;
+  }, []);
+
+  const spots = useMemo(() => {
+    const out: [number, number][] = [];
+    const W = SCENE.extent.w / 2;
+    const D = SCENE.extent.d / 2;
+    for (let x = -W + 2; x < W - 1; x += 3.6) {
+      for (let z = -D + 2; z < D - 1; z += 3.6) {
+        if (!inHall(x, z)) out.push([x, z]);
+      }
+    }
+    return out;
+  }, []);
+  const ref = useRef<THREE.InstancedMesh>(null);
+  useLayoutEffect(() => {
+    const m = ref.current;
+    if (!m) return;
+    const o = new THREE.Object3D();
+    spots.forEach(([x, z], i) => {
+      o.position.set(x, FLOOR_CEILING - 0.01, z);
+      o.rotation.set(Math.PI / 2, 0, 0);
+      o.updateMatrix();
+      m.setMatrixAt(i, o.matrix);
+    });
+    m.instanceMatrix.needsUpdate = true;
+    m.computeBoundingSphere();
+  }, [spots]);
+
+  return (
+    <>
+      <mesh geometry={geo} position={[0, FLOOR_CEILING, 0]}>
+        {/* lit from below by its lamps, not dark against the sun above it */}
+        <meshStandardMaterial color="#EEEAE2" emissive="#EEEAE2" emissiveIntensity={0.55} roughness={0.95} side={THREE.DoubleSide} />
+      </mesh>
+      <instancedMesh ref={ref} args={[undefined, undefined, spots.length]}>
+        <circleGeometry args={[0.1, 10]} />
+        <meshBasicMaterial color="#FFF6E0" side={THREE.DoubleSide} toneMapped={false} />
+      </instancedMesh>
+    </>
+  );
+}
+
+/** Seconds to walk a leg of a path: brisk, and never long across the hall. */
+function legSeconds(metres: number) {
+  return THREE.MathUtils.clamp(metres / 3.5, 0.45, 2.2);
+}
+
+/** How far ahead of the eye the camera turns about, inside. */
+const EYE_REACH = 0.08;
+const EYE = 1.6;
+
+/**
+ * Tap the floor to walk there, as in a street view: anywhere you can see
+ * floor (or seats, or the stage), not through a wall to the floor beyond.
+ */
+function FloorWalk({ onWalk }: { onWalk: (steps: Walk["steps"]) => void }) {
+  const { camera, scene, raycaster } = useThree();
+  return (
+    <mesh
+      rotation-x={-Math.PI / 2}
+      position={[0, 0.05, 0]}
+      userData={{ ghost: true }}
+      onClick={(e) => {
+        // A drag to look round ends in a click too; only a tap walks.
+        if (e.delta > 6) return;
+        e.stopPropagation();
+        raycaster.set(e.ray.origin, e.ray.direction);
+        raycaster.camera = camera;
+        const first = raycaster
+          .intersectObjects(scene.children, true)
+          .find((h) => !h.object.userData.ghost && (h.object as THREE.Mesh).isMesh && h.object.visible);
+        if (!first) return;
+        const ok = first.object.userData.walkable || first.point.y < 0.3;
+        if (!ok) return;
+        const x = first.point.x;
+        const z = first.point.z;
+        const floorY = first.object.userData.walkable === "stage" ? SCENE.stage.platform.h : 0;
+        const dx = x - camera.position.x;
+        const dz = z - camera.position.z;
+        const len = Math.hypot(dx, dz) || 1;
+        onWalk([{ pos: [x, floorY + EYE, z], look: [x + (dx / len) * 2, floorY + EYE, z + (dz / len) * 2] }]);
+      }}
+    >
+      <planeGeometry args={[SCENE.extent.w, SCENE.extent.d]} />
+      <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+    </mesh>
+  );
+}
+
+interface Door {
+  id: string;
+  /** Middle of the doorway, on the wall's line. */
+  x: number;
+  z: number;
+  width: number;
+  /** Which way the wall runs. */
+  along: "x" | "z";
+  /** Outward, away from the hall. */
+  n: [number, number];
+  /** How far past the doorway to walk, clear of what lies beyond. */
+  step: number;
+}
+
+/**
+ * The hall's doorways, read off the drawing: the gaps of a metre or more
+ * between its tall walls on the north, south and back (east) sides.
+ */
+function hallDoors(): Door[] {
+  const tall = SCENE.floors.ground.walls.filter((w) => w.kind === "tall");
+  const lines: { along: "x" | "z"; at: number; n: [number, number]; step: number }[] = [
+    { along: "x", at: -21.67, n: [0, -1], step: 3 },
+    { along: "x", at: 10.86, n: [0, 1], step: 3 },
+    { along: "z", at: 27.22, n: [1, 0], step: 3.6 },
+  ];
+  const out: Door[] = [];
+  for (const L of lines) {
+    const segs = tall
+      .filter((w) =>
+        L.along === "x"
+          ? Math.abs(w.z - L.at) < 0.1 && w.w >= w.d - 0.01
+          : Math.abs(w.x - L.at) < 0.1 && w.d >= w.w - 0.01
+      )
+      .map((w) => (L.along === "x" ? [w.x - w.w / 2, w.x + w.w / 2] : [w.z - w.d / 2, w.z + w.d / 2]))
+      .sort((a, b) => a[0] - b[0]);
+    if (!segs.length) continue;
+    let end = segs[0][1];
+    for (let i = 1; i < segs.length; i++) {
+      const [s, e] = segs[i];
+      if (s - end >= 1) {
+        const c = (s + end) / 2;
+        out.push({
+          id: `${L.along}${L.at}:${c.toFixed(2)}`,
+          x: L.along === "x" ? c : L.at,
+          z: L.along === "x" ? L.at : c,
+          width: s - end,
+          along: L.along,
+          n: L.n,
+          step: L.step,
+        });
+      }
+      end = Math.max(end, e);
+    }
+  }
+  return out;
+}
+
+const DOOR_H = 2.6;
+const DOOR_OPEN = Math.PI / 2 - 0.12;
+
+/**
+ * Every doorway with its doors, standing open. Tap one and you walk through
+ * it, and it swings shut behind you; tap it again to open it and go back.
+ */
+function Doors({ onWalk }: { onWalk: (steps: Walk["steps"]) => void }) {
+  const doors = useMemo(hallDoors, []);
+  const camera = useThree((s) => s.camera);
+  const scene = useThree((s) => s.scene);
+
+  /** Of the ways to face from a spot, the one with the most room ahead. */
+  function openestWay(x: number, z: number, ways: [number, number][]): [number, number] {
+    const ray = new THREE.Raycaster();
+    ray.far = 40;
+    // Sprites in the scene (the trees) need the camera to be hit-tested.
+    ray.camera = camera;
+    let best = ways[0];
+    let bestRoom = -1;
+    for (const w of ways) {
+      ray.set(new THREE.Vector3(x, EYE, z), new THREE.Vector3(w[0], 0, w[1]));
+      const hit = ray
+        .intersectObjects(scene.children, true)
+        .find((h) => !h.object.userData.ghost && (h.object as THREE.Mesh).isMesh);
+      const room = hit ? hit.distance : 40;
+      // Straight on is the natural way to go: it wins unless cramped.
+      const score = w === ways[0] && room > 6 ? room + 100 : room;
+      if (score > bestRoom) {
+        bestRoom = score;
+        best = w;
+      }
+    }
+    return best;
+  }
+  const invalidate = useThree((s) => s.invalidate);
+  // Openness of each door, 0 shut to 1 open, and where each is heading.
+  const open = useRef<Record<string, number>>({});
+  const target = useRef<Record<string, number>>({});
+  const leaves = useRef<Record<string, THREE.Group | null>>({});
+  const timers = useRef<number[]>([]);
+  useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
+
+  useFrame((_, dt) => {
+    let moving = false;
+    for (const d of doors) {
+      const now = open.current[d.id] ?? 1;
+      const to = target.current[d.id] ?? 1;
+      if (now === to) continue;
+      const next = now < to ? Math.min(to, now + dt * 2.2) : Math.max(to, now - dt * 2.2);
+      open.current[d.id] = next;
+      moving = true;
+      for (const side of [0, 1]) {
+        const g = leaves.current[`${d.id}:${side}`];
+        if (g) g.rotation.y = (g.userData.closed as number) + (g.userData.swing as number) * next;
+      }
+    }
+    if (moving) invalidate();
+  });
+
+  function walkThrough(d: Door) {
+    const [nx, nz] = d.n;
+    const fromHall = inHall(camera.position.x, camera.position.z);
+    const at = (k: number, y = 1.6): [number, number, number] => [d.x + nx * k, y, d.z + nz * k];
+    const out = at(d.step);
+    const [fx, fz] = openestWay(out[0], out[2], [
+      [nx, nz],
+      [nz, -nx],
+      [-nz, nx],
+    ]);
+    const steps: Walk["steps"] = fromHall
+      ? [
+          { pos: at(-1.4), look: at(2) },
+          { pos: out, look: [out[0] + fx * 2, EYE, out[2] + fz * 2] },
+        ]
+      : [
+          { pos: at(1.4), look: at(-2) },
+          { pos: at(-4.5), look: at(-6.5) },
+        ];
+    // Open it if it was shut, walk through, and once through let it close
+    // behind you.
+    let from = camera.position.clone();
+    let seconds = 0;
+    for (const st of steps) {
+      const to = new THREE.Vector3(...st.pos);
+      seconds += legSeconds(from.distanceTo(to));
+      from = to;
+    }
+    target.current[d.id] = 1;
+    invalidate();
+    onWalk(steps);
+    timers.current.push(
+      window.setTimeout(() => {
+        target.current[d.id] = 0;
+        invalidate();
+      }, seconds * 1000 + 300)
+    );
+  }
+
+  return (
+    <>
+      {doors.map((d) => {
+        const [nx, nz] = d.n;
+        const double = d.width > 2.2;
+        const leafW = double ? d.width / 2 : d.width;
+        // Hinges at the ends of the doorway; a shut leaf runs from its hinge
+        // across the opening, an open one stands out from the wall.
+        const ends: { hx: number; hz: number; dx: number; dz: number }[] =
+          d.along === "x"
+            ? [
+                { hx: d.x - d.width / 2, hz: d.z, dx: 1, dz: 0 },
+                { hx: d.x + d.width / 2, hz: d.z, dx: -1, dz: 0 },
+              ]
+            : [
+                { hx: d.x, hz: d.z - d.width / 2, dx: 0, dz: 1 },
+                { hx: d.x, hz: d.z + d.width / 2, dx: 0, dz: -1 },
+              ];
+        const used = double ? ends : [ends[0]];
+        const inward = d.along === "x" ? 0 : -Math.PI / 2;
+        return (
+          <group key={d.id}>
+            {used.map((e, side) => {
+              // Rotation about y taking local +x to a direction (vx, vz).
+              const closed = Math.atan2(-e.dz, e.dx);
+              const towardN = Math.atan2(-nz, nx);
+              let swing = towardN - closed;
+              while (swing > Math.PI) swing -= 2 * Math.PI;
+              while (swing < -Math.PI) swing += 2 * Math.PI;
+              swing = Math.sign(swing) * DOOR_OPEN;
+              return (
+                <group
+                  key={side}
+                  position={[e.hx, 0, e.hz]}
+                  rotation-y={closed + swing}
+                  userData={{ closed, swing }}
+                  ref={(g) => {
+                    leaves.current[`${d.id}:${side}`] = g;
+                  }}
+                >
+                  <mesh position={[leafW / 2, DOOR_H / 2, 0]} castShadow>
+                    <boxGeometry args={[leafW - 0.03, DOOR_H, 0.06]} />
+                    <meshStandardMaterial color="#6B4A2E" roughness={0.55} />
+                  </mesh>
+                  <mesh position={[leafW - 0.18, 1.05, 0]}>
+                    <boxGeometry args={[0.04, 0.4, 0.12]} />
+                    <meshStandardMaterial color="#C9B48A" roughness={0.3} metalness={0.8} />
+                  </mesh>
+                </group>
+              );
+            })}
+            {/* the wall over the doorway, and its exit sign on the hall side */}
+            <group position={[d.x, 0, d.z]} rotation-y={inward}>
+              <mesh position={[0, (DOOR_H + HALL_WALL_TOP) / 2, 0]}>
+                <boxGeometry args={[d.width, HALL_WALL_TOP - DOOR_H, 0.3]} />
+                <meshStandardMaterial color={HALL_WALL} roughness={0.88} />
+              </mesh>
+              <mesh position={[0, DOOR_H + 0.3, (d.along === "x" ? -nz : nx) * 0.17]}>
+                <boxGeometry args={[0.7, 0.24, 0.04]} />
+                <meshBasicMaterial color="#19B35A" toneMapped={false} />
+              </mesh>
+            </group>
+            {/* what you tap: the doorway itself */}
+            <mesh
+              position={[d.x, DOOR_H / 2, d.z]}
+              rotation-y={inward}
+              userData={{ ghost: true }}
+              onClick={(e) => {
+                if (e.delta > 6) return;
+                e.stopPropagation();
+                walkThrough(d);
+              }}
+              onPointerOver={() => (document.body.style.cursor = "pointer")}
+              onPointerOut={() => (document.body.style.cursor = "")}
+            >
+              <boxGeometry args={[d.width, DOOR_H, 0.4]} />
+              <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+            </mesh>
+          </group>
+        );
+      })}
+    </>
   );
 }
 
@@ -1369,7 +1760,7 @@ function Stage() {
 
   return (
     <group>
-      <mesh position={[platform.x, platform.h / 2, platform.z]} castShadow receiveShadow>
+      <mesh position={[platform.x, platform.h / 2, platform.z]} castShadow receiveShadow userData={{ walkable: "stage" }}>
         <boxGeometry args={[platform.w, platform.h, platform.d]} />
         <meshStandardMaterial attach="material-0" color={STAGE_SIDE} />
         <meshStandardMaterial attach="material-1" color={STAGE_SIDE} />
@@ -1942,12 +2333,14 @@ function CameraRig({
   resetNonce,
   inside,
   spot,
+  walk,
 }: {
   controls: React.RefObject<OrbitControlsImpl | null>;
   focus: CanvasProps["focus"];
   resetNonce: number;
   inside: boolean;
   spot: number;
+  walk: Walk | null;
 }) {
   const { camera, size, invalidate } = useThree();
   const flight = useRef<{
@@ -1956,10 +2349,16 @@ function CameraRig({
     toPos: THREE.Vector3;
     toTarget: THREE.Vector3;
     t: number;
+    /** Seconds the leg takes. */
+    dur: number;
+    /** Eased to a stop, or walked at an even pace into the next leg. */
+    ease: boolean;
+    /** Legs still to go, for a walk through a door. */
+    next: Walk["steps"];
   } | null>(null);
   const userMoved = useRef(false);
 
-  function fly(toPos: THREE.Vector3, toTarget: THREE.Vector3, keep = true) {
+  function fly(toPos: THREE.Vector3, toTarget: THREE.Vector3, keep = true, dur = 0.75, ease = true, next: Walk["steps"] = []) {
     const c = controls.current;
     if (!c) return;
     // A flight on purpose counts as moving the camera: a resize afterwards
@@ -1971,9 +2370,26 @@ function CameraRig({
       toPos,
       toTarget,
       t: 0,
+      dur,
+      ease,
+      next,
     };
     invalidate();
   }
+
+  /** Walk a path at a walking pace (a brisk one: this is a map). */
+  function walkLegs(steps: Walk["steps"]) {
+    const [first, ...rest] = steps;
+    if (!first) return;
+    const to = new THREE.Vector3(...first.pos);
+    const dur = legSeconds(camera.position.distanceTo(to));
+    fly(to, new THREE.Vector3(...first.look), true, dur, rest.length === 0, rest);
+  }
+
+  useEffect(() => {
+    if (walk) walkLegs(walk.steps);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [walk?.nonce]);
 
   function overview(): [THREE.Vector3, THREE.Vector3] {
     const cam = camera as THREE.PerspectiveCamera;
@@ -2066,7 +2482,7 @@ function CameraRig({
         // From outside, appear at the spot at once: a flight from the sky
         // would pass through the roof.
         camera.position.copy(to);
-        controls.current?.target.copy(look);
+        controls.current?.target.copy(to).addScaledVector(look.sub(to).normalize(), EYE_REACH);
         controls.current?.update();
         userMoved.current = true;
         invalidate();
@@ -2119,22 +2535,40 @@ function CameraRig({
     const c = controls.current;
     if (inside && c && !flight.current) {
       // However it is turned or zoomed, the camera stays in the room.
+      // In the hall, up to its high ceiling; out on the floor, under its
+      // low one and within the building.
       const p = camera.position;
-      const m = 0.6;
-      p.x = THREE.MathUtils.clamp(p.x, ROOM.x0 + m, ROOM.x1 - m);
-      p.y = THREE.MathUtils.clamp(p.y, 1, ROOM.h - 1.2);
-      p.z = THREE.MathUtils.clamp(p.z, ROOM.z0 + m, ROOM.z1 - m);
+      if (inHall(p.x, p.z)) {
+        p.y = THREE.MathUtils.clamp(p.y, 1, ROOM.h - 1.2);
+      } else {
+        p.x = THREE.MathUtils.clamp(p.x, -SCENE.extent.w / 2 + 1, SCENE.extent.w / 2 - 1);
+        p.z = THREE.MathUtils.clamp(p.z, -SCENE.extent.d / 2 + 1, SCENE.extent.d / 2 - 1);
+        p.y = THREE.MathUtils.clamp(p.y, 1, FLOOR_CEILING - 0.4);
+      }
     }
     const f = flight.current;
     if (!f || !c) return;
     // The first frame after the map has sat still arrives with the whole
     // idle time as its step; capped, the flight is seen rather than skipped.
-    f.t = Math.min(1, f.t + Math.min(dt, 1 / 30) / 0.75);
-    const k = 1 - Math.pow(1 - f.t, 3);
+    f.t = Math.min(1, f.t + Math.min(dt, 1 / 30) / f.dur);
+    const k = f.ease ? 1 - Math.pow(1 - f.t, 3) : f.t;
     camera.position.lerpVectors(f.fromPos, f.toPos, k);
-    c.target.lerpVectors(f.fromTarget, f.toTarget, k);
+    if (inside) {
+      // Inside, the turning point stays at the eye: carry the direction of
+      // view round from the old one to the new, rather than the point.
+      const a = f.fromTarget.clone().sub(f.fromPos).normalize();
+      const b = f.toTarget.clone().sub(f.toPos).normalize();
+      const dir = a.lerp(b, k);
+      if (dir.lengthSq() < 1e-4) dir.copy(b);
+      c.target.copy(camera.position).addScaledVector(dir.normalize(), EYE_REACH);
+    } else {
+      c.target.lerpVectors(f.fromTarget, f.toTarget, k);
+    }
     c.update();
-    if (f.t >= 1) flight.current = null;
+    if (f.t >= 1) {
+      flight.current = null;
+      if (f.next.length) walkLegs(f.next);
+    }
     else invalidate();
   });
 

@@ -271,7 +271,11 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
         </div>
 
         {/* which floor this is, where a lift would say it */}
-        {inside ? null : (
+        {inside ? (
+          <p className="pointer-events-none absolute left-3 top-[100px] z-10 rounded-full bg-white/95 px-3 py-1 text-[12px] font-semibold text-brand-900 shadow-sm">
+            Tap the floor or a door to walk · drag to look
+          </p>
+        ) : (
           <p className="pointer-events-none absolute left-3 top-[100px] z-10 rounded-full bg-white/95 px-3 py-1 text-[12px] font-semibold text-brand-900 shadow-sm">
             {FLOOR_NAMES[floor]} floor
           </p>
