@@ -23,7 +23,7 @@ const SIGNED_IN_ONLY = [
  * A bare prefix test had "/me" catching /meetings and /media, so a guest
  * asking for a picture under /media was sent to the sign-in page instead.
  */
-function needsSignIn(pathname: string): boolean {
+export function needsSignIn(pathname: string): boolean {
   return SIGNED_IN_ONLY.some((p) =>
     p.endsWith("/")
       ? pathname.startsWith(p)
