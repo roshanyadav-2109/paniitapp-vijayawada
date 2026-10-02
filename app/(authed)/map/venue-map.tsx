@@ -16,6 +16,7 @@ import {
 import {
   FLOOR_NAMES,
   FLOOR_ORDER,
+  INSIDE_VIEWS,
   STALLS,
   ZONE_NAMES,
   type FloorKey,
@@ -79,6 +80,10 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
   const [query, setQuery] = useState("");
   const [floor, setFloor] = useState<FloorKey>("ground");
   const [showPlan, setShowPlan] = useState(false);
+  // The open map, roof off, is the default; inside puts the roof back on
+  // and stands you in the main hall.
+  const [inside, setInside] = useState(false);
+  const [spot, setSpot] = useState(0);
   // The layer the canvas draws its floating labels into. A state, not a
   // ref, so the canvas hears about it once it exists.
   const [labelLayer, setLabelLayer] = useState<HTMLDivElement | null>(null);
@@ -120,7 +125,9 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
 
   function go(code: string) {
     setQuery("");
-    // Every stall is on the ground floor; a search from upstairs comes down.
+    // Every stall is on the ground floor; a search from upstairs comes down,
+    // and from inside the hall comes out to the map.
+    setInside(false);
     setFloor("ground");
     setSelected(code);
     setFocus({ code, nonce: Date.now() });
@@ -144,6 +151,8 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
           focus={focus}
           resetNonce={resetNonce}
           labelLayer={labelLayer}
+          inside={inside}
+          spot={spot}
         />
         <div ref={setLabelLayer} className="pointer-events-none absolute inset-0 z-[5] overflow-hidden" />
 
@@ -193,7 +202,7 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
 
         {/* Floors, top to bottom as a lift panel reads, and the drawing
             behind them as a layer to switch on. */}
-        <div className="absolute right-3 top-16 z-10 flex flex-col items-center gap-2">
+        <div className={`absolute right-3 top-16 z-10 flex-col items-center gap-2 ${inside ? "hidden" : "flex"}`}>
           <div className="flex flex-col overflow-hidden rounded-2xl border border-white/70 bg-white/95 shadow-[0_4px_14px_rgba(15,23,42,0.12)]">
             {[...FLOOR_ORDER].reverse().map((f) => (
               <button
@@ -230,13 +239,47 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
           </button>
         </div>
 
+        {/* Roof off to find your way, or roof on to stand in the hall. */}
+        <div
+          role="radiogroup"
+          aria-label="View"
+          className="absolute left-3 top-16 z-10 flex rounded-full border border-white/70 bg-white/95 p-0.5 shadow-[0_4px_14px_rgba(15,23,42,0.12)]"
+        >
+          {[
+            { on: false, label: "Roof open" },
+            { on: true, label: "Inside hall" },
+          ].map((v) => (
+            <button
+              key={v.label}
+              type="button"
+              role="radio"
+              aria-checked={inside === v.on}
+              onClick={() => {
+                setSelected(null);
+                if (v.on) setFloor("ground");
+                setInside(v.on);
+              }}
+              className={
+                inside === v.on
+                  ? "rounded-full bg-brand-800 px-3 py-1 text-[12px] font-semibold text-white"
+                  : "rounded-full px-3 py-1 text-[12px] font-semibold text-brand-900"
+              }
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+
         {/* which floor this is, where a lift would say it */}
-        <p className="pointer-events-none absolute left-3 top-16 z-10 rounded-full bg-white/95 px-3 py-1 text-[12px] font-semibold text-brand-900 shadow-sm">
-          {FLOOR_NAMES[floor]} floor
-        </p>
+        {inside ? null : (
+          <p className="pointer-events-none absolute left-3 top-[100px] z-10 rounded-full bg-white/95 px-3 py-1 text-[12px] font-semibold text-brand-900 shadow-sm">
+            {FLOOR_NAMES[floor]} floor
+          </p>
+        )}
 
         {/* The neighbourhood is OpenStreetMap's; its licence asks for this. */}
         <a
+          hidden={inside}
           href="https://www.openstreetmap.org/copyright"
           target="_blank"
           rel="noopener noreferrer"
@@ -245,8 +288,29 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
           &copy; OpenStreetMap contributors
         </a>
 
+        {/* where to stand, inside */}
+        {inside ? (
+          <div className="no-scrollbar absolute inset-x-0 bottom-2 z-10 flex gap-1.5 overflow-x-auto px-3">
+            {INSIDE_VIEWS.map((v, i) => (
+              <button
+                key={v.name}
+                type="button"
+                onClick={() => setSpot(i)}
+                aria-pressed={spot === i}
+                className={
+                  spot === i
+                    ? "shrink-0 rounded-full bg-brand-800 px-3 py-1.5 text-[12px] font-semibold text-white shadow-sm"
+                    : "shrink-0 rounded-full bg-white/95 px-3 py-1.5 text-[12px] font-semibold text-brand-900 shadow-sm"
+                }
+              >
+                {v.name}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
         {/* legend */}
-        {floor === "ground" ? (
+        {floor === "ground" && !inside ? (
           <div className="no-scrollbar absolute inset-x-0 bottom-2 z-10 flex gap-1.5 overflow-x-auto px-3">
             {(Object.keys(ZONE_COLOR) as StallZone[]).map((z) => (
               <span

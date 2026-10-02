@@ -511,3 +511,14 @@ export const ZONE_NAMES: Record<StallZone, string> = {
   "prefunction-1": "Pre-function Area 1, south corridor",
   "prefunction-2": "Pre-function Area 2, north corridor",
 };
+
+/**
+ * Where to stand inside the main hall with its roof on, and what to look at
+ * from there: metres in the 3D scene's frame.
+ */
+export const INSIDE_VIEWS: readonly { name: string; pos: [number, number, number]; look: [number, number, number] }[] = [
+  { name: "Back of hall", pos: [25.5, 3.4, -4.5], look: [-15, 3.2, -2.6] },
+  { name: "Middle", pos: [9, 1.7, 3.5], look: [-15, 3, -2.6] },
+  { name: "Front row", pos: [-6.4, 1.25, -7.5], look: [-16, 3.2, -2.6] },
+  { name: "On stage", pos: [-13.2, 2.75, -2.6], look: [20, 2.2, -5.6] },
+];

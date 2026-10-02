@@ -6,7 +6,7 @@ import { Environment, Lightformer, OrbitControls, useTexture } from "@react-thre
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import { STALLS, type FloorKey, type Stall, type StallZone } from "@/lib/venue-3d";
+import { INSIDE_VIEWS, STALLS, type FloorKey, type Stall, type StallZone } from "@/lib/venue-3d";
 import { SCENE, SEATS } from "@/lib/venue-3d-scene";
 import { SURROUNDINGS } from "@/lib/venue-surroundings";
 
@@ -47,7 +47,7 @@ const STAGE_SIDE = "#5E3F24";
 const CARPET = "#566278";
 // As the hall is: cream seats on a deep maroon carpet.
 const SEAT = "#E2D5BA";
-const HALL_CARPET = "#6E3530";
+const HALL_CARPET = "#5A2725";
 const TIMBER = "#7A5537";
 const CHAIR = "#343A46";
 const BOOTH_WALL = "#FFFFFF";
@@ -85,6 +85,10 @@ export interface CanvasProps {
   resetNonce: number;
   /** A DOM layer over the canvas for the floating labels. */
   labelLayer: HTMLDivElement | null;
+  /** Inside the main hall with its roof on, rather than the open map. */
+  inside: boolean;
+  /** Which of INSIDE_VIEWS (lib/venue-3d) to stand at, when inside. */
+  spot: number;
 }
 
 export default function VenueCanvas(props: CanvasProps) {
@@ -153,7 +157,7 @@ function Sun() {
   );
 }
 
-function ShadowsOnce({ floor }: { floor: FloorKey }) {
+function ShadowsOnce({ floor, inside = false }: { floor: FloorKey; inside?: boolean }) {
   const { gl, invalidate } = useThree();
   useEffect(() => {
     gl.shadowMap.autoUpdate = false;
@@ -165,72 +169,86 @@ function ShadowsOnce({ floor }: { floor: FloorKey }) {
       invalidate();
     }, 900);
     return () => window.clearTimeout(t);
-  }, [floor, gl, invalidate]);
+  }, [floor, inside, gl, invalidate]);
   return null;
 }
 
-function Scene({ floor, showPlan, occupied, selected, onSelect, focus, resetNonce, labelLayer }: CanvasProps) {
+function Scene({ floor, showPlan, occupied, selected, onSelect, focus, resetNonce, labelLayer, inside, spot }: CanvasProps) {
   const controls = useRef<OrbitControlsImpl | null>(null);
   const data = SCENE.floors[floor];
 
   return (
     <>
-      <Outside floor={floor} />
-      <Slabs floor={floor} />
-      <Rooms floor={floor} />
-      {showPlan ? <PlanLayer floor={floor} /> : null}
-      <Walls floor={floor} />
-      <Columns floor={floor} />
-      <FloorWords floor={floor} />
-
-      {floor === "ground" ? (
+      {inside ? (
+        // The hall alone, roof on: nothing outside it can be seen from in here.
         <>
-          <Hall />
+          <HallInterior />
+          <Hall ribs={false} />
           <Stage />
-          {STALLS.map((s) => (
-            <Booth
-              key={s.code}
-              stall={s}
-              holder={occupied[s.code] ?? null}
-              selected={selected === s.code}
-              onSelect={onSelect}
-            />
-          ))}
-          <Backdrops />
-          <OneWayLoop />
-          <Blocked />
-          <Entrances />
         </>
-      ) : null}
-
-      {floor === "first" ? (
+      ) : (
         <>
-          <BoardRooms />
-          {/* The hall is double height: from the first floor you look down
-              through the void onto the seats and the stage below. */}
-          <group position={[0, -STOREY, 0]}>
-            <Hall />
-            <Stage />
-          </group>
-        </>
-      ) : null}
+          <Outside floor={floor} />
+          <Slabs floor={floor} />
+          <Rooms floor={floor} />
+          {showPlan ? <PlanLayer floor={floor} /> : null}
+          <Walls floor={floor} />
+          <Columns floor={floor} />
+          <FloorWords floor={floor} />
 
-      <Labels labels={data.labels} layer={labelLayer} />
-      <ShadowsOnce floor={floor} />
+          {floor === "ground" ? (
+            <>
+              <Hall />
+              <Stage />
+              {STALLS.map((s) => (
+                <Booth
+                  key={s.code}
+                  stall={s}
+                  holder={occupied[s.code] ?? null}
+                  selected={selected === s.code}
+                  onSelect={onSelect}
+                />
+              ))}
+              <Backdrops />
+              <OneWayLoop />
+              <Blocked />
+              <Entrances />
+            </>
+          ) : null}
+
+          {floor === "first" ? (
+            <>
+              <BoardRooms />
+              {/* The hall is double height: from the first floor you look down
+                  through the void onto the seats and the stage below. */}
+              <group position={[0, -STOREY, 0]}>
+                <Hall />
+                <Stage />
+              </group>
+            </>
+          ) : null}
+
+          <Labels labels={data.labels} layer={labelLayer} />
+        </>
+      )}
+
+      <ShadowsOnce floor={floor} inside={inside} />
 
       <OrbitControls
         ref={controls}
         makeDefault
         enableDamping
         dampingFactor={0.12}
-        minDistance={8}
-        maxDistance={480}
-        // Never below the floor, never flat on it: a plan seen edge-on is a line.
-        minPolarAngle={0.08}
-        maxPolarAngle={Math.PI / 2.25}
+        minDistance={inside ? 1 : 8}
+        maxDistance={inside ? 42 : 480}
+        // Outside: never below the floor, never flat on it, as a plan seen
+        // edge-on is a line. Inside: low enough to look up at the ceiling.
+        minPolarAngle={inside ? 0.25 : 0.08}
+        maxPolarAngle={inside ? Math.PI * 0.62 : Math.PI / 2.25}
         screenSpacePanning={false}
+        enablePan={!inside}
       />
-      <CameraRig controls={controls} focus={focus} resetNonce={resetNonce} />
+      <CameraRig controls={controls} focus={focus} resetNonce={resetNonce} inside={inside} spot={spot} />
     </>
   );
 }
@@ -950,7 +968,7 @@ function Columns({ floor }: { floor: FloorKey }) {
  * Carpet and every seat in the hall — 1,515 of them, each off the drawing —
  * as one instanced mesh: one draw call on a phone, not fifteen hundred.
  */
-function Hall() {
+function Hall({ ribs = true }: { ribs?: boolean }) {
   const seats = useRef<THREE.InstancedMesh>(null);
   const count = SEATS.length / 2;
 
@@ -985,7 +1003,7 @@ function Hall() {
       <instancedMesh ref={seats} args={[chair, undefined, count]} castShadow receiveShadow>
         <meshStandardMaterial color={SEAT} roughness={0.8} />
       </instancedMesh>
-      <HallRibs />
+      {ribs ? <HallRibs /> : null}
     </group>
   );
 }
@@ -1075,12 +1093,12 @@ function StageDressing() {
     const palette = ["#F4E04D", "#FFFFFF", "#C2185B", "#8E44AD", "#F39C12", "#E84A5F", "#F8BBD0"];
     let seed = 11;
     const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
-    for (let z = platform.z - platform.d / 2 + 0.3; z < platform.z + platform.d / 2 - 0.3; z += 0.32) {
-      for (let row = 0; row < 2; row++) {
+    for (let z = platform.z - platform.d / 2 + 0.3; z < platform.z + platform.d / 2 - 0.3; z += 0.19) {
+      for (let row = 0; row < 3; row++) {
         out.push({
-          x: front + 0.4 - row * 0.2,
-          y: 0.45 + row * 0.2 + rnd() * 0.08,
-          z: z + rnd() * 0.12,
+          x: front + 0.48 - row * 0.15,
+          y: 0.44 + row * 0.12 + rnd() * 0.06,
+          z: z + rnd() * 0.08,
           c: palette[Math.floor(rnd() * palette.length)],
         });
       }
@@ -1178,9 +1196,152 @@ function Flowers({ at }: { at: { x: number; y: number; z: number; c: string }[] 
   }, [at]);
   return (
     <instancedMesh ref={ref} args={[undefined, undefined, at.length]}>
-      <icosahedronGeometry args={[0.16, 1]} />
+      <icosahedronGeometry args={[0.095, 1]} />
       <meshStandardMaterial roughness={0.9} />
     </instancedMesh>
+  );
+}
+
+/**
+ * The hall closed in, as it is when you stand in it: double height, from the
+ * stage wall to the back wall. Inside faces only, and none of it casts a
+ * shadow, so the sun still lights the room as its lamps would.
+ */
+const ROOM = { x0: -19.8, x1: 27.4, z0: -21.6, z1: 10.7, h: 10.2 };
+
+function HallInterior() {
+  const { x0, x1, z0, z1, h } = ROOM;
+  const w = x1 - x0;
+  const d = z1 - z0;
+  const cx = (x0 + x1) / 2;
+  const cz = (z0 + z1) / 2;
+  const R = 2.2;
+
+  // Seven arches across the hall, nearer together toward the stage as the
+  // ribs in the hall are, each a cream band edged both sides in warm light.
+  const ribXs = useMemo(() => [-8.5, -2.5, 3.5, 9.5, 15.5, 21, 26.2], []);
+  const { band, glow } = useMemo(() => {
+    // The arches run just under the lowered ceiling, framing it.
+    const top = h - 0.75;
+    const pts: THREE.Vector3[] = [];
+    const push = (y: number, z: number) => pts.push(new THREE.Vector3(0, y, z));
+    push(0.05, z0 + 0.25);
+    push(top - R, z0 + 0.25);
+    for (let k = 1; k <= 12; k++) {
+      const a = (k / 12) * (Math.PI / 2);
+      push(top - R + Math.sin(a) * R, z0 + 0.25 + (1 - Math.cos(a)) * R);
+    }
+    for (let k = 1; k <= 8; k++) push(top, z0 + 0.25 + R + ((d - 0.5 - 2 * R) * k) / 9);
+    for (let k = 0; k <= 12; k++) {
+      const a = (k / 12) * (Math.PI / 2);
+      push(top - R + Math.cos(a) * R, z1 - 0.25 - (1 - Math.sin(a)) * R);
+    }
+    push(0.05, z1 - 0.25);
+    const path = new THREE.CatmullRomCurve3(pts, false, "centripetal");
+    return {
+      band: new THREE.TubeGeometry(path, 240, 0.26, 4, false),
+      glow: new THREE.TubeGeometry(path, 240, 0.045, 5, false),
+    };
+  }, [z0, z1, d, h]);
+
+  const downlights = useMemo(() => {
+    const out: [number, number][] = [];
+    for (let x = x0 + 4; x < x1 - 1; x += 2.6) {
+      for (let z = z0 + 4; z < z1 - 3; z += 2.6) out.push([x, z]);
+    }
+    return out;
+  }, [x0, x1, z0, z1]);
+  const lightsRef = useRef<THREE.InstancedMesh>(null);
+  useLayoutEffect(() => {
+    const m = lightsRef.current;
+    if (!m) return;
+    const o = new THREE.Object3D();
+    downlights.forEach(([x, z], i) => {
+      o.position.set(x, h - 0.42, z);
+      o.rotation.set(Math.PI / 2, 0, 0);
+      o.updateMatrix();
+      m.setMatrixAt(i, o.matrix);
+    });
+    m.instanceMatrix.needsUpdate = true;
+    m.computeBoundingSphere();
+  }, [downlights, h]);
+
+  // Doors along both long walls, between the arches, and over each its sign.
+  const doors = useMemo(() => {
+    const out: { x: number; z: number; turn: number }[] = [];
+    for (const x of [0.5, 12.5, 23.6]) {
+      out.push({ x, z: z0 + 0.02, turn: 0 });
+      out.push({ x, z: z1 - 0.02, turn: Math.PI });
+    }
+    return out;
+  }, [z0, z1]);
+
+  return (
+    <group>
+      {/* the room: inside faces only */}
+      <mesh position={[cx, h / 2 - 0.01, cz]}>
+        <boxGeometry args={[w, h + 0.02, d]} />
+        <meshStandardMaterial attach="material-0" color="#E6DAC3" roughness={0.9} side={THREE.BackSide} />
+        <meshStandardMaterial attach="material-1" color="#D6C8AE" roughness={0.9} side={THREE.BackSide} />
+        <meshStandardMaterial attach="material-2" color="#F1EBDF" roughness={0.95} side={THREE.BackSide} />
+        <meshStandardMaterial attach="material-3" color={HALL_CARPET} roughness={1} side={THREE.BackSide} />
+        <meshStandardMaterial attach="material-4" color="#E8DDC8" roughness={0.9} side={THREE.BackSide} />
+        <meshStandardMaterial attach="material-5" color="#E8DDC8" roughness={0.9} side={THREE.BackSide} />
+      </mesh>
+
+      {/* the lowered ceiling between the arches, set with downlights */}
+      <mesh position={[cx + 1, h - 0.4, cz]} rotation-x={Math.PI / 2}>
+        <planeGeometry args={[w - 6, d - 2 * R - 1.2]} />
+        <meshStandardMaterial color="#F4EFE6" roughness={0.95} side={THREE.DoubleSide} />
+      </mesh>
+      <instancedMesh ref={lightsRef} args={[undefined, undefined, downlights.length]}>
+        <circleGeometry args={[0.12, 12]} />
+        <meshBasicMaterial color="#FFF3D6" side={THREE.DoubleSide} toneMapped={false} />
+      </instancedMesh>
+
+      {/* the arches */}
+      {ribXs.map((x) => (
+        <group key={x} position={[x, 0, 0]}>
+          <mesh geometry={band}>
+            <meshStandardMaterial color="#EFE5D0" roughness={0.6} />
+          </mesh>
+          {[-0.3, 0.3].map((dx) => (
+            <mesh key={dx} geometry={glow} position={[dx, 0, 0]}>
+              <meshStandardMaterial color="#FFE9BE" emissive="#FFD58A" emissiveIntensity={1.8} toneMapped={false} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+
+      {/* timber doors and green exit signs */}
+      {doors.map((dr) => (
+        <group key={`${dr.x}-${dr.z}`} position={[dr.x, 0, dr.z]} rotation-y={dr.turn}>
+          <mesh position={[0, 1.25, 0.03]}>
+            <boxGeometry args={[2, 2.5, 0.06]} />
+            <meshStandardMaterial color="#6B4A2E" roughness={0.55} />
+          </mesh>
+          <mesh position={[0, 1.25, 0.065]}>
+            <boxGeometry args={[0.03, 2.5, 0.01]} />
+            <meshStandardMaterial color="#3A2818" />
+          </mesh>
+          <mesh position={[0, 2.95, 0.06]}>
+            <boxGeometry args={[0.7, 0.24, 0.05]} />
+            <meshBasicMaterial color="#19B35A" toneMapped={false} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* the control room window high in the back wall */}
+      <mesh position={[x1 - 0.03, 5.6, cz]} rotation-y={-Math.PI / 2}>
+        <planeGeometry args={[7, 1.6]} />
+        <meshStandardMaterial color="#2A3038" roughness={0.4} />
+      </mesh>
+
+      {/* the room's own light, warm, from the ceiling */}
+      {[-6, 6, 18].map((x) => (
+        <pointLight key={x} position={[x, h - 1.5, cz]} intensity={60} distance={0} decay={1.4} color="#FFE7C2" />
+      ))}
+    </group>
   );
 }
 
@@ -1779,10 +1940,14 @@ function CameraRig({
   controls,
   focus,
   resetNonce,
+  inside,
+  spot,
 }: {
   controls: React.RefObject<OrbitControlsImpl | null>;
   focus: CanvasProps["focus"];
   resetNonce: number;
+  inside: boolean;
+  spot: number;
 }) {
   const { camera, size, invalidate } = useThree();
   const flight = useRef<{
@@ -1862,7 +2027,7 @@ function CameraRig({
   }, [controls]);
 
   useEffect(() => {
-    if (userMoved.current) return;
+    if (userMoved.current || inside) return;
     const [pos, target] = overview();
     camera.position.copy(pos);
     controls.current?.target.copy(target);
@@ -1873,10 +2038,52 @@ function CameraRig({
 
   useEffect(() => {
     if (resetNonce === 0) return;
+    if (inside) {
+      const v = INSIDE_VIEWS[spot] ?? INSIDE_VIEWS[0];
+      fly(new THREE.Vector3(...v.pos), new THREE.Vector3(...v.look));
+      return;
+    }
     const [pos, target] = overview();
     fly(pos, target, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetNonce]);
+
+  // Stepping in: a closer near plane, for chairs at arm's length, and off to
+  // the chosen spot. Stepping out: back to the whole venue.
+  const wasInside = useRef(inside);
+  useEffect(() => {
+    const cam = camera as THREE.PerspectiveCamera;
+    // A wider lens in the room, as the eye has: on a phone held upright the
+    // map's narrow one would show a slice of the stage and none of the walls.
+    cam.fov = inside ? 66 : 38;
+    cam.near = inside ? 0.1 : 0.5;
+    cam.updateProjectionMatrix();
+    if (inside) {
+      const v = INSIDE_VIEWS[spot] ?? INSIDE_VIEWS[0];
+      const to = new THREE.Vector3(...v.pos);
+      const look = new THREE.Vector3(...v.look);
+      if (!wasInside.current) {
+        // From outside, appear at the spot at once: a flight from the sky
+        // would pass through the roof.
+        camera.position.copy(to);
+        controls.current?.target.copy(look);
+        controls.current?.update();
+        userMoved.current = true;
+        invalidate();
+      } else {
+        fly(to, look);
+      }
+    } else if (wasInside.current) {
+      const [pos, target] = overview();
+      camera.position.copy(pos);
+      controls.current?.target.copy(target);
+      controls.current?.update();
+      userMoved.current = false;
+      invalidate();
+    }
+    wasInside.current = inside;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inside, spot]);
 
   useEffect(() => {
     if (!focus) return;
@@ -1909,8 +2116,16 @@ function CameraRig({
   }, [focus?.nonce]);
 
   useFrame((_, dt) => {
-    const f = flight.current;
     const c = controls.current;
+    if (inside && c && !flight.current) {
+      // However it is turned or zoomed, the camera stays in the room.
+      const p = camera.position;
+      const m = 0.6;
+      p.x = THREE.MathUtils.clamp(p.x, ROOM.x0 + m, ROOM.x1 - m);
+      p.y = THREE.MathUtils.clamp(p.y, 1, ROOM.h - 1.2);
+      p.z = THREE.MathUtils.clamp(p.z, ROOM.z0 + m, ROOM.z1 - m);
+    }
+    const f = flight.current;
     if (!f || !c) return;
     // The first frame after the map has sat still arrives with the whole
     // idle time as its step; capped, the flight is seen rather than skipped.
