@@ -4,6 +4,7 @@ import { RefreshOnReturn } from "@/components/features/refresh-on-return";
 import { VersionWatcher } from "@/components/features/version-watcher";
 import { ScrollMemory } from "@/components/features/scroll-memory";
 import { BottomNav } from "@/components/features/bottom-nav";
+import { PhotoViewer } from "@/components/features/photo-viewer";
 import { AppPromptSheet } from "@/components/features/app-prompt-sheet";
 import { getMyProfile, getViewer, type MyProfile } from "@/lib/viewer";
 import { createClient } from "@/lib/supabase/server";
@@ -78,6 +79,7 @@ async function Shell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       <BottomNav isAdmin={viewer.isAdmin} isModerator={viewer.isModerator} />
+      <PhotoViewer />
       {/* Slides up a few seconds in, at most once a visit: install the app,
           then — once installed — turn notifications on. The public VAPID key
           is public by definition; the private half stays on the server. */}

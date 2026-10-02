@@ -538,7 +538,7 @@ function AttendeeListItem({
       content ignores the pointer so clicks reach the overlay; the marks take
       it back.
     */
-    <li className="group relative rounded-lg border border-rule bg-white p-3 transition-colors hover:bg-paper-deep/30">
+    <li className="group relative rounded-lg border border-rule bg-white p-3 transition-colors hover:border-rule-strong">
       <Link
         href={`/attendees/${p.id}`}
         aria-label={p.full_name ?? "Attendee"}
