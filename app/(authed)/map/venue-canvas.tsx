@@ -38,14 +38,16 @@ const ROOM_FLOOR: Record<string, string> = {
 };
 
 const WALL_PAINT = "#F6F5F2";
-const HALL_WALL = "#DDE2EA";
+const HALL_WALL = "#E8DDC8";
 const GLASS = "#9FD4F1";
 const COLUMN = "#E4E6EA";
 const INK = "#1E2433";
 const STAGE_TOP = "#8A6039";
 const STAGE_SIDE = "#5E3F24";
 const CARPET = "#566278";
-const SEAT = "#9C1C33";
+// As the hall is: cream seats on a deep maroon carpet.
+const SEAT = "#E2D5BA";
+const HALL_CARPET = "#6E3530";
 const TIMBER = "#7A5537";
 const CHAIR = "#343A46";
 const BOOTH_WALL = "#FFFFFF";
@@ -669,6 +671,7 @@ function FinishedFloor({
   w,
   d,
   y = 0.01,
+  colour,
 }: {
   kind: string;
   x: number;
@@ -676,9 +679,10 @@ function FinishedFloor({
   w: number;
   d: number;
   y?: number;
+  colour?: string;
 }) {
   const finish = finishOf(kind);
-  const base = FINISH_BASE[finish] ?? ROOM_FLOOR[kind] ?? ROOM_FLOOR.service;
+  const base = colour ?? FINISH_BASE[finish] ?? ROOM_FLOOR[kind] ?? ROOM_FLOOR.service;
   const map = useMemo(() => {
     const t = finishTexture(finish, base).clone();
     t.needsUpdate = true;
@@ -977,11 +981,206 @@ function Hall() {
   const c = SCENE.hall.carpet;
   return (
     <group>
-      <FinishedFloor kind="carpet" x={c.x} z={c.z} w={c.w} d={c.d} y={0.02} />
+      <FinishedFloor kind="carpet" x={c.x} z={c.z} w={c.w} d={c.d} y={0.02} colour={HALL_CARPET} />
       <instancedMesh ref={seats} args={[chair, undefined, count]} castShadow receiveShadow>
-        <meshStandardMaterial color={SEAT} roughness={0.75} />
+        <meshStandardMaterial color={SEAT} roughness={0.8} />
       </instancedMesh>
+      <HallRibs />
     </group>
+  );
+}
+
+/** A rib's path: up the wall, then a quarter turn inward over the hall. */
+function ribPath(H: number, R: number): THREE.CatmullRomCurve3 {
+  const pts: THREE.Vector3[] = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, H - R, 0)];
+  for (let k = 1; k <= 10; k++) {
+    const a = (k / 10) * (Math.PI / 2);
+    pts.push(new THREE.Vector3(0, H - R + Math.sin(a) * R, (1 - Math.cos(a)) * R));
+  }
+  return new THREE.CatmullRomCurve3(pts);
+}
+
+/**
+ * The hall's signature, as the event footage shows it: cream pilasters up
+ * the long walls, each edged with a warm LED line, that turn over into the
+ * ceiling as rounded arches. Drawn as far as the turn, so the hall stays
+ * open to the camera above.
+ */
+function HallRibs() {
+  const hall = SCENE.hall;
+  const north = hall.z - hall.d / 2 + 0.2;
+  const south = hall.z + hall.d / 2 - 0.2;
+  const H = 4.5;
+  const R = 1.4;
+  const xs = useMemo(() => {
+    const from = hall.x - hall.w / 2 + 3;
+    const to = hall.x + hall.w / 2 - 4;
+    return Array.from({ length: 6 }, (_, i) => from + ((to - from) * i) / 5);
+  }, [hall.x, hall.w]);
+
+  const { line, fascia } = useMemo(() => {
+    const path = ribPath(H, R);
+    const shape = new THREE.Shape();
+    shape.moveTo(-0.32, -0.12);
+    shape.lineTo(0.32, -0.12);
+    shape.lineTo(0.32, 0.12);
+    shape.lineTo(-0.32, 0.12);
+    return {
+      line: new THREE.TubeGeometry(path, 40, 0.05, 6, false),
+      fascia: new THREE.ExtrudeGeometry(shape, { steps: 40, bevelEnabled: false, extrudePath: path }),
+    };
+  }, []);
+
+  return (
+    <group>
+      {xs.flatMap((x) =>
+        [
+          { z: north, turn: 0 },
+          { z: south, turn: Math.PI },
+        ].map(({ z, turn }) => (
+          <group key={`${x}-${z}`} position={[x, 0, z]} rotation-y={turn}>
+            <mesh geometry={fascia} position={[0, 0, 0.14]} castShadow>
+              <meshStandardMaterial color="#EFE6D3" roughness={0.6} />
+            </mesh>
+            {[-0.36, 0.36].map((dx) => (
+              <mesh key={dx} geometry={line} position={[dx, 0.3, 0.2]}>
+                <meshStandardMaterial color="#FFE9BE" emissive="#FFD58A" emissiveIntensity={1.6} toneMapped={false} />
+              </mesh>
+            ))}
+          </group>
+        ))
+      )}
+    </group>
+  );
+}
+
+/**
+ * The stage as it is set for an event there: a dais of carved maroon chairs
+ * with low tables, a podium at each front corner, banks of flowers along
+ * the front edge, and the lighting truss over the LED wall.
+ */
+function StageDressing() {
+  const { platform, screen, lectern } = SCENE.stage;
+  const top = platform.h;
+  const front = platform.x + platform.w / 2;
+  const chairX = platform.x - 0.6;
+  const seats = useMemo(() => {
+    const span = platform.d - 7;
+    return Array.from({ length: 11 }, (_, i) => platform.z - span / 2 + (span * i) / 10);
+  }, [platform.d, platform.z]);
+  const otherLectern = 2 * platform.z - lectern.z;
+
+  const flowers = useMemo(() => {
+    const out: { x: number; y: number; z: number; c: string }[] = [];
+    const palette = ["#F4E04D", "#FFFFFF", "#C2185B", "#8E44AD", "#F39C12", "#E84A5F", "#F8BBD0"];
+    let seed = 11;
+    const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+    for (let z = platform.z - platform.d / 2 + 0.3; z < platform.z + platform.d / 2 - 0.3; z += 0.32) {
+      for (let row = 0; row < 2; row++) {
+        out.push({
+          x: front + 0.4 - row * 0.2,
+          y: 0.45 + row * 0.2 + rnd() * 0.08,
+          z: z + rnd() * 0.12,
+          c: palette[Math.floor(rnd() * palette.length)],
+        });
+      }
+    }
+    return out;
+  }, [front, platform.z, platform.d]);
+
+  const step = seats[1] - seats[0];
+  return (
+    <group>
+      {/* the dais, facing the hall */}
+      {seats.map((z, i) => (
+        <group key={z} position={[chairX, top, z]}>
+          <mesh position={[0, 0.48, 0]} castShadow>
+            <boxGeometry args={[0.6, 0.12, 0.62]} />
+            <meshStandardMaterial color="#7B2430" roughness={0.6} />
+          </mesh>
+          <mesh position={[-0.28, 0.95, 0]} castShadow>
+            <boxGeometry args={[0.1, 1.0, 0.66]} />
+            <meshStandardMaterial color="#5A2A1A" roughness={0.45} metalness={0.1} />
+          </mesh>
+          <mesh position={[-0.22, 1.0, 0]}>
+            <boxGeometry args={[0.03, 0.72, 0.5]} />
+            <meshStandardMaterial color="#8C2F3A" roughness={0.7} />
+          </mesh>
+          <mesh position={[0, 0.21, 0]}>
+            <boxGeometry args={[0.52, 0.42, 0.54]} />
+            <meshStandardMaterial color="#5A2A1A" roughness={0.5} />
+          </mesh>
+          {i % 2 === 0 && i < seats.length - 1 ? (
+            <group position={[0.85, 0, step / 2]}>
+              <mesh position={[0, 0.3, 0]} castShadow>
+                <boxGeometry args={[0.5, 0.6, 0.6]} />
+                <meshStandardMaterial color="#3B2418" roughness={0.4} />
+              </mesh>
+              <mesh position={[0, 0.72, 0]}>
+                <sphereGeometry args={[0.2, 10, 8]} />
+                <meshStandardMaterial color="#E84A5F" roughness={0.9} />
+              </mesh>
+            </group>
+          ) : null}
+        </group>
+      ))}
+
+      {/* the second podium, opposite the first; flowers on the front of each */}
+      <mesh position={[lectern.x, top + 0.58, otherLectern]} castShadow>
+        <boxGeometry args={[0.55, 1.16, 0.6]} />
+        <meshStandardMaterial color="#3A2A1C" roughness={0.5} />
+      </mesh>
+      {[lectern.z, otherLectern].map((z) => (
+        <mesh key={z} position={[lectern.x + 0.34, top + 0.95, z]}>
+          <sphereGeometry args={[0.28, 12, 10]} />
+          <meshStandardMaterial color="#C2185B" roughness={0.9} />
+        </mesh>
+      ))}
+
+      {/* flower banks along the front edge */}
+      <mesh position={[front + 0.3, 0.2, platform.z]} receiveShadow>
+        <boxGeometry args={[0.55, 0.4, platform.d]} />
+        <meshStandardMaterial color="#3E6B2F" roughness={1} />
+      </mesh>
+      <Flowers at={flowers} />
+
+      {/* the lighting truss over the LED wall and its row of moving heads */}
+      <mesh position={[screen.x + 1.4, top + screen.h + 0.9, screen.z]}>
+        <boxGeometry args={[0.35, 0.35, screen.d + 2]} />
+        <meshStandardMaterial color="#2A2D33" roughness={0.4} metalness={0.7} wireframe />
+      </mesh>
+      {Array.from({ length: 12 }, (_, i) => screen.z - screen.d / 2 + (screen.d * (i + 0.5)) / 12).map((z) => (
+        <mesh key={z} position={[screen.x + 1.4, top + screen.h + 0.55, z]} rotation-z={0.5}>
+          <cylinderGeometry args={[0.13, 0.17, 0.4, 10]} />
+          <meshStandardMaterial color="#15171B" roughness={0.4} metalness={0.5} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function Flowers({ at }: { at: { x: number; y: number; z: number; c: string }[] }) {
+  const ref = useRef<THREE.InstancedMesh>(null);
+  useLayoutEffect(() => {
+    const m = ref.current;
+    if (!m) return;
+    const o = new THREE.Object3D();
+    const c = new THREE.Color();
+    at.forEach((f, i) => {
+      o.position.set(f.x, f.y, f.z);
+      o.updateMatrix();
+      m.setMatrixAt(i, o.matrix);
+      m.setColorAt(i, c.set(f.c));
+    });
+    m.instanceMatrix.needsUpdate = true;
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
+    m.computeBoundingSphere();
+  }, [at]);
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, at.length]}>
+      <icosahedronGeometry args={[0.16, 1]} />
+      <meshStandardMaterial roughness={0.9} />
+    </instancedMesh>
   );
 }
 
@@ -1050,6 +1249,7 @@ function Stage() {
           );
         })
       )}
+      <StageDressing />
     </group>
   );
 }
