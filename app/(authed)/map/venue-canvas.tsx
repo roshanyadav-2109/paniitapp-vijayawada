@@ -2,12 +2,13 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { OrbitControls, useTexture } from "@react-three/drei";
+import { Environment, Lightformer, OrbitControls, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { STALLS, type FloorKey, type Stall, type StallZone } from "@/lib/venue-3d";
 import { SCENE, SEATS } from "@/lib/venue-3d-scene";
+import { SURROUNDINGS } from "@/lib/venue-surroundings";
 
 /* ------------------------------------------------------------------ */
 /* Palette                                                             */
@@ -36,7 +37,6 @@ const ROOM_FLOOR: Record<string, string> = {
   arrival: "#DAE7F7",
 };
 
-const STONE = "#EBE7E0";
 const WALL_PAINT = "#F6F5F2";
 const HALL_WALL = "#DDE2EA";
 const GLASS = "#9FD4F1";
@@ -99,8 +99,16 @@ export default function VenueCanvas(props: CanvasProps) {
       onPointerMissed={() => props.onSelect(null)}
       className="touch-none"
     >
-      <color attach="background" args={[props.floor === "basement" ? "#22262C" : "#E6ECF3"]} />
-      <hemisphereLight args={["#ffffff", "#8e98a8", props.floor === "basement" ? 0.9 : 1.0]} />
+      <color attach="background" args={[props.floor === "basement" ? "#22262C" : "#DDE7F1"]} />
+      <hemisphereLight args={["#ffffff", "#8e98a8", props.floor === "basement" ? 0.75 : 0.42]} />
+      {/* Soft light from every side and something for glass and polished
+          stone to reflect: a few light panels rendered into an environment
+          map on the device, so nothing is downloaded for it. */}
+      <Environment resolution={64} frames={1} environmentIntensity={props.floor === "basement" ? 0.35 : 0.32}>
+        <Lightformer form="rect" intensity={2.2} position={[0, 30, 0]} rotation-x={Math.PI / 2} scale={[80, 80, 1]} />
+        <Lightformer form="rect" intensity={0.9} position={[-40, 12, 20]} rotation-y={Math.PI / 2} scale={[60, 14, 1]} color="#FFF4E6" />
+        <Lightformer form="rect" intensity={0.7} position={[40, 12, -20]} rotation-y={-Math.PI / 2} scale={[60, 14, 1]} color="#E6F0FF" />
+      </Environment>
       <Sun />
       <Scene {...props} />
     </Canvas>
@@ -130,15 +138,15 @@ function Sun() {
     <>
       <directionalLight
         ref={light}
-        position={[38, 80, 46]}
-        intensity={1.55}
+        position={[46, 62, 40]}
+        intensity={2.6}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
         shadow-bias={-0.0004}
         shadow-normalBias={0.03}
       />
-      <directionalLight position={[-60, 40, -50]} intensity={0.35} />
+      <directionalLight position={[-60, 40, -50]} intensity={0.2} />
     </>
   );
 }
@@ -214,7 +222,7 @@ function Scene({ floor, showPlan, occupied, selected, onSelect, focus, resetNonc
         enableDamping
         dampingFactor={0.12}
         minDistance={8}
-        maxDistance={260}
+        maxDistance={480}
         // Never below the floor, never flat on it: a plan seen edge-on is a line.
         minPolarAngle={0.08}
         maxPolarAngle={Math.PI / 2.25}
@@ -230,10 +238,462 @@ function Scene({ floor, showPlan, occupied, selected, onSelect, focus, resetNonc
 /* ------------------------------------------------------------------ */
 
 function Outside({ floor }: { floor: FloorKey }) {
+  const base = floor === "first" ? -STOREY - 0.05 : -0.32;
+  if (floor === "basement") {
+    return (
+      <mesh rotation-x={-Math.PI / 2} position={[0, base, 0]} receiveShadow>
+        <planeGeometry args={[480, 480]} />
+        <meshStandardMaterial color={OUTSIDE[floor]} roughness={1} />
+      </mesh>
+    );
+  }
+  return <Landscape y={base} />;
+}
+
+/**
+ * The real neighbourhood, from OpenStreetMap (lib/venue-surroundings.ts):
+ * every building round the hall at its height, the roads at their widths,
+ * parks and green areas, water, trees, and the Statue of Social Justice on
+ * its pedestal to the south. The hall stands on a stone forecourt.
+ */
+function Landscape({ y }: { y: number }) {
+  const W = SCENE.extent.w;
+  const D = SCENE.extent.d;
+  const R = SURROUNDINGS.radius;
+
+  const ground = useMemo(() => {
+    const t = canvasTexture(256, 256, (g, w, h) => {
+      g.fillStyle = "#CBCDB6";
+      g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 2600; i++) {
+        g.fillStyle = Math.random() < 0.5 ? "rgba(110,100,80,0.10)" : "rgba(255,250,240,0.12)";
+        g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
+      }
+    });
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(70, 70);
+    return t;
+  }, []);
+
+  const roads = useMemo(() => {
+    const asphalt: THREE.BufferGeometry[] = [];
+    const paths: THREE.BufferGeometry[] = [];
+    const water: THREE.BufferGeometry[] = [];
+    for (const r of SURROUNDINGS.roads) {
+      const geo = ribbon(r.p, r.w);
+      if (!geo) continue;
+      if ((r.k as string) === "water") water.push(geo);
+      else if (r.w <= 2.5) paths.push(geo);
+      else asphalt.push(geo);
+    }
+    const merge = (list: THREE.BufferGeometry[]) => (list.length ? mergeGeometries(list) : null);
+    return { asphalt: merge(asphalt), paths: merge(paths), water: merge(water) };
+  }, []);
+
+  const areas = useMemo(() => {
+    const merge = (polys: readonly (readonly number[])[]) => {
+      const list = polys.map((p) => flatShape(p)).filter((g): g is THREE.BufferGeometry => !!g);
+      return list.length ? mergeGeometries(list) : null;
+    };
+    return {
+      green: merge(SURROUNDINGS.greens),
+      water: merge(SURROUNDINGS.waters),
+      parking: merge(SURROUNDINGS.parking),
+    };
+  }, []);
+
+  const buildings = useMemo(() => {
+    const st = SURROUNDINGS.statue;
+    const list: THREE.BufferGeometry[] = [];
+    const colour = new THREE.Color();
+    SURROUNDINGS.buildings.forEach((b, i) => {
+      const pts: THREE.Vector2[] = [];
+      for (let k = 0; k < b.p.length; k += 2) pts.push(new THREE.Vector2(b.p[k], -b.p[k + 1]));
+      if (pts.length < 3) return;
+      const cx = pts.reduce((a, v) => a + v.x, 0) / pts.length;
+      const cz = -pts.reduce((a, v) => a + v.y, 0) / pts.length;
+      // The statue's pedestal is 81 feet tall; the map records it as low.
+      const h = Math.hypot(cx - st.x, cz - st.z) < 30 ? 24.7 : b.h;
+      const geo = new THREE.ExtrudeGeometry(new THREE.Shape(pts), { depth: h, bevelEnabled: false });
+      geo.rotateX(-Math.PI / 2);
+      // A building is not all one white: a shade apart each, warm to cool.
+      colour.setHSL(0.09 + (i % 5) * 0.012, 0.12 + (i % 3) * 0.04, 0.78 + (i % 7) * 0.018);
+      const n = geo.attributes.position.count;
+      const rgb = new Float32Array(n * 3);
+      for (let v = 0; v < n; v++) {
+        rgb[v * 3] = colour.r;
+        rgb[v * 3 + 1] = colour.g;
+        rgb[v * 3 + 2] = colour.b;
+      }
+      geo.setAttribute("color", new THREE.BufferAttribute(rgb, 3));
+      list.push(geo);
+    });
+    return list.length ? mergeGeometries(list) : null;
+  }, []);
+
+  const trees = useMemo(() => {
+    const out: [number, number, number][] = [];
+    const t = SURROUNDINGS.trees;
+    for (let i = 0; i < t.length; i += 2) out.push([t[i], t[i + 1], 0.85 + ((i * 37) % 9) * 0.04]);
+
+    // The streets here are lined with trees, as the satellite view shows,
+    // though few are on the map: plant them along both sides of the larger
+    // roads, never on a building, a road or the hall's forecourt.
+    const footprints = SURROUNDINGS.buildings.map((b) => b.p);
+    const inPoly = (poly: readonly number[], x: number, z: number) => {
+      let c = false;
+      const n = poly.length / 2;
+      for (let i = 0, j = n - 1; i < n; j = i++) {
+        const xi = poly[i * 2], zi = poly[i * 2 + 1], xj = poly[j * 2], zj = poly[j * 2 + 1];
+        if (zi > z !== zj > z && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c;
+      }
+      return c;
+    };
+    const clearOfHall = (x: number, z: number) =>
+      Math.abs(x) > SCENE.extent.w / 2 + 9 || Math.abs(z) > SCENE.extent.d / 2 + 9;
+    let k = 0;
+    for (const r of SURROUNDINGS.roads) {
+      if (r.w < 6) continue;
+      const p = r.p;
+      for (let i = 0; i < p.length / 2 - 1; i++) {
+        const x1 = p[i * 2], z1 = p[i * 2 + 1], x2 = p[i * 2 + 2], z2 = p[i * 2 + 3];
+        const len = Math.hypot(x2 - x1, z2 - z1);
+        if (len < 1) continue;
+        const nx = -(z2 - z1) / len, nz = (x2 - x1) / len;
+        const off = r.w / 2 + 2.6;
+        for (let s = 6; s < len; s += 13) {
+          const bx = x1 + ((x2 - x1) * s) / len, bz = z1 + ((z2 - z1) * s) / len;
+          for (const side of [1, -1]) {
+            const x = bx + nx * off * side, z = bz + nz * off * side;
+            if (Math.hypot(x, z) > SURROUNDINGS.radius) continue;
+            if (!clearOfHall(x, z)) continue;
+            if (footprints.some((f) => inPoly(f, x, z))) continue;
+            out.push([x, z, 0.8 + ((k++ * 29) % 9) * 0.045]);
+          }
+        }
+      }
+    }
+    return out;
+  }, []);
+
   return (
-    <mesh rotation-x={-Math.PI / 2} position={[0, floor === "first" ? -STOREY - 0.05 : -0.32, 0]} receiveShadow>
-      <planeGeometry args={[480, 480]} />
-      <meshStandardMaterial color={OUTSIDE[floor]} roughness={1} />
+    <group position={[0, y, 0]}>
+      <mesh rotation-x={-Math.PI / 2} receiveShadow>
+        <circleGeometry args={[R + 140, 64]} />
+        <meshStandardMaterial map={ground} roughness={1} />
+      </mesh>
+      {areas.green ? (
+        <mesh geometry={areas.green} position={[0, 0.015, 0]} receiveShadow>
+          <meshStandardMaterial color="#9DBB86" roughness={1} />
+        </mesh>
+      ) : null}
+      {areas.parking ? (
+        <mesh geometry={areas.parking} position={[0, 0.02, 0]} receiveShadow>
+          <meshStandardMaterial color="#A9A9A6" roughness={0.95} />
+        </mesh>
+      ) : null}
+      {areas.water ? (
+        <mesh geometry={areas.water} position={[0, 0.025, 0]}>
+          <meshStandardMaterial color="#6E9EC2" roughness={0.15} metalness={0.2} />
+        </mesh>
+      ) : null}
+      {roads.water ? (
+        <mesh geometry={roads.water} position={[0, 0.026, 0]}>
+          <meshStandardMaterial color="#6E9EC2" roughness={0.15} metalness={0.2} />
+        </mesh>
+      ) : null}
+      {roads.paths ? (
+        <mesh geometry={roads.paths} position={[0, 0.03, 0]} receiveShadow>
+          <meshStandardMaterial color="#CFC8BA" roughness={0.9} />
+        </mesh>
+      ) : null}
+      {roads.asphalt ? (
+        <mesh geometry={roads.asphalt} position={[0, 0.035, 0]} receiveShadow>
+          <meshStandardMaterial color="#5E6168" roughness={0.85} />
+        </mesh>
+      ) : null}
+      {/* the forecourt the hall stands on */}
+      <FinishedFloor kind="paving" x={0} z={0} w={W + 14} d={D + 14} y={0.045} />
+      {buildings ? (
+        <mesh geometry={buildings} castShadow receiveShadow>
+          <meshStandardMaterial vertexColors roughness={0.85} />
+        </mesh>
+      ) : null}
+      <Statue x={SURROUNDINGS.statue.x} z={SURROUNDINGS.statue.z} />
+      <Trees at={trees} />
+    </group>
+  );
+}
+
+/** A road or path: its centre line, widened to its width, flat on the ground. */
+function ribbon(line: readonly number[], width: number): THREE.BufferGeometry | null {
+  const n = line.length / 2;
+  if (n < 2) return null;
+  const pos: number[] = [];
+  const half = width / 2;
+  for (let i = 0; i < n - 1; i++) {
+    const x1 = line[i * 2], z1 = line[i * 2 + 1];
+    const x2 = line[i * 2 + 2], z2 = line[i * 2 + 3];
+    const dx = x2 - x1, dz = z2 - z1;
+    const len = Math.hypot(dx, dz);
+    if (len < 0.01) continue;
+    const nx = (-dz / len) * half, nz = (dx / len) * half;
+    // the segment, and a round joint at its end so bends have no gaps
+    pos.push(x1 + nx, 0, z1 + nz, x2 + nx, 0, z2 + nz, x2 - nx, 0, z2 - nz);
+    pos.push(x1 + nx, 0, z1 + nz, x2 - nx, 0, z2 - nz, x1 - nx, 0, z1 - nz);
+    const steps = 8;
+    for (let k = 0; k < steps; k++) {
+      const a1 = (k / steps) * Math.PI * 2, a2 = ((k + 1) / steps) * Math.PI * 2;
+      pos.push(x2, 0, z2, x2 + Math.cos(a2) * half, 0, z2 + Math.sin(a2) * half, x2 + Math.cos(a1) * half, 0, z2 + Math.sin(a1) * half);
+    }
+  }
+  if (!pos.length) return null;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.computeVertexNormals();
+  // A flat ribbon faces up whichever way its triangles wind.
+  const normals = g.attributes.normal as THREE.BufferAttribute;
+  for (let i = 0; i < normals.count; i++) normals.setXYZ(i, 0, 1, 0);
+  return g;
+}
+
+/** A flat area (a park, a pond, a car park) from its outline. */
+function flatShape(poly: readonly number[]): THREE.BufferGeometry | null {
+  if (poly.length < 6) return null;
+  const pts: THREE.Vector2[] = [];
+  for (let k = 0; k < poly.length; k += 2) pts.push(new THREE.Vector2(poly[k], -poly[k + 1]));
+  const g = new THREE.ShapeGeometry(new THREE.Shape(pts));
+  g.rotateX(-Math.PI / 2);
+  return g;
+}
+
+/**
+ * The Statue of Social Justice: 125 feet of bronze on its 81-foot pedestal.
+ * Drawn simply, as a figure in a long coat holding a book, so it reads as
+ * the landmark it is from anywhere on the map.
+ */
+function Statue({ x, z }: { x: number; z: number }) {
+  const base = 24.7;
+  const bronze = "#7A5A3A";
+  return (
+    <group position={[x, base, z]}>
+      <mesh position={[0, 1, 0]} castShadow>
+        <cylinderGeometry args={[4.2, 4.6, 2, 24]} />
+        <meshStandardMaterial color="#B8B2A7" roughness={0.6} />
+      </mesh>
+      {/* legs and long coat */}
+      <mesh position={[0, 10, 0]} castShadow>
+        <cylinderGeometry args={[2.4, 3.2, 16, 20]} />
+        <meshStandardMaterial color={bronze} roughness={0.45} metalness={0.55} />
+      </mesh>
+      {/* chest and shoulders */}
+      <mesh position={[0, 23, 0]} castShadow>
+        <cylinderGeometry args={[3.1, 2.5, 10, 20]} />
+        <meshStandardMaterial color={bronze} roughness={0.45} metalness={0.55} />
+      </mesh>
+      {/* head */}
+      <mesh position={[0, 31, 0]} castShadow>
+        <sphereGeometry args={[2.2, 20, 16]} />
+        <meshStandardMaterial color={bronze} roughness={0.45} metalness={0.55} />
+      </mesh>
+      {/* the book, held at the chest */}
+      <mesh position={[2.6, 21.5, 1.4]} rotation={[0, 0.4, 0.2]} castShadow>
+        <boxGeometry args={[0.6, 3.2, 2.4]} />
+        <meshStandardMaterial color={bronze} roughness={0.45} metalness={0.55} />
+      </mesh>
+    </group>
+  );
+}
+
+function Trees({ at }: { at: [number, number, number][] }) {
+  const trunks = useRef<THREE.InstancedMesh>(null);
+  const crowns = useRef<THREE.InstancedMesh>(null);
+  useLayoutEffect(() => {
+    const t = trunks.current;
+    const c = crowns.current;
+    if (!t || !c) return;
+    const o = new THREE.Object3D();
+    const colour = new THREE.Color();
+    at.forEach(([x, z, s], i) => {
+      o.rotation.set(0, 0, 0);
+      o.position.set(x, 1.3 * s, z);
+      o.scale.set(s, s, s);
+      o.updateMatrix();
+      t.setMatrixAt(i, o.matrix);
+      o.position.set(x, 3.6 * s, z);
+      o.rotation.set(0, (x + z) * 0.7, 0);
+      o.updateMatrix();
+      c.setMatrixAt(i, o.matrix);
+      c.setColorAt(i, colour.setHSL(0.27 + (i % 7) * 0.006, 0.38, 0.33 + (i % 5) * 0.015));
+    });
+    t.instanceMatrix.needsUpdate = true;
+    c.instanceMatrix.needsUpdate = true;
+    if (c.instanceColor) c.instanceColor.needsUpdate = true;
+    t.computeBoundingSphere();
+    c.computeBoundingSphere();
+  }, [at]);
+  return (
+    <>
+      <instancedMesh ref={trunks} args={[undefined, undefined, at.length]} castShadow>
+        <cylinderGeometry args={[0.13, 0.2, 2.6, 8]} />
+        <meshStandardMaterial color="#6B4E37" roughness={0.9} />
+      </instancedMesh>
+      <instancedMesh ref={crowns} args={[undefined, undefined, at.length]} castShadow receiveShadow>
+        <icosahedronGeometry args={[2.1, 1]} />
+        <meshStandardMaterial roughness={0.95} flatShading />
+      </instancedMesh>
+    </>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Floor finishes                                                       */
+/* ------------------------------------------------------------------ */
+
+type Finish = "stone" | "paving" | "timber" | "tile" | "carpet" | "plain";
+
+/** Which finish each kind of room is laid in. */
+function finishOf(kind: string): Finish {
+  if (kind === "stone" || kind === "paving" || kind === "carpet") return kind;
+  if (kind === "circulation" || kind === "arrival" || kind === "service") return "stone";
+  if (kind === "office" || kind === "lounge" || kind === "meeting" || kind === "suite" || kind === "dining")
+    return "timber";
+  if (kind === "toilet" || kind === "kitchen") return "tile";
+  return "plain";
+}
+
+/** Metres of floor one copy of each finish's texture covers. */
+const FINISH_SPAN: Record<Finish, number> = {
+  stone: 2.4,
+  paving: 3.2,
+  timber: 2.0,
+  tile: 1.2,
+  carpet: 1.6,
+  plain: 4,
+};
+
+const FINISH_BASE: Partial<Record<Finish, string>> = {
+  stone: "#E9E4DC",
+  paving: "#D8D2C8",
+  carpet: CARPET,
+  tile: "#E8EEF3",
+  timber: "#C79E74",
+};
+
+const finishTextures = new Map<string, THREE.Texture>();
+
+/** One texture per finish and colour, drawn once and shared by every room. */
+function finishTexture(finish: Finish, base: string): THREE.Texture {
+  const key = `${finish}:${base}`;
+  const hit = finishTextures.get(key);
+  if (hit) return hit;
+  const speckle = (g: CanvasRenderingContext2D, w: number, h: number, n: number, a: number) => {
+    for (let i = 0; i < n; i++) {
+      g.fillStyle = Math.random() < 0.5 ? `rgba(0,0,0,${a})` : `rgba(255,255,255,${a * 1.4})`;
+      g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
+    }
+  };
+  const line = (g: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number) => {
+    g.beginPath();
+    g.moveTo(x1, y1);
+    g.lineTo(x2, y2);
+    g.stroke();
+  };
+  const t = canvasTexture(256, 256, (g, w, h) => {
+    g.fillStyle = base;
+    g.fillRect(0, 0, w, h);
+    if (finish === "stone" || finish === "paving") {
+      // large-format slabs, each a shade apart, with thin grout lines
+      const n = finish === "stone" ? 2 : 4;
+      const step = w / n;
+      for (let i = 0; i < n; i++)
+        for (let j = 0; j < n; j++) {
+          g.fillStyle = (i + j) % 2 ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.035)";
+          g.fillRect(i * step, j * step, step, step);
+        }
+      speckle(g, w, h, 1400, 0.035);
+      g.strokeStyle = finish === "stone" ? "rgba(90,80,70,0.28)" : "rgba(80,75,70,0.35)";
+      g.lineWidth = 2;
+      for (let k = 0; k <= n; k++) {
+        line(g, k * step, 0, k * step, h);
+        line(g, 0, k * step, w, k * step);
+      }
+    } else if (finish === "timber") {
+      // planks with staggered joints and a little grain
+      const rows = 10;
+      const ph = h / rows;
+      for (let r = 0; r < rows; r++) {
+        const shade = 0.82 + ((r * 37) % 11) / 55;
+        g.fillStyle = `rgba(${Math.round(150 * shade)},${Math.round(108 * shade)},${Math.round(72 * shade)},0.55)`;
+        g.fillRect(0, r * ph, w, ph);
+        g.strokeStyle = "rgba(60,40,25,0.35)";
+        g.lineWidth = 1.5;
+        line(g, 0, r * ph, w, r * ph);
+        const off = ((r * 97) % 5) * (w / 5);
+        line(g, off, r * ph, off, (r + 1) * ph);
+        g.strokeStyle = "rgba(70,45,25,0.08)";
+        for (let k = 0; k < 6; k++) {
+          const yy = r * ph + Math.random() * ph;
+          line(g, 0, yy, w, yy + (Math.random() - 0.5) * 4);
+        }
+      }
+    } else if (finish === "tile") {
+      const n = 4;
+      const step = w / n;
+      speckle(g, w, h, 500, 0.03);
+      g.strokeStyle = "rgba(255,255,255,0.85)";
+      g.lineWidth = 3;
+      for (let k = 0; k <= n; k++) {
+        line(g, k * step, 0, k * step, h);
+        line(g, 0, k * step, w, k * step);
+      }
+    } else if (finish === "carpet") {
+      speckle(g, w, h, 5000, 0.06);
+      g.strokeStyle = "rgba(255,255,255,0.06)";
+      g.lineWidth = 6;
+      for (let k = -h; k < w; k += 32) line(g, k, 0, k + h, h);
+    } else {
+      speckle(g, w, h, 900, 0.03);
+    }
+  });
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  finishTextures.set(key, t);
+  return t;
+}
+
+/** A floor laid in its finish, the pattern at its real size. */
+function FinishedFloor({
+  kind,
+  x,
+  z,
+  w,
+  d,
+  y = 0.01,
+}: {
+  kind: string;
+  x: number;
+  z: number;
+  w: number;
+  d: number;
+  y?: number;
+}) {
+  const finish = finishOf(kind);
+  const base = FINISH_BASE[finish] ?? ROOM_FLOOR[kind] ?? ROOM_FLOOR.service;
+  const map = useMemo(() => {
+    const t = finishTexture(finish, base).clone();
+    t.needsUpdate = true;
+    t.repeat.set(Math.max(w / FINISH_SPAN[finish], 0.2), Math.max(d / FINISH_SPAN[finish], 0.2));
+    return t;
+  }, [finish, base, w, d]);
+  const shine = finish === "stone" || finish === "tile";
+  return (
+    <mesh rotation-x={-Math.PI / 2} position={[x, y, z]} receiveShadow>
+      <planeGeometry args={[w, d]} />
+      <meshStandardMaterial
+        map={map}
+        roughness={shine ? 0.35 : finish === "carpet" ? 1 : 0.7}
+        envMapIntensity={shine ? 0.9 : 0.4}
+      />
     </mesh>
   );
 }
@@ -244,10 +704,15 @@ function Slabs({ floor }: { floor: FloorKey }) {
   return (
     <>
       {slabs.map((s, i) => (
-        <mesh key={i} position={[s.x, -0.15, s.z]} receiveShadow>
-          <boxGeometry args={[s.w, 0.3, s.d]} />
-          <meshStandardMaterial color={floor === "basement" ? "#3F3C39" : STONE} roughness={0.95} />
-        </mesh>
+        <group key={i}>
+          <mesh position={[s.x, -0.15, s.z]} receiveShadow>
+            <boxGeometry args={[s.w, 0.3, s.d]} />
+            <meshStandardMaterial color={floor === "basement" ? "#3F3C39" : "#CFC9BF"} roughness={0.95} />
+          </mesh>
+          {floor === "basement" ? null : (
+            <FinishedFloor kind="stone" x={s.x} z={s.z} w={s.w} d={s.d} y={0.004} />
+          )}
+        </group>
       ))}
       {floor === "basement" ? <CarParkMarkings /> : null}
     </>
@@ -290,16 +755,16 @@ function Rooms({ floor }: { floor: FloorKey }) {
     <>
       {SCENE.floors[floor].rooms.map((r, i) => (
         <group key={i}>
-          <mesh rotation-x={-Math.PI / 2} position={[r.x, 0.01, r.z]} receiveShadow>
-            <planeGeometry args={[r.w, r.d]} />
-            {r.kind === "ramp" ? (
-              // Unlit: a painted marking should read the same in the car
-              // park's low light as upstairs, and lit it went black there.
+          {r.kind === "ramp" ? (
+            <mesh rotation-x={-Math.PI / 2} position={[r.x, 0.01, r.z]} receiveShadow>
+              <planeGeometry args={[r.w, r.d]} />
+              {/* Unlit: a painted marking should read the same in the car
+                  park's low light as upstairs, and lit it went black there. */}
               <meshBasicMaterial map={hatch} />
-            ) : (
-              <meshStandardMaterial color={ROOM_FLOOR[r.kind] ?? ROOM_FLOOR.service} roughness={0.95} />
-            )}
-          </mesh>
+            </mesh>
+          ) : (
+            <FinishedFloor kind={r.kind} x={r.x} z={r.z} w={r.w} d={r.d} />
+          )}
           {r.name ? (
             <FlatText text={r.name} x={r.x} y={0.035} z={r.z} fit={Math.min(r.w, r.d)} />
           ) : null}
@@ -379,13 +844,72 @@ function WallSet({
   }, [list]);
   const glass = kind === "glass";
   return (
-    <instancedMesh ref={ref} args={[undefined, undefined, list.length]} castShadow={!glass} receiveShadow>
+    <>
+      <instancedMesh ref={ref} args={[undefined, undefined, list.length]} castShadow={!glass} receiveShadow>
+        <boxGeometry args={[1, 1, 1]} />
+        {glass ? (
+          <meshPhysicalMaterial
+            color={GLASS}
+            transparent
+            opacity={0.32}
+            roughness={0.05}
+            metalness={0.1}
+            clearcoat={1}
+            envMapIntensity={1.4}
+          />
+        ) : (
+          <meshStandardMaterial color={kind === "tall" ? HALL_WALL : WALL_PAINT} roughness={0.88} />
+        )}
+      </instancedMesh>
+      {/* A wall is more than a box: a capping line along its top and a
+          skirting at its foot, or for glass a metal frame top and bottom. */}
+      <WallTrim list={list} at="top" glass={glass} />
+      <WallTrim list={list} at="foot" glass={glass} />
+    </>
+  );
+}
+
+function WallTrim({
+  list,
+  at,
+  glass,
+}: {
+  list: readonly { x: number; z: number; w: number; d: number; h: number }[];
+  at: "top" | "foot";
+  glass: boolean;
+}) {
+  const ref = useRef<THREE.InstancedMesh>(null);
+  const h = glass ? 0.07 : at === "top" ? 0.06 : 0.12;
+  const grow = glass ? 0.04 : at === "top" ? 0.06 : 0.025;
+  useLayoutEffect(() => {
+    const m = ref.current;
+    if (!m) return;
+    const o = new THREE.Object3D();
+    list.forEach((w, i) => {
+      const y = at === "top" ? w.h + h / 2 - 0.001 : h / 2;
+      // Wider than the wall across its thickness only, so the trim stands
+      // proud of both faces without running past the wall's ends.
+      const along = w.w >= w.d;
+      o.position.set(w.x, y, w.z);
+      o.scale.set(
+        Math.max(w.w, 0.12) + (along ? 0 : grow),
+        h,
+        Math.max(w.d, 0.12) + (along ? grow : 0)
+      );
+      o.updateMatrix();
+      m.setMatrixAt(i, o.matrix);
+    });
+    m.instanceMatrix.needsUpdate = true;
+    m.computeBoundingSphere();
+  }, [list, at, h, grow]);
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, list.length]} receiveShadow>
       <boxGeometry args={[1, 1, 1]} />
-      {glass ? (
-        <meshStandardMaterial color={GLASS} transparent opacity={0.38} roughness={0.1} metalness={0.1} />
-      ) : (
-        <meshStandardMaterial color={kind === "tall" ? HALL_WALL : WALL_PAINT} roughness={0.92} />
-      )}
+      <meshStandardMaterial
+        color={glass ? "#5B6472" : at === "top" ? "#C9C4BB" : "#6E6A64"}
+        roughness={glass ? 0.35 : 0.7}
+        metalness={glass ? 0.6 : 0}
+      />
     </instancedMesh>
   );
 }
@@ -408,8 +932,8 @@ function Columns({ floor }: { floor: FloorKey }) {
   }, [cols, height]);
   return (
     <instancedMesh key={floor} ref={ref} args={[undefined, undefined, cols.length]} castShadow receiveShadow>
-      <boxGeometry args={[0.7, height, 0.7]} />
-      <meshStandardMaterial color={COLUMN} roughness={0.85} />
+      <cylinderGeometry args={[0.36, 0.36, height, 20]} />
+      <meshStandardMaterial color={COLUMN} roughness={0.6} />
     </instancedMesh>
   );
 }
@@ -453,10 +977,7 @@ function Hall() {
   const c = SCENE.hall.carpet;
   return (
     <group>
-      <mesh rotation-x={-Math.PI / 2} position={[c.x, 0.02, c.z]} receiveShadow>
-        <planeGeometry args={[c.w, c.d]} />
-        <meshStandardMaterial color={CARPET} roughness={1} />
-      </mesh>
+      <FinishedFloor kind="carpet" x={c.x} z={c.z} w={c.w} d={c.d} y={0.02} />
       <instancedMesh ref={seats} args={[chair, undefined, count]} castShadow receiveShadow>
         <meshStandardMaterial color={SEAT} roughness={0.75} />
       </instancedMesh>

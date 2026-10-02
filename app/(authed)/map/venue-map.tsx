@@ -235,6 +235,16 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
           {FLOOR_NAMES[floor]} floor
         </p>
 
+        {/* The neighbourhood is OpenStreetMap's; its licence asks for this. */}
+        <a
+          href="https://www.openstreetmap.org/copyright"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute bottom-12 right-3 z-10 rounded bg-white/80 px-1.5 py-0.5 text-[10px] text-brand-900/70"
+        >
+          &copy; OpenStreetMap contributors
+        </a>
+
         {/* legend */}
         {floor === "ground" ? (
           <div className="no-scrollbar absolute inset-x-0 bottom-2 z-10 flex gap-1.5 overflow-x-auto px-3">
