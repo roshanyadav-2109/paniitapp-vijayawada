@@ -125,7 +125,7 @@
     }
   }
   body {
-    /* Standard ligatures and contextual alternates are all Poppins needs.
+    /* Standard ligatures and contextual alternates are all Lexend needs.
        Numerals stay proportional here — the tabular-nums utility opts in
        where columns of times and counts need to line up. */
     font-feature-settings: "rlig" 1, "calt" 1;
@@ -147,15 +147,15 @@
    * Opt in per title.
    *
    * Letter-spacing is the part that matters. `tracking-tight` exists to
-   * correct Inter's loose default fit; Poppins needs its own value, and a
-   * heading set at Poppins' natural fit reads noticeably slack.
+   * correct Inter's loose default fit; Lexend needs its own value, and a
+   * heading set at Lexend's natural fit reads noticeably slack.
    */
   .font-display {
-    /* Poppins is a geometric sans with generous default sidebearings; at
-       title sizes it needs pulling in slightly or headings read loose. The
-       serif variation axes that used to be set here are gone with the serif. */
+    /* Lexend is set wide, for reading at text sizes; at title sizes it
+       needs pulling in a little more or headings read loose. The serif
+       variation axes that used to be set here are gone with the serif. */
     font-weight: 600;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.02em;
     font-feature-settings: "liga" 1, "calt" 1;
   }
 
@@ -177,9 +177,9 @@
   .eyebrow {
     /* Was a serif italic, which distinguished a label from body text by
        typeface. With one family doing both jobs that distinction has to come
-       from weight, size and colour instead. Not italic: Poppins has no true
-       italic, only a slanted roman, and at 12px it reads as a rendering
-       fault rather than as emphasis. */
+       from weight, size and colour instead. Not italic: Lexend has no
+       italic, and a slanted roman at 12px reads as a rendering fault
+       rather than as emphasis. */
     font-family: var(--font-sans), system-ui, sans-serif;
     font-style: normal;
     font-weight: 500;

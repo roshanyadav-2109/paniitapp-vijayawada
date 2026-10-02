@@ -1,30 +1,25 @@
 import type { Metadata, Viewport } from "next";
-import { Poppins, Noto_Sans_Telugu } from "next/font/google";
+import { Lexend, Noto_Sans_Telugu } from "next/font/google";
 import { Toaster } from "@/components/ui/toaster";
 import { LaunchSplash } from "@/components/features/launch-splash";
 import { EVENT_APP_NAME, EVENT_NAME, EVENT_TAGLINE } from "@/lib/event-config";
 import "./globals.css";
 
 /**
- * Poppins, used for both titles and body.
+ * Lexend, used for both titles and body: built for easy reading, and the
+ * face of quizspace.unknowniitians.com.
  *
- * It is a static family rather than variable, so the weights have to be
- * listed — 400/500/600/700 is everything the app actually sets. Asking for
- * more would ship more files for nothing.
+ * A variable font, so one file carries every weight the app sets.
  *
  * Latin only. The greeting on the sign-in screen rotates through Devanagari,
- * Telugu, Tamil and Kannada; Poppins covers only the first of those, so
- * pulling in its Devanagari subset would style one greeting differently from
- * its siblings. Noto Sans Telugu is loaded separately for Telugu, and the
- * rest fall back to the system's Indic faces, which keeps them consistent
- * with each other.
+ * Telugu, Tamil and Kannada; Noto Sans Telugu is loaded separately for
+ * Telugu, and the rest fall back to the system's Indic faces.
  *
- * Bound to both --font-sans and --font-display so the `font-display` utility
- * and every existing heading keep working untouched.
+ * Bound to --font-sans, which --font-display follows, so the `font-display`
+ * utility and every existing heading keep working untouched.
  */
-const poppins = Poppins({
+const lexend = Lexend({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
   variable: "--font-sans",
   display: "swap",
   preload: true,
@@ -93,7 +88,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${poppins.variable} ${notoTelugu.variable}`}
+      className={`${lexend.variable} ${notoTelugu.variable}`}
     >
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         {/* Chrome says the app can be installed (beforeinstallprompt) as
