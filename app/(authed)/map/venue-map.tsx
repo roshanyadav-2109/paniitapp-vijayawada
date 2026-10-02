@@ -23,6 +23,7 @@ import {
   type StallZone,
 } from "@/lib/venue-3d";
 import { Joystick } from "./joystick";
+import { useRememberedState } from "@/hooks/use-remembered-state";
 
 // three.js is most of a megabyte. It loads on this page and nowhere else,
 // and only in the browser — there is nothing to render on the server.
@@ -79,12 +80,14 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
   const [focus, setFocus] = useState<{ code: string; nonce: number } | null>(null);
   const [resetNonce, setResetNonce] = useState(0);
   const [query, setQuery] = useState("");
-  const [floor, setFloor] = useState<FloorKey>("ground");
+  // Kept for the visit: Back from a stall's page returns to the same floor
+  // and view, not the ground floor from above.
+  const [floor, setFloor] = useRememberedState<FloorKey>("floor", "ground");
   const [showPlan, setShowPlan] = useState(false);
   // The open map, roof off, is the default; inside puts the roof back on
   // and stands you in the main hall.
-  const [inside, setInside] = useState(false);
-  const [spot, setSpot] = useState(0);
+  const [inside, setInside] = useRememberedState("inside", false);
+  const [spot, setSpot] = useRememberedState("spot", 0);
   // Walking inside, by the thumbstick or the arrow keys and WASD: read by
   // the 3D view every frame, with `walking` to wake it.
   const move = useRef({ f: 0, t: 0 });

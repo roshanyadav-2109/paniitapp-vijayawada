@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/empty";
 import { IIT_CAMPUSES, INTERESTS } from "@/lib/constants";
 import { cn, initials } from "@/lib/utils";
+import { useRememberedState } from "@/hooks/use-remembered-state";
 
 export interface AttendeeRow {
   id: string;
@@ -107,15 +108,18 @@ export function NetworkingClient({
   const supabase = useMemo(() => createClient(), []);
   // Land on "For you" when we have something to recommend — that is the
   // reason to open this tab at a 800-person summit.
-  const [tab, setTab] = useState<SubTab>(
+  // The tab, search and filters are kept for the visit, so Back from a
+  // profile comes back to the list you were on.
+  const [tab, setTab] = useRememberedState<SubTab>(
+    "tab",
     recommended.length > 0 ? "foryou" : "people",
   );
   const [rows, setRows] = useState<AttendeeRow[]>(initialRows);
   const [connections, setConnections] = useState<AttendeeRow[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(initialRows.length < PAGE_SIZE);
-  const [filters, setFilters] = useState<Filters>(emptyFilters);
-  const [searchInput, setSearchInput] = useState("");
+  const [filters, setFilters] = useRememberedState<Filters>("filters", emptyFilters);
+  const [searchInput, setSearchInput] = useRememberedState("search", "");
   const [sheetOpen, setSheetOpen] = useState(false);
 
   // Debounce search input into filters.q

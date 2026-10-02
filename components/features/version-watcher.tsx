@@ -17,6 +17,16 @@ export function VersionWatcher() {
   const pathname = usePathname();
   const stale = useRef(false);
   const first = useRef(true);
+  // Back and Forward are not a moment to reload: they would land you on the
+  // screen's defaults, at its top, instead of where you were.
+  const viaHistory = useRef(false);
+  useEffect(() => {
+    const onPop = () => {
+      viaHistory.current = true;
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   useEffect(() => {
     if (BUILT === "dev") return;
@@ -48,10 +58,15 @@ export function VersionWatcher() {
     };
   }, []);
 
-  // A change of screen is a natural moment to take the new version.
+  // A change of screen is a natural moment to take the new version: a
+  // forward one, that is; going back waits for the next.
   useEffect(() => {
     if (first.current) {
       first.current = false;
+      return;
+    }
+    if (viaHistory.current) {
+      viaHistory.current = false;
       return;
     }
     if (stale.current) window.location.reload();

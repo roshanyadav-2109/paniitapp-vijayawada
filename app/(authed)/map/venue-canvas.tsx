@@ -2884,7 +2884,9 @@ function CameraRig({
 
   // Stepping in: a closer near plane, for chairs at arm's length, and off to
   // the chosen spot. Stepping out: back to the whole venue.
-  const wasInside = useRef(inside);
+  // Not yet inside, as far as this rig knows: a map that opens straight
+  // into the inside view (Back, a reload) is stepped into, not flown into.
+  const wasInside = useRef(false);
   const wasFloor = useRef(floor);
   useEffect(() => {
     const cam = camera as THREE.PerspectiveCamera;
@@ -2904,11 +2906,22 @@ function CameraRig({
         // flight still under way out there (a reset, a stall) is dropped,
         // or it would carry on and lift you back over the roof.
         flight.current = null;
-        camera.position.copy(to);
-        controls.current?.target.copy(to).addScaledVector(look.sub(to).normalize(), EYE_REACH);
-        controls.current?.update();
         userMoved.current = true;
-        invalidate();
+        // The controls are made in the same render as this rig; on a first
+        // render they may not be there yet, so wait a frame for them.
+        let tries = 0;
+        const place = () => {
+          const c = controls.current;
+          if (!c && tries++ < 60) {
+            requestAnimationFrame(place);
+            return;
+          }
+          camera.position.copy(to);
+          c?.target.copy(to).addScaledVector(look.clone().sub(to).normalize(), EYE_REACH);
+          c?.update();
+          invalidate();
+        };
+        place();
       } else {
         fly(to, look);
       }
