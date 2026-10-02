@@ -91,6 +91,48 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
   // Walking inside, by the thumbstick or the arrow keys and WASD: read by
   // the 3D view every frame, with `walking` to wake it.
   const move = useRef({ f: 0, t: 0 });
+
+  // On a phone the map fills exactly the space between the top of the page
+  // and the bottom bar: measured, not guessed. A stylesheet's fixed figure
+  // for the bar went stale with a phone's gesture area and the bar's own
+  // border, and left a strip of map behind the bar or a gap above it.
+  // On the narrowest phones the search box holds a word, not two.
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 379px)");
+    const on = () => setNarrow(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+
+  const fitStage = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = fitStage.current;
+    if (!el) return;
+    const fit = () => {
+      if (window.matchMedia("(min-width: 1024px)").matches) {
+        el.style.height = "";
+        return;
+      }
+      const nav = document.querySelector<HTMLElement>("[data-bottom-nav]");
+      const navH = nav && getComputedStyle(nav).display !== "none" ? nav.getBoundingClientRect().height : 0;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      const h = Math.max(380, Math.floor(window.innerHeight - top - navH));
+      el.style.height = `${h}px`;
+    };
+    fit();
+    const nav = document.querySelector<HTMLElement>("[data-bottom-nav]");
+    const ro = new ResizeObserver(fit);
+    if (nav) ro.observe(nav);
+    window.addEventListener("resize", fit);
+    window.visualViewport?.addEventListener("resize", fit);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", fit);
+      window.visualViewport?.removeEventListener("resize", fit);
+    };
+  }, []);
   const [walking, setWalking] = useState(false);
 
   useEffect(() => {
@@ -196,7 +238,7 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
     // building gets the whole width, and the controls sit on the canvas
     // rather than above it.
     <div className="-mx-3 -mt-2 sm:-mx-5 lg:mx-0 lg:mt-0">
-      <div className="venue-stage relative w-full overflow-hidden bg-[#EAF0F7] lg:rounded-lg lg:ring-1 lg:ring-rule">
+      <div ref={fitStage} className="venue-stage relative w-full overflow-hidden bg-[#EAF0F7] lg:rounded-lg lg:ring-1 lg:ring-rule">
         <VenueCanvas
           floor={floor}
           showPlan={showPlan}
@@ -220,7 +262,7 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search stalls"
+              placeholder={narrow ? "Search" : "Search stalls"}
               className="h-10 w-full min-w-0 rounded-full border border-white/70 bg-white/95 pl-9 pr-3 text-[16px] text-brand-950 shadow-[0_4px_14px_rgba(15,23,42,0.12)] outline-none placeholder:text-brand-900/50 focus:border-brand-300"
             />
             {matches.length > 0 ? (
@@ -277,8 +319,8 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
                 }}
                 className={
                   inside === v.on
-                    ? "h-8 rounded-full bg-brand-800 px-3.5 text-[14.5px] font-medium text-white"
-                    : "h-8 rounded-full px-3.5 text-[14.5px] font-medium text-brand-900"
+                    ? "h-8 rounded-full bg-brand-800 px-2.5 text-[13.5px] font-medium text-white min-[400px]:px-3.5 min-[400px]:text-[14.5px]"
+                    : "h-8 rounded-full px-2.5 text-[13.5px] font-medium text-brand-900 min-[400px]:px-3.5 min-[400px]:text-[14.5px]"
                 }
               >
                 {v.label}

@@ -49,7 +49,12 @@ export function BottomNav({
       // Marked so anything that has to float above it can measure it rather
       // than carry a copy of its height that goes stale.
       data-bottom-nav
-      className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-rule bg-white shadow-[0_-8px_24px_-18px_rgba(13,9,48,0.18)] lg:hidden"
+      // No shadow over the map: it meets the bar edge to edge, and the
+      // shadow lay on it as a grey band.
+      className={cn(
+        "safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-rule bg-white lg:hidden",
+        pathname === "/map" ? "" : "shadow-[0_-8px_24px_-18px_rgba(13,9,48,0.18)]"
+      )}
     >
       <ul
         className={cn(
