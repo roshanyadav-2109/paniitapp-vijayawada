@@ -65,6 +65,16 @@ const OUTSIDE: Record<FloorKey, string> = {
   first: "#CCDDC4",
 };
 
+/**
+ * The app's own typeface (Lexend, loaded by next/font under a hashed name),
+ * for text drawn into the scene's textures, so the stage screen and the
+ * stall boards match the page around them.
+ */
+function face(): string {
+  if (typeof document === "undefined") return "system-ui, sans-serif";
+  return getComputedStyle(document.body).fontFamily || "system-ui, sans-serif";
+}
+
 const BOOTH_H = 2.5;
 const FASCIA_H = 0.55;
 const PANEL = 0.06;
@@ -2077,9 +2087,9 @@ function Stage() {
         g.fillStyle = "#FFFFFF";
         g.textAlign = "center";
         g.textBaseline = "middle";
-        g.font = "800 92px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+        g.font = `800 92px ${face()}`;
         g.fillText("PanIIT", w / 2, h * 0.4);
-        g.font = "600 40px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+        g.font = `600 40px ${face()}`;
         g.fillText("Andhra Pradesh Summit 2026", w / 2, h * 0.72);
       }),
     []
@@ -2251,11 +2261,11 @@ function FlatText({
   const { tex, w, h } = useMemo(() => {
     const px = 64;
     const probe = document.createElement("canvas").getContext("2d")!;
-    probe.font = `700 ${px}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+    probe.font = `700 ${px}px ${face()}`;
     const cw = Math.ceil(probe.measureText(text).width) + 24;
     const ch = px + 20;
     const t = canvasTexture(cw, ch, (g2) => {
-      g2.font = `700 ${px}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+      g2.font = `700 ${px}px ${face()}`;
       g2.fillStyle = INK;
       g2.textAlign = "center";
       g2.textBaseline = "middle";
@@ -2415,10 +2425,10 @@ function useFasciaTexture(label: string, holder: string | null, colour: string) 
         g.textBaseline = "middle";
         const text = holder ? `${label} · ${holder}` : label;
         let size = 40;
-        g.font = `700 ${size}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+        g.font = `700 ${size}px ${face()}`;
         while (g.measureText(text).width > w - 24 && size > 18) {
           size -= 2;
-          g.font = `700 ${size}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+          g.font = `700 ${size}px ${face()}`;
         }
         g.fillText(text, w / 2, h / 2 + 2);
       }),
@@ -2446,7 +2456,7 @@ function useTagTexture(label: string, colour: string, selected: boolean) {
         g.fillStyle = selected ? "#FFFFFF" : "#0F172A";
         g.textAlign = "center";
         g.textBaseline = "middle";
-        g.font = "800 60px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+        g.font = `800 60px ${face()}`;
         g.fillText(label, 128, 59);
       }),
     [label, colour, selected]
@@ -2479,9 +2489,9 @@ function Backdrops() {
         g.fillStyle = "#FFFFFF";
         g.textAlign = "center";
         g.textBaseline = "middle";
-        g.font = "800 96px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+        g.font = `800 96px ${face()}`;
         g.fillText("PanIIT", w / 2, h * 0.36);
-        g.font = "600 44px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+        g.font = `600 44px ${face()}`;
         g.fillText("Andhra Pradesh Summit 2026", w / 2, h * 0.64);
       }),
     []
@@ -2630,20 +2640,34 @@ function Labels({ labels, layer }: { labels: readonly LabelData[]; layer: HTMLDi
   useEffect(() => {
     if (!layer) return;
     nodes.current = labels.map((l) => {
+      // Set as a map sets a place name: the words themselves, haloed in white
+      // to read over anything, over a pin at the place they name.
       const el = document.createElement("div");
       el.className =
-        "pointer-events-none absolute left-0 top-0 whitespace-nowrap rounded-full bg-white/95 px-2 py-0.5 text-center shadow-[0_1px_6px_rgba(15,23,42,0.18)] ring-1 ring-black/5 transition-opacity duration-150";
+        "pointer-events-none absolute left-0 top-0 flex flex-col items-center whitespace-nowrap text-center transition-opacity duration-150";
       el.style.opacity = "0";
+      // A solid white outline traced all round the letters, then a soft
+      // glow: legible over the carpet and the stage screen alike.
+      const halo = [
+        "1.5px 0 0 #fff", "-1.5px 0 0 #fff", "0 1.5px 0 #fff", "0 -1.5px 0 #fff",
+        "1.1px 1.1px 0 #fff", "-1.1px -1.1px 0 #fff", "1.1px -1.1px 0 #fff", "-1.1px 1.1px 0 #fff",
+        "0 0 6px rgba(255,255,255,0.9)",
+      ].join(", ");
       const t = document.createElement("p");
-      t.className = "text-[10.5px] font-semibold leading-tight text-[#1B1464]";
+      t.className = "text-[12px] font-semibold leading-[1.15] tracking-[-0.005em] text-[#0E1330]";
+      t.style.textShadow = halo;
       t.textContent = l.title;
       el.appendChild(t);
       if (l.sub) {
         const s = document.createElement("p");
-        s.className = "text-[8.5px] font-medium leading-tight text-slate-500";
+        s.className = "text-[10px] font-medium leading-[1.2] text-[#3E465E]";
+        s.style.textShadow = halo;
         s.textContent = l.sub;
         el.appendChild(s);
       }
+      const pin = document.createElement("span");
+      pin.className = "mt-1 block size-[7px] rounded-full bg-[#1B1464] ring-2 ring-white shadow-[0_1px_3px_rgba(15,23,42,0.4)]";
+      el.appendChild(pin);
       layer.appendChild(el);
       return el;
     });
@@ -2668,11 +2692,12 @@ function Labels({ labels, layer }: { labels: readonly LabelData[]; layer: HTMLDi
       const y = (-v.y * 0.5 + 0.5) * size.height;
       const w = el.offsetWidth || 80;
       const h = el.offsetHeight || 22;
-      const b = { x0: x - w / 2 - 3, y0: y - h / 2 - 3, x1: x + w / 2 + 3, y1: y + h / 2 + 3 };
+      const b = { x0: x - w / 2 - 4, y0: y - h - 2, x1: x + w / 2 + 4, y1: y + 8 };
       const clear =
         !near && v.z < 1 && !kept.some((k) => b.x0 < k.x1 && k.x0 < b.x1 && b.y0 < k.y1 && k.y0 < b.y1);
       if (clear) kept.push(b);
-      el.style.transform = `translate(${Math.round(x - w / 2)}px, ${Math.round(y - h / 2)}px)`;
+      // The pin, at the foot of the label, sits on the place itself.
+      el.style.transform = `translate(${Math.round(x - w / 2)}px, ${Math.round(y - h + 5.5)}px)`;
       el.style.opacity = clear ? "1" : "0";
     });
   });
