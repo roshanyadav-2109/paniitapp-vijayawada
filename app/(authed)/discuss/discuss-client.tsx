@@ -868,29 +868,31 @@ function Poll({
     });
   }
 
-  // The answer in front, once there is one: it gets the deeper fill.
-  const top = Math.max(0, ...options.map((o) => countOf(o.id)));
+  // Once you have voted, each answer is coloured by where it stands: the one
+  // in front green, the one behind red, the rest amber. Ties share a colour.
+  const tallies = options.map((o) => countOf(o.id));
+  const top = Math.max(0, ...tallies);
+  const bottom = Math.min(...tallies);
+  const tone = (n: number) =>
+    n === top && top > 0
+      ? { fill: "bg-[#DCFCE7]", text: "text-[#15803D]", edge: "border-[#86EFAC]" }
+      : n === bottom && bottom < top
+        ? { fill: "bg-[#FEE2E2]", text: "text-[#B91C1C]", edge: "border-[#FCA5A5]" }
+        : { fill: "bg-[#FEF3C7]", text: "text-[#B45309]", edge: "border-[#FCD34D]" };
 
   return (
-    <div className="mt-3 rounded-xl bg-[#F3F6FD] p-2.5 ring-1 ring-[#E1E8F8]">
-      <div className="mb-2 flex items-center justify-between px-1">
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-800">
-          <PollGlyph className="size-3.5" />
-          Poll
-        </span>
-        {total > 0 ? (
-          <span className="text-[11px] tabular-nums text-brand-900/60">
-            {total} vote{total === 1 ? "" : "s"}
-          </span>
-        ) : null}
-      </div>
+    <div className="mt-3">
+      <span className="mb-2 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-950">
+        <PollGlyph className="size-3.5" />
+        Poll
+      </span>
 
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {options.map((o, i) => {
           const n = countOf(o.id);
           const pct = total > 0 ? Math.round((n / total) * 100) : 0;
           const mine = voted === o.id;
-          const leading = !!voted && n > 0 && n === top;
+          const t = voted ? tone(n) : null;
           return (
             <button
               key={o.id}
@@ -899,52 +901,31 @@ function Poll({
               disabled={pending}
               aria-pressed={mine}
               className={cn(
-                "group relative flex w-full items-center gap-2.5 overflow-hidden rounded-lg border bg-white px-2.5 py-2 text-left transition-all",
-                mine
-                  ? "border-brand-800 shadow-[0_0_0_1px_rgba(27,20,100,0.9)]"
-                  : voted
-                    ? "border-[#E1E8F8]"
-                    : "border-[#E1E8F8] hover:-translate-y-px hover:border-brand-300 hover:shadow-[0_6px_14px_-10px_rgba(27,20,100,0.45)] active:translate-y-0"
+                "relative flex w-full items-center gap-3 overflow-hidden rounded-[4px] border bg-white px-3 py-2.5 text-left transition-colors",
+                t ? t.edge : "border-rule hover:border-brand-950",
+                mine && "border-2"
               )}
             >
               {/* Results stay hidden until you have answered, so early votes
                   do not steer anyone else's. */}
-              {voted ? (
+              {t ? (
                 <span
                   aria-hidden
-                  className={cn(
-                    "absolute inset-y-0 left-0 transition-[width] duration-700 ease-out",
-                    leading ? "bg-[#D6E1FA]" : "bg-[#EAF0FC]"
-                  )}
+                  className={cn("absolute inset-y-0 left-0 transition-[width] duration-700 ease-out", t.fill)}
                   style={{ width: `${pct}%` }}
                 />
               ) : null}
 
-              <span
-                className={cn(
-                  "relative grid size-6 shrink-0 place-items-center rounded-md text-[11px] font-semibold transition-colors",
-                  mine
-                    ? "bg-brand-800 text-white"
-                    : "bg-[#EEF2FC] text-brand-800 ring-1 ring-[#DCE4F7] group-hover:bg-white"
-                )}
-              >
-                {mine ? <Check className="size-3.5" strokeWidth={2.6} /> : String.fromCharCode(65 + i)}
-              </span>
+              <span className="relative w-4 shrink-0 text-[14px] font-semibold tabular-nums text-brand-950">{i + 1}</span>
 
-              <span
-                className={cn(
-                  "relative min-w-0 flex-1 text-[13.5px] leading-snug",
-                  mine || leading ? "font-semibold text-brand-950" : "text-brand-950"
-                )}
-              >
+              <span className={cn("relative min-w-0 flex-1 text-[14px] leading-snug text-brand-950", mine && "font-semibold")}>
                 {o.label}
               </span>
 
-              {voted ? (
-                <span className="relative shrink-0 text-right">
-                  <span className={cn("block text-[13px] font-semibold tabular-nums", leading ? "text-brand-800" : "text-brand-900/75")}>
-                    {pct}%
-                  </span>
+              {t ? (
+                <span className="relative inline-flex shrink-0 items-center gap-1 text-[14px] font-semibold tabular-nums text-brand-950">
+                  {mine ? <Check className="size-4" strokeWidth={2.6} aria-label="Your vote" /> : null}
+                  {pct}%
                 </span>
               ) : null}
             </button>
@@ -952,7 +933,7 @@ function Poll({
         })}
       </div>
 
-      <p className="mt-2 px-1 text-[11px] text-brand-900/55">
+      <p className="mt-2 text-[12px] text-brand-950">
         {voted
           ? "You voted · tap another option to change"
           : total === 0
@@ -963,7 +944,6 @@ function Poll({
   );
 }
 
-/** Three bars of different lengths: the poll mark beside the label. */
 function PollGlyph({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 16 16" className={className} aria-hidden>
