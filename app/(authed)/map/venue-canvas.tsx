@@ -10,6 +10,7 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { INSIDE_VIEWS, STALLS, type FloorKey, type Stall, type StallZone } from "@/lib/venue-3d";
 import { SCENE, SEATS } from "@/lib/venue-3d-scene";
 import { SURROUNDINGS } from "@/lib/venue-surroundings";
+import { ENVELOPE } from "@/lib/venue-envelope";
 
 /* ------------------------------------------------------------------ */
 /* Palette                                                             */
@@ -207,7 +208,8 @@ function Scene({ floor, showPlan, occupied, selected, onSelect, focus, resetNonc
           <Outside floor="first" />
           <Slabs floor="first" />
           <Rooms floor="first" />
-          <Walls floor="first" />
+          <Walls floor="first" upTo={CEILING.first} />
+          <Envelope floor="first" height={CEILING.first} />
           <Columns floor="first" />
           <BoardRooms />
           <group position={[0, -STOREY, 0]}>
@@ -224,7 +226,8 @@ function Scene({ floor, showPlan, occupied, selected, onSelect, focus, resetNonc
           <Outside floor="basement" />
           <Slabs floor="basement" />
           <Rooms floor="basement" />
-          <Walls floor="basement" />
+          <Walls floor="basement" upTo={CEILING.basement} />
+          <Envelope floor="basement" height={CEILING.basement} />
           <Columns floor="basement" />
           <FloorCeiling y={CEILING.basement} hole={false} />
           <FloorWalk onWalk={(steps) => setWalk({ steps, nonce: Date.now() })} />
@@ -236,7 +239,8 @@ function Scene({ floor, showPlan, occupied, selected, onSelect, focus, resetNonc
           <Outside floor="ground" />
           <Slabs floor="ground" />
           <Rooms floor="ground" />
-          <Walls floor="ground" />
+          <Walls floor="ground" upTo={CEILING.ground} />
+          <Envelope floor="ground" height={CEILING.ground} />
           <Columns floor="ground" />
           <Hall ribs={false} />
           <Stage />
@@ -262,6 +266,7 @@ function Scene({ floor, showPlan, occupied, selected, onSelect, focus, resetNonc
           <Rooms floor={floor} />
           {showPlan ? <PlanLayer floor={floor} /> : null}
           <Walls floor={floor} />
+          <Envelope floor={floor} height={floor === "basement" ? 3 : 3.2} />
           <Columns floor={floor} />
           <FloorWords floor={floor} />
 
@@ -334,15 +339,20 @@ function Scene({ floor, showPlan, occupied, selected, onSelect, focus, resetNonc
 
 function Outside({ floor }: { floor: FloorKey }) {
   const base = floor === "first" ? -STOREY - 0.05 : -0.32;
+  // The world outside is seen, not walked into: no collisions with it.
   if (floor === "basement") {
     return (
-      <mesh rotation-x={-Math.PI / 2} position={[0, base, 0]} receiveShadow>
+      <mesh rotation-x={-Math.PI / 2} position={[0, base, 0]} receiveShadow userData={{ noCollide: true }}>
         <planeGeometry args={[480, 480]} />
         <meshStandardMaterial color={OUTSIDE[floor]} roughness={1} />
       </mesh>
     );
   }
-  return <Landscape y={base} />;
+  return (
+    <group userData={{ noCollide: true }}>
+      <Landscape y={base} />
+    </group>
+  );
 }
 
 /**
@@ -901,13 +911,100 @@ function useHatch() {
  * mesh per kind of wall: painted, the hall's taller walls, and the glass
  * balustrade round the void upstairs.
  */
-function Walls({ floor }: { floor: FloorKey }) {
+/** A box standing on the line a–b, from y0 to y1, `thick` through. */
+function alongLine(a: readonly [number, number], b: readonly [number, number], y0: number, y1: number, thick: number, at = 0, len?: number) {
+  const dx = b[0] - a[0];
+  const dz = b[1] - a[1];
+  const full = Math.hypot(dx, dz);
+  const l = len ?? full;
+  const g = new THREE.BoxGeometry(l, y1 - y0, thick);
+  // Centred at distance `at` + l/2 along the line from a.
+  const t = (at + l / 2) / full;
+  g.rotateY(-Math.atan2(dz, dx));
+  g.translate(a[0] + dx * t, (y0 + y1) / 2, a[1] + dz * t);
+  return g;
+}
+
+/**
+ * What the drawing leaves out along each floor's edge (lib/venue-envelope.ts):
+ * curtain walls of glass in aluminium frames, the entrances as framed
+ * doorways, glass balustrades at the voids, the basement's concrete walls.
+ */
+function Envelope({ floor, height }: { floor: FloorKey; height: number }) {
+  const parts = useMemo(() => {
+    const glass: THREE.BufferGeometry[] = [];
+    const frame: THREE.BufferGeometry[] = [];
+    const railGlass: THREE.BufferGeometry[] = [];
+    const steel: THREE.BufferGeometry[] = [];
+    const solid: THREE.BufferGeometry[] = [];
+    const DOOR_TOP = 2.6;
+    for (const sg of ENVELOPE[floor]) {
+      const len = Math.hypot(sg.b[0] - sg.a[0], sg.b[1] - sg.a[1]);
+      if (sg.k === "solid") {
+        solid.push(alongLine(sg.a, sg.b, 0, height, 0.3));
+      } else if (sg.k === "glass") {
+        glass.push(alongLine(sg.a, sg.b, 0.08, height - 0.08, 0.03));
+        frame.push(alongLine(sg.a, sg.b, 0, 0.08, 0.12), alongLine(sg.a, sg.b, height - 0.08, height, 0.12));
+        // a transom where a door head would be, and mullions every 1.5 m
+        frame.push(alongLine(sg.a, sg.b, DOOR_TOP - 0.03, DOOR_TOP + 0.03, 0.1));
+        const n = Math.max(1, Math.round(len / 1.5));
+        for (let i = 0; i <= n; i++) frame.push(alongLine(sg.a, sg.b, 0, height, 0.12, Math.min(len - 0.06, Math.max(0, (len * i) / n - 0.03)), 0.06));
+      } else if (sg.k === "door") {
+        // open to walk through: jambs, a head, glass above it
+        frame.push(alongLine(sg.a, sg.b, 0, height, 0.14, 0, 0.1), alongLine(sg.a, sg.b, 0, height, 0.14, len - 0.1, 0.1));
+        frame.push(alongLine(sg.a, sg.b, DOOR_TOP, DOOR_TOP + 0.12, 0.14));
+        glass.push(alongLine(sg.a, sg.b, DOOR_TOP + 0.12, height - 0.08, 0.03));
+        frame.push(alongLine(sg.a, sg.b, height - 0.08, height, 0.12));
+      } else {
+        railGlass.push(alongLine(sg.a, sg.b, 0.05, 1.05, 0.02));
+        steel.push(alongLine(sg.a, sg.b, 1.05, 1.1, 0.06));
+        const n = Math.max(1, Math.round(len / 1.4));
+        for (let i = 0; i <= n; i++) steel.push(alongLine(sg.a, sg.b, 0, 1.08, 0.05, Math.min(len - 0.05, Math.max(0, (len * i) / n - 0.025)), 0.05));
+      }
+    }
+    const merge = (l: THREE.BufferGeometry[]) => (l.length ? mergeGeometries(l) : null);
+    return { glass: merge(glass), frame: merge(frame), railGlass: merge(railGlass), steel: merge(steel), solid: merge(solid) };
+  }, [floor, height]);
+
+  return (
+    <>
+      {parts.solid ? (
+        <mesh geometry={parts.solid} castShadow receiveShadow>
+          <meshStandardMaterial color="#8F8B84" roughness={0.95} />
+        </mesh>
+      ) : null}
+      {parts.frame ? (
+        <mesh geometry={parts.frame} castShadow>
+          <meshStandardMaterial color="#5B636C" roughness={0.35} metalness={0.7} />
+        </mesh>
+      ) : null}
+      {parts.glass ? (
+        <mesh geometry={parts.glass}>
+          <meshPhysicalMaterial color="#9FB9C4" transparent opacity={0.3} roughness={0.06} metalness={0.15} envMapIntensity={1.3} depthWrite={false} />
+        </mesh>
+      ) : null}
+      {parts.railGlass ? (
+        <mesh geometry={parts.railGlass}>
+          <meshPhysicalMaterial color={GLASS} transparent opacity={0.18} roughness={0.05} depthWrite={false} />
+        </mesh>
+      ) : null}
+      {parts.steel ? (
+        <mesh geometry={parts.steel} castShadow>
+          <meshStandardMaterial color="#B9BEC4" roughness={0.25} metalness={0.9} />
+        </mesh>
+      ) : null}
+    </>
+  );
+}
+
+function Walls({ floor, upTo = 0 }: { floor: FloorKey; upTo?: number }) {
   const walls = SCENE.floors[floor].walls;
   const groups = useMemo(() => {
-    const by: Record<string, typeof walls[number][]> = {};
-    for (const w of walls) (by[w.kind] ??= []).push(w);
+    const by: Record<string, { kind: string; h: number; x: number; z: number; w: number; d: number }[]> = {};
+    // Inside, a room's walls meet its ceiling; glass rails keep their height.
+    for (const w of walls) (by[w.kind] ??= []).push(w.kind === "glass" ? w : { ...w, h: Math.max(w.h, upTo) });
     return by;
-  }, [walls]);
+  }, [walls, upTo]);
 
   return (
     <>
@@ -1896,6 +1993,7 @@ function Stage() {
           return (
             <mesh
               key={`${i}-${k}`}
+              userData={{ walkable: "stage" }}
               position={[s.x, h / 2, s.z + toward * (s.d / 2 - depth / 2 - k * depth)]}
               castShadow
               receiveShadow
@@ -2491,6 +2589,24 @@ function CameraRig({
 }) {
   const { camera, size, invalidate, scene } = useThree();
   const moveRef = move;
+  // What can stop you walking, gathered once a floor: not the world outside,
+  // not the floor or the seats, not what is there only to be tapped.
+  const colliderList = useRef<THREE.Object3D[] | null>(null);
+  useEffect(() => {
+    colliderList.current = null;
+  }, [inside, floor]);
+  function colliders() {
+    if (colliderList.current) return colliderList.current;
+    const out: THREE.Object3D[] = [];
+    const visit = (o: THREE.Object3D) => {
+      if (o.userData.noCollide || o.userData.ghost || o.userData.walkable || !o.visible) return;
+      if ((o as THREE.Mesh).isMesh) out.push(o);
+      o.children.forEach(visit);
+    };
+    scene.children.forEach(visit);
+    colliderList.current = out;
+    return out;
+  }
   useEffect(() => {
     if (walking) invalidate();
   }, [walking, invalidate]);
@@ -2702,13 +2818,15 @@ function CameraRig({
       if (m.f) {
         const dir = new THREE.Vector3(look.x, 0, look.z).normalize().multiplyScalar(Math.sign(m.f));
         const dist = WALK_SPEED * Math.abs(m.f) * step;
-        const eye = camera.position.clone();
-        WALK_RAY.set(eye, dir);
+        // Anything from the knee up stops you: a rail, a table, a wall.
+        const feet = camera.position.y - EYE;
         WALK_RAY.far = dist + 0.45;
         WALK_RAY.camera = camera;
-        const blocked = WALK_RAY.intersectObjects(scene.children, true).some(
-          (h) => !h.object.userData.ghost && !h.object.userData.walkable && (h.object as THREE.Mesh).isMesh
-        );
+        const list = colliders();
+        const blocked = [0.3, 0.75, 1.2, EYE].some((hgt) => {
+          WALK_RAY.set(new THREE.Vector3(camera.position.x, feet + hgt, camera.position.z), dir);
+          return WALK_RAY.intersectObjects(list, false).length > 0;
+        });
         if (!blocked) {
           camera.position.addScaledVector(dir, dist);
           camera.position.y = floorAt(floor, camera.position.x, camera.position.z) + EYE;

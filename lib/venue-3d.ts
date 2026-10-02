@@ -536,7 +536,7 @@ export const INSIDE_VIEWS: Record<FloorKey, readonly InsideView[]> = {
     { name: "Reception", pos: [31.5, 1.6, 9], look: [31.5, 1.6, -6] },
     { name: "Board room 1", pos: [-31.6, 1.6, -11.86], look: [-46, 1.5, -11.86] },
     { name: "Board room 2", pos: [-31.6, 1.6, -4.91], look: [-46, 1.5, -4.91] },
-    { name: "Gallery", pos: [6.85, 1.6, -21.05], look: [6.85, 1.2, -10] },
+    { name: "Gallery", pos: [6.85, 1.6, -22.9], look: [6.85, 1.1, -10] },
   ],
   basement: [
     { name: "Car park", pos: [-6, 1.6, -4.5], look: [20, 1.6, -4.5] },
