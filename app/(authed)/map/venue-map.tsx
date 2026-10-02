@@ -118,10 +118,21 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
       const nav = document.querySelector<HTMLElement>("[data-bottom-nav]");
       const navH = nav && getComputedStyle(nav).display !== "none" ? nav.getBoundingClientRect().height : 0;
       const top = el.getBoundingClientRect().top + window.scrollY;
-      const h = Math.max(380, Math.floor(window.innerHeight - top - navH));
+      const h = Math.max(380, Math.ceil(window.innerHeight - top - navH));
       el.style.height = `${h}px`;
     };
     fit();
+    // The map screen does not scroll: a drag on it scrolled the page a
+    // little, a phone's address bar slid away, the screen grew, and a strip
+    // of page showed between the map and the bar. Held still while here,
+    // and let go on the way out.
+    const html = document.documentElement;
+    const before = { overflow: html.style.overflow, overscroll: html.style.overscrollBehavior };
+    if (!window.matchMedia("(min-width: 1024px)").matches) {
+      window.scrollTo(0, 0);
+      html.style.overflow = "hidden";
+      html.style.overscrollBehavior = "none";
+    }
     const nav = document.querySelector<HTMLElement>("[data-bottom-nav]");
     const ro = new ResizeObserver(fit);
     if (nav) ro.observe(nav);
@@ -131,6 +142,8 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
       ro.disconnect();
       window.removeEventListener("resize", fit);
       window.visualViewport?.removeEventListener("resize", fit);
+      html.style.overflow = before.overflow;
+      html.style.overscrollBehavior = before.overscroll;
     };
   }, []);
   const [walking, setWalking] = useState(false);
