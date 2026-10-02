@@ -50,6 +50,7 @@ import { PostStrip } from "@/components/features/post-strip";
 import { PressStrip } from "@/components/features/press-strip";
 import { SectorMarquee } from "@/components/features/sector-marquee";
 import { KeyParticipantsStrip } from "./key-participants-strip";
+import { Venue3dCta } from "./venue-3d-cta";
 
 const LOGO_BUCKET = "LOGOS";
 // Folder name in storage = visible tier heading. Order = display order.
@@ -351,6 +352,11 @@ export default async function HomePage() {
           </div>
         </SafeSection>
       ) : null}
+
+      {/* The venue in 3D, under the guests: where they will all be. */}
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
+        <Venue3dCta />
+      </SafeSection>
 
       {/* The sectors the summit's sessions cover, on a white panel of their
           own. The card's padding is the page gutter, so the marquee's own
