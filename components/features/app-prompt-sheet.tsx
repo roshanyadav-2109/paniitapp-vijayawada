@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 import { EVENT_INSTALL_ART, EVENT_NOTIFY_ART } from "@/lib/event-config";
 import {
   APP_PROMPT_EVENT,
+  blockingOem,
+  type BlockingOem,
   isStandalone,
   snooze,
   type AppPromptKind,
@@ -62,6 +64,13 @@ export function AppPromptSheet({
   const { toast } = useToast();
   const status = useAppPrompt({ signedIn, pushRegistered, scope });
   const router = useRouter();
+  // A Xiaomi, Oppo, Vivo or Realme phone turns an install into a shortcut
+  // unless Chrome may add apps: say so before they tap Install.
+  const [oem, setOem] = useState<BlockingOem | null>(null);
+  useEffect(() => {
+    if (status.ios) return;
+    void blockingOem().then(setOem);
+  }, [status.ios]);
   const [kind, setKind] = useState<AppPromptKind | null>(null);
   const [busy, setBusy] = useState(false);
   const shown = useRef(false);
@@ -285,6 +294,14 @@ export function AppPromptSheet({
                     Then come back here; they switch on by themselves.
                   </p>
                 </>
+              ) : null}
+
+              {isInstall && oem ? (
+                <p className="mt-2 rounded-md bg-white/70 px-2.5 py-2 text-[12px] leading-5 text-brand-950">
+                  On {oem === "xiaomi" ? "Xiaomi, Redmi and POCO" : oem === "oppo" ? "Oppo" : oem === "vivo" ? "Vivo" : "Realme"} phones, first allow
+                  Chrome to add apps: Settings, Apps, Chrome, {oem === "xiaomi" ? "Other permissions, Home screen shortcuts" : "Permissions, Create desktop shortcuts"}.
+                  Otherwise it only makes a shortcut.
+                </p>
               ) : null}
 
               {byHand ? (

@@ -102,3 +102,31 @@ export interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
+
+export type BlockingOem = "xiaomi" | "oppo" | "vivo" | "realme";
+
+/**
+ * Phones whose makers stop Chrome from adding an installed app to the app
+ * list unless a permission is switched on, leaving a home-screen shortcut
+ * instead. Chrome no longer names the phone in its user agent, so the model
+ * is asked for through client hints, and matched on the makers' model codes.
+ */
+export async function blockingOem(): Promise<BlockingOem | null> {
+  if (typeof navigator === "undefined") return null;
+  let model = "";
+  try {
+    const uad = (navigator as Navigator & {
+      userAgentData?: { getHighEntropyValues?: (h: string[]) => Promise<{ model?: string }> };
+    }).userAgentData;
+    model = (await uad?.getHighEntropyValues?.(["model"]))?.model ?? "";
+  } catch {
+    // no client hints: fall back to the user agent alone
+  }
+  const s = `${model} ${navigator.userAgent}`.toLowerCase();
+  // Xiaomi codes: 23021RAAEG, 2201117TI, 22101316I, M2101K6G.
+  if (/xiaomi|redmi|poco|\bmi \d|\bm2\d{3}[a-z0-9]{1,4}\b|\b2[0-4]\d{3,6}[a-z]{1,5}\b|\b2[0-4]\d{6,7}\b/.test(s)) return "xiaomi";
+  if (/\brmx\d{4}|realme/.test(s)) return "realme";
+  if (/\bcph\d{4}|oppo|\bpd[a-z]{2}\d{2}/.test(s)) return "oppo";
+  if (/\bvivo|\bv2\d{3}[a-z]?\b|\bi2\d{3}\b/.test(s)) return "vivo";
+  return null;
+}
