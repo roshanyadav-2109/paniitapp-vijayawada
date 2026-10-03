@@ -49,6 +49,7 @@ import {
   toggleLike,
   votePoll,
 } from "@/app/actions/discussion";
+import { Share2 } from "lucide-react";
 
 export interface PostAuthor {
   id: string;
@@ -575,6 +576,7 @@ function PostCard({
     : null;
   const isMine = userId != null && post.author_id === userId;
   const canDelete = isMine || isAdmin;
+  const displayName = stall ? stall.name : team ? TEAM_NAME : a?.full_name ?? "Attendee";
   // Deleting takes two taps: the first turns the bin into a red Delete.
   const [confirmDelete, setConfirmDelete] = useState(false);
   useEffect(() => {
@@ -616,8 +618,32 @@ function PostCard({
     });
   }
 
+  async function onShare() {
+    const url = `${window.location.origin}${window.location.pathname}${window.location.search}#post-${post.id}`;
+    const shareTitle = `Post by ${displayName}`;
+    const shareText = post.body.trim() || "Join the discussion on PANIIT AP";
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: shareTitle, text: shareText, url });
+        return;
+      }
+
+      await navigator.clipboard.writeText(url);
+      toast({ title: "Post link copied", description: "Share it with anyone in the room." });
+    } catch (error) {
+      // Closing the native share sheet is an intentional action, not an error.
+      if ((error as Error)?.name === "AbortError") return;
+      toast({
+        title: "Could not share post",
+        description: "Please try again in a moment.",
+        variant: "destructive",
+      });
+    }
+  }
+
   return (
-    <li className="rounded-lg border border-rule bg-white p-3.5">
+    <li id={`post-${post.id}`} className="rounded-lg border border-rule bg-white p-3.5">
       <div className="flex items-start gap-2.5">
         {/* The team's posts lead nowhere: tapping the mark or the name must
             not open the profile of the admin who wrote it. */}
@@ -663,7 +689,7 @@ function PostCard({
                 !team && "hover:underline"
               )}
             >
-              {stall ? stall.name : team ? TEAM_NAME : a?.full_name ?? "Attendee"}
+              {displayName}
             </AuthorLink>
             {team ? (
               <VerifiedTick />
@@ -686,6 +712,15 @@ function PostCard({
             </p>
           ) : null}
         </div>
+        <button
+          type="button"
+          onClick={onShare}
+          aria-label="Share post"
+          title="Share post"
+          className="ml-auto grid size-7 shrink-0 place-items-center rounded-md text-brand-900/45 transition-colors hover:bg-paper-deep hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-800/30"
+        >
+          <Share2 className="size-3.5" strokeWidth={1.8} />
+        </button>
         {canDelete ? (
           confirmDelete ? (
             <button
