@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Camera, RefreshCw, X } from "@/components/icons";
 import { EVENT_TAGLINE } from "@/lib/event-config";
-import { TICKETS_URL } from "./tickets-banner";
 import { InstagramLogo, LinkedInLogo, XLogo } from "@/components/features/brand-logos";
 
 const SOCIAL_BUTTON =
@@ -98,8 +97,7 @@ const FILE_NAME = "paniit-ap-summit-2026.jpg";
 /** What goes with the picture wherever it is shared. */
 const SHARE_TEXT = [
   `I'm at the PanIIT Andhra Pradesh Summit 2026 — ${EVENT_TAGLINE}.`,
-  "Join us in building Andhra's deeptech future: andhra.paniit.space",
-  `I'm coming to the summit, are you? Register here: ${TICKETS_URL}`,
+  "Get your PanIIT framed photographs, explore the agenda, stalls, discuss and network with one app: andhra.paniit.space",
 ].join("\n\n");
 
 /**
