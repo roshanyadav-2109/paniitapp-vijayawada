@@ -109,6 +109,9 @@ export function HeroCarousel() {
         return;
       }
       const slide = SLIDES[shown >= N ? 0 : shown];
+      // Never move the live/video slide away while someone is watching it.
+      // The viewer can still swipe or choose a dot to leave it manually.
+      if (slide?.live) return;
       if (Date.now() - since < (slide?.live ? LIVE_MS : INTERVAL_MS)) return;
       since = Date.now();
       setActive((cur) => (cur + 1) % (N + 1));
