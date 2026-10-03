@@ -668,8 +668,13 @@ function PostCard({
               <VerifiedTick />
             ) : null}
             {viewsLabel(post.view_count ?? 0) ? (
-              <span className="shrink-0 text-[11px] font-normal text-brand-900/55 tabular-nums">
-                · {viewsLabel(post.view_count ?? 0)}
+              <span
+                className="inline-flex shrink-0 items-center gap-1 text-[11px] font-normal text-brand-900/55 tabular-nums"
+                aria-label={`${post.view_count} views`}
+              >
+                <span aria-hidden>·</span>
+                <ViewsEye className="size-3.5" />
+                {viewsLabel(post.view_count ?? 0)}
               </span>
             ) : null}
             {post.is_pinned ? (
@@ -774,6 +779,17 @@ function PostCard({
 
       {showComments ? <Comments postId={post.id} userId={userId} isAdmin={isAdmin} /> : null}
     </li>
+  );
+}
+
+/** The summit's own eye mark for views: an open eye with three lashes. */
+function ViewsEye({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden className={className}>
+      <path d="M2.3 14.5Q12 3.3 21.7 14.5Q12 25.7 2.3 14.5Z" />
+      <circle cx="12" cy="14.5" r="3.5" />
+      <path d="M12 3.2v3.4M4.4 5.4l1.8 2.2M19.6 5.4l-1.8 2.2" />
+    </svg>
   );
 }
 

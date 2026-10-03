@@ -16,11 +16,12 @@ const DWELL_MS = 1000;
 /** Below this the count is not shown, so a new post never reads as empty. */
 export const VIEWS_SHOWN_FROM = 25;
 
+/** The number to show beside the eye, or null while it is too small. */
 export function viewsLabel(n: number): string | null {
   if (n < VIEWS_SHOWN_FROM) return null;
-  if (n < 1000) return `${n} views`;
+  if (n < 1000) return String(n);
   const k = n / 1000;
-  return `${k < 10 ? k.toFixed(1).replace(/\.0$/, "") : Math.round(k)}k views`;
+  return `${k < 10 ? k.toFixed(1).replace(/\.0$/, "") : Math.round(k)}k`;
 }
 
 function readSeen(): Set<string> {
