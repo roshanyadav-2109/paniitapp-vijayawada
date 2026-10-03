@@ -38,10 +38,16 @@ interface Frame {
   win: { x: number; y: number; w: number; h: number };
 }
 
-type FrameKey = "deeptech" | "campuses" | "leaders" | "summit";
+type FrameKey = "sponsor" | "deeptech" | "campuses" | "leaders" | "summit";
 
 /** The frames to choose from, in the order they are offered. */
 const FRAMES: Record<FrameKey, Frame> = {
+  sponsor: {
+    src: "/ui/frame/sponsor-circle-frame.png",
+    w: 1122,
+    h: 1402,
+    win: { x: 255, y: 480, w: 620, h: 450 },
+  },
   deeptech: {
     src: "/ui/frame/summit-frame-deeptech.webp",
     w: 1536,
@@ -68,12 +74,13 @@ const FRAMES: Record<FrameKey, Frame> = {
   },
 };
 const FRAME_NAMES: Record<FrameKey, string> = {
+  sponsor: "Sponsor circle frame",
   deeptech: "Deeptech Decade frame",
   campuses: "IIT campuses frame",
   leaders: "Chief Minister and Minister frame",
   summit: "PanIIT Andhra Pradesh Summit frame",
 };
-const FRAME_KEYS: FrameKey[] = ["deeptech", "campuses", "leaders", "summit"];
+const FRAME_KEYS: FrameKey[] = ["sponsor", "deeptech", "campuses", "leaders", "summit"];
 
 /** A frame's window as percentages of the frame, for laying things out in it. */
 function winStyle(f: Frame): React.CSSProperties {
@@ -255,7 +262,7 @@ function FrameCamera({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState<Step>("camera");
   // Which frame is round the picture: it opens on the first, and the
   // person can change it at any point.
-  const [frameKey, setFrameKey] = useState<FrameKey>("deeptech");
+  const [frameKey, setFrameKey] = useState<FrameKey>("sponsor");
   const [facing, setFacing] = useState<"user" | "environment">("user");
   const [live, setLive] = useState(false);
   const [streamId, setStreamId] = useState(0);
