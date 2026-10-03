@@ -25,6 +25,20 @@ const BY_KEY = Object.fromEntries(REACTIONS.map((r) => [r.key, r])) as Record<
   ReactionKey,
   (typeof REACTIONS)[number]
 >;
+const DEVICE_KEY = "reaction-device-id";
+
+function deviceId(): string {
+  try {
+    let id = window.localStorage.getItem(DEVICE_KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      window.localStorage.setItem(DEVICE_KEY, id);
+    }
+    return id;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
 
 type Counts = Partial<Record<ReactionKey, number>>;
 export type Reactions = {
@@ -42,6 +56,7 @@ const TABLE = {
 export function useReactions(kind: "post" | "comment", ids: string[], userId: string | null): Reactions {
   const supabase = useMemo(() => createClient(), []);
   const { table, col } = TABLE[kind];
+  const viewer = userId ? `user:${userId}` : `device:${deviceId()}`;
   const [counts, setCounts] = useState<Record<string, Counts>>({});
   const [mine, setMine] = useState<Record<string, ReactionKey | undefined>>({});
   const key = ids.join(",");
@@ -50,7 +65,7 @@ export function useReactions(kind: "post" | "comment", ids: string[], userId: st
     if (ids.length === 0) return;
     let cancelled = false;
     (async () => {
-      const { data } = await supabase.from(table).select(`${col}, user_id, reaction`).in(col, ids);
+      const { data } = await supabase.from(table).select(`${col}, user_id, viewer, reaction`).in(col, ids);
       if (cancelled || !data) return;
       const c: Record<string, Counts> = {};
       const m: Record<string, ReactionKey | undefined> = {};
@@ -58,7 +73,7 @@ export function useReactions(kind: "post" | "comment", ids: string[], userId: st
         const id = row[col];
         const r = row.reaction as ReactionKey;
         (c[id] ??= {})[r] = (c[id][r] ?? 0) + 1;
-        if (userId && row.user_id === userId) m[id] = r;
+        if (row.viewer === viewer) m[id] = r;
       }
       setCounts(c);
       setMine(m);
@@ -67,14 +82,10 @@ export function useReactions(kind: "post" | "comment", ids: string[], userId: st
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, userId, supabase, table, col]);
+  }, [key, viewer, supabase, table, col]);
 
   const react = useCallback(
     (id: string, r: ReactionKey) => {
-      if (!userId) {
-        window.location.assign(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
-        return;
-      }
       const before = mine[id];
       const next = before === r ? undefined : r;
       const prevCounts = counts[id] ?? {};
@@ -85,11 +96,10 @@ export function useReactions(kind: "post" | "comment", ids: string[], userId: st
       setCounts((c) => ({ ...c, [id]: bumped }));
 
       void (async () => {
-        const { error } = next
-          ? await supabase
-              .from(table)
-              .upsert({ [col]: id, user_id: userId, reaction: next }, { onConflict: `${col},user_id` })
-          : await supabase.from(table).delete().eq(col, id).eq("user_id", userId);
+        const { error } = await supabase.rpc(
+          kind === "post" ? "toggle_post_reaction" : "toggle_comment_reaction",
+          { target_id: id, reaction_key: r, device: deviceId() }
+        );
         if (error) {
           setMine((m) => ({ ...m, [id]: before }));
           setCounts((c) => ({ ...c, [id]: prevCounts }));
@@ -97,7 +107,7 @@ export function useReactions(kind: "post" | "comment", ids: string[], userId: st
         }
       })();
     },
-    [userId, mine, counts, supabase, table, col]
+    [kind, mine, counts, supabase]
   );
 
   return { counts, mine, react };
