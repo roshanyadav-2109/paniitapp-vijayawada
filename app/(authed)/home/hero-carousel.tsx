@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { EVENT_HERO_SLIDES, EVENT_LIVE_STREAM } from "@/lib/event-config";
+import { LiveEmbed } from "@/components/features/live-embed";
 
 type Slide = (typeof EVENT_HERO_SLIDES)[number] & { live?: string };
 
@@ -203,15 +204,7 @@ export function HeroCarousel() {
                 the loop is a still, so only one player ever runs. */}
             {s.live && i < N ? (
               <div className="relative aspect-video w-full bg-black">
-                <iframe
-                  src={`https://www.youtube.com/embed/${s.live}?playsinline=1&rel=0&autoplay=1&mute=1`}
-                  title={s.alt}
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  allowFullScreen
-                  className="absolute left-0 top-0 h-full w-full"
-                />
+                <LiveEmbed id={s.live} title={s.alt} />
               </div>
             ) : (
             // eslint-disable-next-line @next/next/no-img-element

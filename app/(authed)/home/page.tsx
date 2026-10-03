@@ -52,6 +52,7 @@ import { PressStrip } from "@/components/features/press-strip";
 import { SectorMarquee } from "@/components/features/sector-marquee";
 import { KeyParticipantsStrip } from "./key-participants-strip";
 import { Venue3dCta } from "./venue-3d-cta";
+import { LiveEmbed } from "@/components/features/live-embed";
 
 const LOGO_BUCKET = "LOGOS";
 // Folder name in storage = visible tier heading. Order = display order.
@@ -320,21 +321,23 @@ export default async function HomePage() {
 
       {/* Registration and the summit photo, close together: two calls to
           act, one under the other, rather than two sections. */}
-      <SafeSection className="space-y-3 px-3 sm:px-5 lg:px-6">
+      <SafeSection className="!mt-5 space-y-3 px-3 sm:px-5 lg:px-6">
         <FrameCta />
       </SafeSection>
 
       {/* The four things you actually do in the app — badge, scanner,
           secretariat, programme — directly under the masthead. Someone
           opening this at the door wants a QR code, not a photograph. */}
-      <SafeSection className="px-3 sm:px-5 lg:px-6">
+      {/* Close under the camera card and close above the stream: one group of
+          things to do, not three separate sections. */}
+      <SafeSection className="!mt-5 px-3 sm:px-5 lg:px-6">
         <QuickActions role={role} />
       </SafeSection>
 
       {/* The day's live stream, above the guests, while it runs. Muted
           autoplay: a phone will not play sound nobody asked for. */}
       {EVENT_LIVE_STREAM ? (
-        <SafeSection className="px-3 sm:px-5 lg:px-6">
+        <SafeSection className="!mt-6 px-3 sm:px-5 lg:px-6">
           <div className="rounded-lg bg-[#E9EAEE] p-3">
           <p className="mb-2.5 inline-flex items-center gap-1.5 text-[13px] font-bold tracking-[0.08em] text-[#DD002B]">
             <LiveMark />
@@ -342,15 +345,7 @@ export default async function HomePage() {
           </p>
           <div className="overflow-hidden rounded-md bg-black">
             <div className="relative aspect-video w-full">
-              <iframe
-                src={`https://www.youtube.com/embed/${EVENT_LIVE_STREAM.id}?playsinline=1&rel=0&autoplay=1&mute=1`}
-                title={EVENT_LIVE_STREAM.caption}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                referrerPolicy="strict-origin-when-cross-origin"
-                allowFullScreen
-                className="absolute left-0 top-0 h-full w-full"
-              />
+              <LiveEmbed id={EVENT_LIVE_STREAM.id} title={EVENT_LIVE_STREAM.caption} />
             </div>
           </div>
           <p className="mt-3 font-display text-[15px] font-semibold leading-snug text-brand-950">
