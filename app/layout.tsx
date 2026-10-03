@@ -118,11 +118,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <LaunchSplash />
         {children}
         <Toaster />
-        {/* Production only. In development Next serves its chunks at URLs
-            that never change between edits, so a registered worker hands
-            back yesterday's code from its cache and every change looks as
-            if it did nothing. A worker left over from an earlier session is
-            removed instead. */}
+        {/* Push notifications only. The worker no longer caches pages or
+            assets, so normal requests always go to the server. */}
         <script
           dangerouslySetInnerHTML={{
             __html:

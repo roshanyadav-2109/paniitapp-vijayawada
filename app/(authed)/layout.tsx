@@ -5,8 +5,6 @@ import { VersionWatcher } from "@/components/features/version-watcher";
 import { ScrollMemory } from "@/components/features/scroll-memory";
 import { BottomNav } from "@/components/features/bottom-nav";
 import { PhotoViewer } from "@/components/features/photo-viewer";
-import { OfflineBanner, OfflineWarmup } from "@/components/features/offline-support";
-import { OutboxFlusher } from "@/components/features/outbox";
 import { AppPromptSheet } from "@/components/features/app-prompt-sheet";
 import { getMyProfile, getViewer, type MyProfile } from "@/lib/viewer";
 import { createClient } from "@/lib/supabase/server";
@@ -73,7 +71,6 @@ async function Shell({ children }: { children: React.ReactNode }) {
   const viewer = await getViewer();
   return (
     <div className="min-h-screen bg-paper">
-      <OfflineBanner />
       <TopBar />
       <RefreshOnReturn />
       <VersionWatcher />
@@ -83,8 +80,6 @@ async function Shell({ children }: { children: React.ReactNode }) {
       </main>
       <BottomNav isAdmin={viewer.isAdmin} isModerator={viewer.isModerator} />
       <PhotoViewer />
-      <OfflineWarmup scope={viewer.userId} />
-      <OutboxFlusher userId={viewer.userId} />
       {/* Slides up a few seconds in, at most once a visit: install the app,
           then — once installed — turn notifications on. The public VAPID key
           is public by definition; the private half stays on the server. */}

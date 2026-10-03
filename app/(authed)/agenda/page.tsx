@@ -1,5 +1,4 @@
 import { EmptyArt } from "@/components/features/empty-art";
-import { RefreshOnReturn } from "@/components/features/refresh-on-return";
 import { emptied } from "@/lib/dev-empty";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -128,8 +127,6 @@ export default async function AgendaPage({
       header={<PromoCarousel />}
       filters={<AgendaFilters venues={venueOptions} />}
     >
-      {/* Organisers' changes to the programme show within a minute. */}
-      <RefreshOnReturn everyMs={60_000} onReturn={false} />
       {userInterests.length === 0 ? (
         /* In the same green as the Recommended bar on a card, because that
            green is exactly what this offer buys you. A line of grey text
