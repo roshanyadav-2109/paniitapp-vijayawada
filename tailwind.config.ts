@@ -68,21 +68,17 @@ const config: Config = {
   			// neutral grey it used to be, which next to a cool ground reads
   			// as dirty.
   			paper: {
-  				// Amaravati Stone: the stupa's pale limestone, a faint green-grey
-  				// that sits with both the navy and the IIT red, where the old
-  				// cool blue-grey (#EFF3FA) fought the navy's violet lean.
-  				DEFAULT: '#F0F1EC',
-  				deep: '#E4E5DD',
-  				// Unbleached Cotton, the undyed Kalamkari ground.
-  				raised: '#FBFBF8'
+  				DEFAULT: '#EFF3FA',
+  				deep: '#E2E9F4',
+  				raised: '#FFFFFF'
   			},
   			// Hairline rules. Replaces `brand-100` (#d4d2ed, a periwinkle) as
   			// the border everywhere — that lilac cast on 150 borders was most
   			// of why the app looked purple-tinted. Neutral, matching `paper`.
   			rule: {
-  				DEFAULT: '#DEDFD6',
-  				strong: '#C6C7BC',
-  				faint: '#E8E9E2'
+  				DEFAULT: '#E4E4E7',
+  				strong: '#C4C4C8',
+  				faint: '#EFEFF1'
   			},
   			brand: {
   				'50': '#eeedf7',
@@ -95,17 +91,7 @@ const config: Config = {
   				'700': '#241e6b',
   				'800': '#1B1464',
   				'900': '#15104e',
-  				// Iron Black, Kalamkari's iron-rust black, for text: navy then
-  				// reads as navy wherever it is actually used.
-  				'950': '#1E1C1A'
-  			},
-  			// Turmeric, the Kalamkari yellow: one highlight at a time
-  			// ("Featured", "Happening now"), never a fill for whole bars.
-  			turmeric: {
-  				'50': '#FBF3E2',
-  				'200': '#EBCB8B',
-  				DEFAULT: '#C2860F',
-  				'700': '#8A5E08'
+  				'950': '#0d0930'
   			},
   			iit: {
   				'50': '#fff0f3',

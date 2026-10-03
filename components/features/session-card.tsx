@@ -189,8 +189,8 @@ export function SessionCard({
       </div>
 
       {/*
-        One small tag, and only where there is something to say: Featured in
-        turmeric, Recommended in navy, the word alone — set as a word, at
+        One bar, and only where there is something to say: Featured in the
+        IIT red, Recommended in green, the word alone — set as a word, at
         normal weight, not in spaced capitals. The track is not in
         it — it is under the title, where it belongs, and repeating it here
         made the bar a second metadata row rather than a flag.
@@ -200,17 +200,13 @@ export function SessionCard({
         edge.
       */}
       {session.is_featured ? (
-        <div className="px-4 pb-3">
-          <span className="inline-flex rounded-[3px] border border-turmeric-200 bg-turmeric-50 px-2 py-0.5 text-[11.5px] font-semibold text-turmeric-700">
-            Featured
-          </span>
-        </div>
+        <p className="bg-iit-500 px-4 py-1.5 text-[12px] font-normal text-white">
+          Featured
+        </p>
       ) : matches.length > 0 ? (
-        <div className="px-4 pb-3">
-          <span className="inline-flex rounded-[3px] border border-brand-200 bg-brand-50 px-2 py-0.5 text-[11.5px] font-semibold text-brand-800">
-            Recommended
-          </span>
-        </div>
+        <p className="bg-emerald-700 px-4 py-1.5 text-[12px] font-normal text-white">
+          Recommended
+        </p>
       ) : null}
 
       {showCapacity && cap ? (

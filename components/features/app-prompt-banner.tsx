@@ -56,7 +56,7 @@ export function AppPromptBanner({
         // scale row under it brings mt-3 of its own), and both disappear
         // with the banner when there is nothing to ask.
         "mb-2 mt-5 flex items-center gap-3.5 overflow-hidden rounded-lg p-4 sm:gap-4 sm:p-5",
-        "bg-brand-50"
+        isInstall ? "bg-[#DCEFE4]" : "bg-[#D8E6FA]"
       )}
     >
       {/* Artwork on the left, opposite the gate pass below it, so the two
@@ -91,7 +91,7 @@ export function AppPromptBanner({
             // Install takes the deep green of its own block; notifications
             // stays on the navy every other button in the app uses.
             isInstall
-              ? "bg-brand-800 hover:bg-brand-900"
+              ? "bg-emerald-800 hover:bg-emerald-900"
               : "bg-brand-800 hover:bg-brand-900"
           )}
         >

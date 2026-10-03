@@ -4,27 +4,31 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import {
+  NavAdmin, NavAdminActive, NavAgenda, NavAgendaActive, NavDiscuss, NavDiscussActive,
+  NavExpo, NavExpoActive, NavHome, NavHomeActive, NavModerate, NavModerateActive,
+  NavNetwork, NavNetworkActive, type LucideIcon,
+} from "@/components/icons";
 
-
-// The summit's own icon set (public/ui/icons-v3): a thin dark outline for
-// the tabs you are not on, a solid blue shape for the one you are.
-type Tab = { href: string; label: string; icon: string };
-const ICONS = "/ui/icons-v3";
+// Each tab has a line icon and a filled one. The tab you are on shows the
+// filled icon in the brand colour; the rest are black line icons. Shape
+// carries the difference, not a faded copy of the same picture.
+type Tab = { href: string; label: string; icon: LucideIcon; activeIcon: LucideIcon };
 
 const TABS: Tab[] = [
-  { href: "/home", label: "Home", icon: "nav-home" },
-  { href: "/agenda", label: "Agenda", icon: "nav-agenda" },
-  { href: "/attendees", label: "Network", icon: "nav-network" },
-  { href: "/discuss", label: "Discuss", icon: "nav-discuss" },
-  { href: "/exhibitors", label: "Expo", icon: "nav-expo" },
+  { href: "/home", label: "Home", icon: NavHome, activeIcon: NavHomeActive },
+  { href: "/agenda", label: "Agenda", icon: NavAgenda, activeIcon: NavAgendaActive },
+  { href: "/attendees", label: "Network", icon: NavNetwork, activeIcon: NavNetworkActive },
+  { href: "/discuss", label: "Discuss", icon: NavDiscuss, activeIcon: NavDiscussActive },
+  { href: "/exhibitors", label: "Expo", icon: NavExpo, activeIcon: NavExpoActive },
 ];
 
 /** A sixth tab for organisers and admins, and nobody else. */
-const ADMIN_TAB: Tab = { href: "/admin", label: "Admin", icon: "nav-admin" };
+const ADMIN_TAB: Tab = { href: "/admin", label: "Admin", icon: NavAdmin, activeIcon: NavAdminActive };
 
 /** For session moderators: the questions sent to their sessions. An
  *  organiser who also moderates has the admin tab, which leads there too. */
-const MODERATE_TAB: Tab = { href: "/moderate", label: "Questions", icon: "nav-questions" };
+const MODERATE_TAB: Tab = { href: "/moderate", label: "Questions", icon: NavModerate, activeIcon: NavModerateActive };
 
 export function BottomNav({
   isAdmin = false,
@@ -63,7 +67,7 @@ export function BottomNav({
           extra ? "grid-cols-6" : "grid-cols-5"
         )}
       >
-        {tabs.map(({ href, label, icon }) => {
+        {tabs.map(({ href, label, icon: LineIcon, activeIcon: FilledIcon }) => {
           const active =
             shown === href || (href !== "/home" && shown.startsWith(`${href}/`));
           return (
@@ -80,18 +84,14 @@ export function BottomNav({
                 }
                 className={cn(
                   "flex w-full flex-col items-center justify-center gap-1.5 px-0.5 transition-colors",
-                  active ? "text-[#2F6FEB]" : "text-brand-950 hover:text-[#2F6FEB]"
+                  active ? "text-brand-800" : "text-brand-950 hover:text-brand-800"
                 )}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`${ICONS}/${icon}${active ? "-selected" : ""}.svg`}
-                  alt=""
-                  width={26}
-                  height={26}
-                  className="size-[26px]"
-                  draggable={false}
-                />
+                {active ? (
+                  <FilledIcon className="size-6" />
+                ) : (
+                  <LineIcon className="size-6" strokeWidth={1.6} />
+                )}
                 <span className="text-[10px] font-semibold leading-none tracking-tight">
                   {label}
                 </span>

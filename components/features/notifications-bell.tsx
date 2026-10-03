@@ -3,6 +3,32 @@
 import { EmptyArt } from "@/components/features/empty-art";
 import { useEffect, useRef, useState } from "react";
 
+function PremiumBell({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden
+      className={className}
+    >
+      <path
+        d="M5.45 16.45A1 1 0 006.27 18h11.46a1 1 0 00.82-1.57l-1.05-1.5A4 4 0 0116.8 12.6V9.5a4.8 4.8 0 10-9.6 0v3.1a4 4 0 01-.7 2.26l-1.05 1.59z"
+        fill="currentColor"
+        fillOpacity="0.12"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M10 19.5a2 2 0 004 0"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 import {
   Sheet,
   SheetContent,
@@ -138,8 +164,7 @@ export function NotificationsBell() {
             aria-label={`Notifications${unseenCount > 0 ? ` (${unseenCount} unread)` : ""}`}
             className="relative inline-grid size-10 place-items-center rounded-full text-brand-800 transition-colors hover:bg-paper-deep"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/ui/icons-v3/notification-bell.svg" alt="" width={24} height={24} className="size-6" draggable={false} />
+            <PremiumBell className="size-[22px]" />
             {unseenCount > 0 ? (
               <span
                 className={cn(

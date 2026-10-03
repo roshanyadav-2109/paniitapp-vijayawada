@@ -78,7 +78,7 @@ export function AgendaFilters({ venues }: { venues: VenueOption[] }) {
           // itself. On shows as the deeper tone and the ticked bookmark.
           "inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-md px-3 text-[13px] font-semibold text-white transition-colors lg:flex-none lg:px-4",
           mineOnly
-            ? "bg-brand-900 hover:bg-brand-900"
+            ? "bg-brand-950 hover:bg-brand-950"
             : "bg-brand-800 hover:bg-brand-900"
         )}
       >
@@ -129,7 +129,7 @@ export function AgendaFilters({ venues }: { venues: VenueOption[] }) {
                 className={cn(
                   "w-full rounded-md border px-3 py-2.5 text-[13px] font-semibold transition-colors",
                   recommendedOnly
-                    ? "border-brand-800 bg-brand-800 text-white"
+                    ? "border-emerald-600 bg-emerald-600 text-white"
                     : "border-rule bg-white text-brand-900 hover:bg-paper-deep/40"
                 )}
               >

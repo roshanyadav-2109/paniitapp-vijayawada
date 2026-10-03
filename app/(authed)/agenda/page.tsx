@@ -131,10 +131,10 @@ export default async function AgendaPage({
       {/* Organisers' changes to the programme show within a minute. */}
       <RefreshOnReturn everyMs={60_000} onReturn={false} />
       {userInterests.length === 0 ? (
-        /* In navy, like the Recommended tag on a card, because that tag is
-           exactly what this offer buys you. A line of grey text
+        /* In the same green as the Recommended bar on a card, because that
+           green is exactly what this offer buys you. A line of grey text
            above a list of cards is the easiest thing on a page to skip. */
-        <p className="mb-4 rounded-md bg-brand-800 px-3 py-2 text-[12.5px] leading-5 text-white">
+        <p className="mb-4 rounded-md bg-emerald-700 px-3 py-2 text-[12.5px] leading-5 text-white">
           <Link href="/me/edit" className="underline underline-offset-2">
             Add your interests
           </Link>{" "}
