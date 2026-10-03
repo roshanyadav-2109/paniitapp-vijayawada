@@ -839,7 +839,12 @@ function PostCard({
         </span>
       </div>
 
-      {showComments ? <Comments postId={post.id} userId={userId} isAdmin={isAdmin} /> : null}
+      <Comments
+        postId={post.id}
+        userId={userId}
+        isAdmin={isAdmin}
+        showComposer={showComments}
+      />
     </li>
   );
 }
@@ -1036,10 +1041,12 @@ function Comments({
   postId,
   userId,
   isAdmin,
+  showComposer,
 }: {
   postId: string;
   userId: string | null;
   isAdmin: boolean;
+  showComposer: boolean;
 }) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
@@ -1202,8 +1209,9 @@ function Comments({
         </>
       )}
 
-      <div className="mt-2 flex items-center gap-2">
-        <input
+      {showComposer ? (
+        <div className="mt-2 flex items-center gap-2">
+          <input
           ref={inputRef}
           value={body}
           onChange={(e) => setBody(e.target.value.slice(0, 1000))}
@@ -1219,21 +1227,22 @@ function Comments({
           // row grew wider than the card and pushed the send button off the
           // edge. More noticeable since inputs went to 16px on phones.
           className="h-9 w-full min-w-0 flex-1 rounded-md border border-rule px-3 text-[13px] text-brand-950 outline-none placeholder:text-brand-900/40 focus:border-brand-300"
-        />
-        <button
-          type="button"
-          onClick={submit}
-          disabled={!body.trim() || pending}
-          aria-label="Send reply"
-          className="grid size-9 shrink-0 place-items-center rounded-md bg-brand-800 text-white disabled:opacity-40"
-        >
-          {pending ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Send className="size-4" strokeWidth={1.8} />
-          )}
-        </button>
-      </div>
+          />
+          <button
+            type="button"
+            onClick={submit}
+            disabled={!body.trim() || pending}
+            aria-label="Send reply"
+            className="grid size-9 shrink-0 place-items-center rounded-md bg-brand-800 text-white disabled:opacity-40"
+          >
+            {pending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Send className="size-4" strokeWidth={1.8} />
+            )}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
