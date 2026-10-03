@@ -23,6 +23,6 @@ export async function queue(_job: OutboxJob): Promise<boolean> {
   return false;
 }
 
-export async function sendOrQueue<T>(_job: OutboxJob, send: () => Promise<T>): Promise<T> {
+export async function sendOrQueue<T>(_job: OutboxJob, send: () => Promise<T>): Promise<T | "queued"> {
   return send();
 }

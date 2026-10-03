@@ -1047,6 +1047,7 @@ function Comments({
   const commentIds = useMemo(() => (rows ?? []).map((c) => c.id), [rows]);
   const replyReactions = useReactions("comment", commentIds, userId);
   const [body, setBody] = useState("");
+  const [showAll, setShowAll] = useState(false);
   const [pending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement | null>(null);
   // The reply waiting for its second tap to be deleted.
@@ -1137,8 +1138,9 @@ function Comments({
           <Loader2 className="size-4 animate-spin text-brand-800/40" />
         </div>
       ) : (
-        <ul className="space-y-2">
-          {rows.map((c) => {
+        <>
+          <ul className="space-y-2">
+          {rows.slice(0, showAll ? rows.length : 2).map((c) => {
             const prof = Array.isArray(c.profiles) ? c.profiles[0] : c.profiles;
             return (
               <li key={c.id} className="flex items-start gap-2">
@@ -1187,7 +1189,17 @@ function Comments({
               </li>
             );
           })}
-        </ul>
+          </ul>
+          {rows.length > 2 && !showAll ? (
+            <button
+              type="button"
+              onClick={() => setShowAll(true)}
+              className="mt-2 text-[12px] font-semibold text-brand-800 hover:underline"
+            >
+              View all {rows.length} comments
+            </button>
+          ) : null}
+        </>
       )}
 
       <div className="mt-2 flex items-center gap-2">
