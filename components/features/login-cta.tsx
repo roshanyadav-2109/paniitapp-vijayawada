@@ -32,7 +32,7 @@ export function LoginCta({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 overflow-hidden rounded-lg bg-[#D8E6FA] p-4 sm:gap-5 sm:p-5",
+        "flex items-center gap-3 overflow-hidden rounded-lg bg-brand-50 p-4 sm:gap-5 sm:p-5",
         className
       )}
     >

@@ -224,7 +224,7 @@ export function FrameCta() {
         </span>
         {/* The frame itself, tipped a little like a print, over the navy
             the camera opens on. */}
-        <span className="relative aspect-square w-[104px] shrink-0 rotate-[3deg] overflow-hidden rounded-md bg-brand-950 shadow-[0_10px_22px_-10px_rgba(13,9,48,0.5)] ring-2 ring-white sm:w-[128px]">
+        <span className="relative aspect-square w-[104px] shrink-0 rotate-[3deg] overflow-hidden rounded-md bg-brand-900 shadow-[0_10px_22px_-10px_rgba(13,9,48,0.5)] ring-2 ring-white sm:w-[128px]">
           <span
             className="absolute grid place-items-center bg-gradient-to-br from-brand-700 to-brand-500"
             style={winStyle(FRAMES.campuses)}

@@ -159,7 +159,7 @@ function ExhibitorCard({ e }: { e: ExhibitorRow }) {
           </p>
         ) : null}
         {/* The whole row opens the stall; this says so. */}
-        <span className="mt-3 inline-flex h-9 items-center rounded-[4px] bg-brand-950 px-4 text-[13.5px] font-medium text-white">
+        <span className="mt-3 inline-flex h-9 items-center rounded-[4px] bg-brand-900 px-4 text-[13.5px] font-medium text-white">
           Explore
         </span>
       </div>

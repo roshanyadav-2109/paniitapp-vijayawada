@@ -23,7 +23,7 @@ export function GatePassBanner({ signedIn }: { signedIn: boolean }) {
 
   return (
     <>
-      <div className="flex items-center gap-3 overflow-hidden rounded-lg bg-[#D8E6FA] p-4 sm:gap-5 sm:p-5">
+      <div className="flex items-center gap-3 overflow-hidden rounded-lg bg-brand-50 p-4 sm:gap-5 sm:p-5">
         <div className="min-w-0 flex-1">
           <p className="font-display text-[17px] font-semibold leading-snug text-brand-950 sm:text-[19px]">
             Access Gate Pass QR

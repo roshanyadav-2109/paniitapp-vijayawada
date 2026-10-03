@@ -133,7 +133,7 @@ function OwnerTools({
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="h-9 rounded-[4px] bg-brand-950 px-3.5 text-[13px] font-medium text-white"
+            className="h-9 rounded-[4px] bg-brand-900 px-3.5 text-[13px] font-medium text-white"
           >
             Edit details
           </button>

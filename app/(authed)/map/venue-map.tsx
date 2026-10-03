@@ -30,7 +30,7 @@ import { useRememberedState } from "@/hooks/use-remembered-state";
 const VenueCanvas = dynamic(() => import("./venue-canvas"), {
   ssr: false,
   loading: () => (
-    <div className="grid h-full w-full place-items-center bg-[#EAF0F7]">
+    <div className="grid h-full w-full place-items-center bg-[#F0F1EC]">
       <span className="inline-flex items-center gap-2 text-[13px] font-medium text-brand-900/60">
         <Loader2 className="size-4 animate-spin" /> Building the venue…
       </span>
@@ -251,7 +251,7 @@ export function VenueMap({ occupants }: { occupants: Occupant[] }) {
     // building gets the whole width, and the controls sit on the canvas
     // rather than above it.
     <div className="-mx-3 -mt-2 sm:-mx-5 lg:mx-0 lg:mt-0">
-      <div ref={fitStage} className="venue-stage relative w-full overflow-hidden bg-[#EAF0F7] lg:rounded-lg lg:ring-1 lg:ring-rule">
+      <div ref={fitStage} className="venue-stage relative w-full overflow-hidden bg-[#F0F1EC] lg:rounded-lg lg:ring-1 lg:ring-rule">
         <VenueCanvas
           floor={floor}
           showPlan={showPlan}

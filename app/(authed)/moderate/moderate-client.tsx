@@ -194,7 +194,7 @@ export function ModerateClient({
             onClick={() => setTab(t.key)}
             className={cn(
               "inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 text-[13px] transition-colors",
-              tab === t.key ? "bg-brand-950 font-medium text-white" : "bg-white text-brand-900 ring-1 ring-rule hover:bg-paper"
+              tab === t.key ? "bg-brand-900 font-medium text-white" : "bg-white text-brand-900 ring-1 ring-rule hover:bg-paper"
             )}
           >
             {t.label}

@@ -251,7 +251,7 @@ export function AppPromptSheet({
         className={cn(
           "rounded-t-2xl border-t-0 p-0 pb-[max(env(safe-area-inset-bottom),1rem)]",
           // Same ground as this prompt's banner on the home screen.
-          isInstall ? "bg-[#DCEFE4]" : "bg-[#D8E6FA]"
+          "bg-paper-raised"
         )}
       >
         <div className="mx-auto w-full max-w-md px-5 pb-1 pt-4">
@@ -335,7 +335,7 @@ export function AppPromptSheet({
                   <button
                     type="button"
                     onClick={() => close(false)}
-                    className="inline-flex h-9 items-center rounded-md bg-emerald-800 px-4 text-[13px] font-medium text-white transition-colors hover:bg-emerald-900"
+                    className="inline-flex h-9 items-center rounded-md bg-brand-800 px-4 text-[13px] font-medium text-white transition-colors hover:bg-brand-900"
                   >
                     Got it
                   </button>
@@ -348,7 +348,7 @@ export function AppPromptSheet({
                       "inline-flex h-9 items-center gap-1.5 rounded-md px-4 text-[13px] font-medium text-white transition-colors disabled:opacity-60",
                       // Matches the banner this prompt belongs to.
                       isInstall
-                        ? "bg-emerald-800 hover:bg-emerald-900"
+                        ? "bg-brand-800 hover:bg-brand-900"
                         : "bg-brand-800 hover:bg-brand-900"
                     )}
                   >

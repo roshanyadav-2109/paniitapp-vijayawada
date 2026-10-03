@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { ChatBubbleGlyph } from "./chat-icon";
 import { playMessagePing } from "./notify-sound";
 
 /**
@@ -93,7 +92,8 @@ export function ChatButton() {
       aria-label={`Open chat${unread > 0 ? ` (${unread} unread)` : ""}`}
       className="relative inline-grid size-10 place-items-center rounded-full text-brand-900 transition-colors hover:bg-paper-deep/70"
     >
-      <ChatBubbleGlyph className="size-[25px]" strokeWidth={1.6} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/ui/icons-v3/chat-bubble.svg" alt="" width={25} height={25} className="size-[25px]" draggable={false} />
       {unread > 0 ? (
         <span className="absolute right-1 top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-iit-500 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-paper">
           {unread > 99 ? "99+" : unread}
