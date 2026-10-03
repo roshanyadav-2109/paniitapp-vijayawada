@@ -75,10 +75,10 @@ export function LiveEmbed({ id, title }: { id: string; title: string }) {
         type="button"
         onClick={toggleSound}
         aria-label={muted ? "Turn sound on" : "Turn sound off"}
-        className="absolute bottom-2.5 right-2.5 z-10 inline-flex h-9 items-center gap-1.5 rounded-full bg-black/70 px-3 text-[12.5px] font-semibold text-white"
+        className="absolute bottom-2.5 right-2.5 z-10 inline-flex h-9 items-center gap-1.5 rounded-full bg-black/70 px-3 text-[12.5px] font-normal text-white"
       >
         {muted ? <SpeakerOff /> : <SpeakerOn />}
-        {muted ? "Tap for sound" : "Sound on"}
+        {muted ? "Sound off" : "Sound on"}
       </button>
     </>
   );
