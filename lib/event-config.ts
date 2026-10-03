@@ -508,7 +508,7 @@ export const EVENT_IIT_SLUGS = [
  * map while it runs. Set to null once the day is over.
  */
 export const EVENT_LIVE_STREAM: { id: string; caption: string } | null = {
-  id: "3AlLPNc3h4I",
+  id: "HJWig8U9QXQ",
   caption: "PanIIT Andhra Pradesh Summit 2026, live from Kala Vedika",
 };
 
