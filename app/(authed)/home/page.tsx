@@ -29,6 +29,7 @@ import {
   EVENT_STORAGE_PREFIX,
   EVENT_TAGLINE,
   EVENT_VIDEO_EMBED,
+  EVENT_LIVE_STREAM,
   EVENT_VENUE,
 } from "@/lib/event-config";
 import { HeroCarousel } from "./hero-carousel";
@@ -320,7 +321,6 @@ export default async function HomePage() {
       {/* Registration and the summit photo, close together: two calls to
           act, one under the other, rather than two sections. */}
       <SafeSection className="space-y-3 px-3 sm:px-5 lg:px-6">
-        <TicketsBanner />
         <FrameCta />
       </SafeSection>
 
@@ -330,6 +330,30 @@ export default async function HomePage() {
       <SafeSection className="px-3 sm:px-5 lg:px-6">
         <QuickActions role={role} />
       </SafeSection>
+
+      {/* The day's live stream, above the guests, while it runs. Muted
+          autoplay: a phone will not play sound nobody asked for. */}
+      {EVENT_LIVE_STREAM ? (
+        <SafeSection className="px-3 sm:px-5 lg:px-6">
+          <SectionHead title="Live now" meta="Live" />
+          <div className="mt-4 overflow-hidden rounded-lg bg-black">
+            <div className="relative aspect-video w-full">
+              <iframe
+                src={`https://www.youtube.com/embed/${EVENT_LIVE_STREAM.id}?playsinline=1&rel=0&autoplay=1&mute=1`}
+                title={EVENT_LIVE_STREAM.caption}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+                className="absolute left-0 top-0 h-full w-full"
+              />
+            </div>
+          </div>
+          <p className="mt-3 font-display text-[15px] font-semibold leading-snug text-brand-950">
+            {EVENT_LIVE_STREAM.caption}
+          </p>
+        </SafeSection>
+      ) : null}
 
       {/* Key guests & speakers */}
       {keyPeople.length > 0 ? (
@@ -356,6 +380,11 @@ export default async function HomePage() {
       {/* The venue in 3D, under the guests: where they will all be. */}
       <SafeSection className="px-3 sm:px-5 lg:px-6">
         <Venue3dCta />
+      </SafeSection>
+
+      {/* Tickets, under the venue. */}
+      <SafeSection className="px-3 sm:px-5 lg:px-6">
+        <TicketsBanner />
       </SafeSection>
 
       {/* The sectors the summit's sessions cover, on a white panel of their

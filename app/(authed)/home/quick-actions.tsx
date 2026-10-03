@@ -65,7 +65,7 @@ export function QuickActions({ role }: Props) {
           <span className={TILE_LABEL}>My QR</span>
         </button>
         <ActionLink
-          href="mailto:summit@paniit.org"
+          href="mailto:secretariat@paniit.org"
           icon={<TileIcon src="/ui/contact-us.webp" />}
           label="Contact us"
         />

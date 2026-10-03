@@ -1,11 +1,21 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { EVENT_HERO_SLIDES } from "@/lib/event-config";
+import { EVENT_HERO_SLIDES, EVENT_LIVE_STREAM } from "@/lib/event-config";
 
-type Slide = (typeof EVENT_HERO_SLIDES)[number];
+type Slide = (typeof EVENT_HERO_SLIDES)[number] & { live?: string };
 
-const SLIDES: Slide[] = EVENT_HERO_SLIDES;
+// While the summit is streaming, the stream is the first slide.
+const SLIDES: Slide[] = EVENT_LIVE_STREAM
+  ? [
+      {
+        live: EVENT_LIVE_STREAM.id,
+        src: `https://i.ytimg.com/vi/${EVENT_LIVE_STREAM.id}/hqdefault_live.jpg`,
+        alt: EVENT_LIVE_STREAM.caption,
+      },
+      ...EVENT_HERO_SLIDES,
+    ]
+  : EVENT_HERO_SLIDES;
 
 const N = SLIDES.length;
 const INTERVAL_MS = 4500;
@@ -175,14 +185,30 @@ export function HeroCarousel() {
                 2.17:1 strip — and a 16:9 frame with object-cover cropped each
                 of them differently, taking the top off a poster to fit. The
                 frame follows the artwork instead. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {/* The live slide plays the stream, muted; its copy at the end of
+                the loop is a still, so only one player ever runs. */}
+            {s.live && i < N ? (
+              <div className="relative aspect-video w-full bg-black">
+                <iframe
+                  src={`https://www.youtube.com/embed/${s.live}?playsinline=1&rel=0&autoplay=1&mute=1`}
+                  title={s.alt}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                  className="absolute left-0 top-0 h-full w-full"
+                />
+              </div>
+            ) : (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={s.src}
               alt={s.alt}
               loading={i === 0 ? "eager" : "lazy"}
               decoding="async"
-              className="block h-auto w-full"
+              className={s.live ? "block aspect-video w-full object-cover" : "block h-auto w-full"}
             />
+            )}
             {/* Caption for slides that label a person. Scrim only where the
                 text sits, so the banner artwork is untouched. */}
             {s.name ? (

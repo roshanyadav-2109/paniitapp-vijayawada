@@ -509,6 +509,15 @@ export const EVENT_IIT_SLUGS = [
  * state government's channel. It replaced the Bangalore edition's summit
  * video, which was still embedded here.
  */
+/**
+ * The summit's own live stream on YouTube, shown on Home under the venue
+ * map while it runs. Set to null once the day is over.
+ */
+export const EVENT_LIVE_STREAM: { id: string; caption: string } | null = {
+  id: "3AlLPNc3h4I",
+  caption: "PanIIT Andhra Pradesh Summit 2026, live from Kala Vedika",
+};
+
 export const EVENT_VIDEO_EMBED = {
   id: "AVu3iHc925s",
   isLive: false,
