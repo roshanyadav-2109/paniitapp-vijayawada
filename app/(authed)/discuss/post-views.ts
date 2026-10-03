@@ -13,8 +13,8 @@ const SEEN_KEY = "discuss-seen";
 const DEVICE_KEY = "device-id";
 const DWELL_MS = 1000;
 
-/** Below this the count is not shown, so a new post never reads as empty. */
-export const VIEWS_SHOWN_FROM = 25;
+/** Shown as soon as a post has been seen at all. */
+export const VIEWS_SHOWN_FROM = 1;
 
 /** The number to show beside the eye, or null while it is too small. */
 export function viewsLabel(n: number): string | null {
