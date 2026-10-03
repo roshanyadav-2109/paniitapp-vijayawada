@@ -624,7 +624,29 @@ function PostCard({
 
     try {
       if (navigator.share) {
-        await navigator.share({ title: shareTitle, text: shareText, url });
+        let imageFile: File | null = null;
+        if (post.media_url && post.media_type === "image") {
+          try {
+            const response = await fetch(deliverUrl(post.media_url, "image"));
+            if (response.ok) {
+              const blob = await response.blob();
+              const type = blob.type || "image/jpeg";
+              const extension = type.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
+              imageFile = new File([blob], `discussion-${post.id}.${extension}`, { type });
+            }
+          } catch {
+            // The link and caption can still be shared if the image cannot be fetched.
+          }
+        }
+
+        const shareFiles: File[] | undefined =
+          imageFile && navigator.canShare?.({ files: [imageFile] }) ? [imageFile] : undefined;
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url,
+          ...(shareFiles ? { files: shareFiles } : {}),
+        });
         return;
       }
 
