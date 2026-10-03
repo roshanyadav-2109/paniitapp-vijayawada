@@ -4,17 +4,19 @@ import { useCallback, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 /**
- * Counts a post as seen once it has been at least half on screen for a
- * second (0034_post_views.sql). Each phone reports a post once; the
+ * Counts a post as seen once at least half of it, or for a tall post a good
+ * part of the screen, has been in view for a moment (0034_post_views.sql). Each phone reports a post once; the
  * database also counts each person once, so a refresh never adds a view.
  */
 
 const SEEN_KEY = "discuss-seen";
 const DEVICE_KEY = "device-id";
-const DWELL_MS = 1000;
+// Long enough that a post flicked past is not counted, short enough that
+// someone reading at a normal scroll is.
+const DWELL_MS = 600;
 
-/** Shown as soon as a post has been seen at all. */
-export const VIEWS_SHOWN_FROM = 1;
+/** Below this the count is not shown, so a new post never reads as empty. */
+export const VIEWS_SHOWN_FROM = 25;
 
 /** The number to show beside the eye, or null while it is too small. */
 export function viewsLabel(n: number): string | null {
@@ -81,7 +83,12 @@ export function usePostViews() {
         for (const e of entries) {
           const id = (e.target as HTMLElement).dataset.postId;
           if (!id || seen.current?.has(id)) continue;
-          if (e.isIntersecting) {
+          // Half the post on screen, or, for a post taller than the screen
+          // (a big photo), a good part of the screen filled by it.
+          const seenEnough =
+            e.isIntersecting &&
+            (e.intersectionRatio >= 0.5 || e.intersectionRect.height >= window.innerHeight * 0.4);
+          if (seenEnough) {
             if (!timers.current.has(id)) {
               timers.current.set(
                 id,
@@ -99,7 +106,7 @@ export function usePostViews() {
           }
         }
       },
-      { threshold: 0.5 }
+      { threshold: [0, 0.25, 0.5, 0.75, 1] }
     );
     els.current.forEach((el) => observer.current?.observe(el));
     return observer.current;
