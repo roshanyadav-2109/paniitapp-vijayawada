@@ -15,12 +15,8 @@ const DEVICE_KEY = "device-id";
 // someone reading at a normal scroll is.
 const DWELL_MS = 600;
 
-/** Below this the count is not shown, so a new post never reads as empty. */
-export const VIEWS_SHOWN_FROM = 25;
-
-/** The number to show beside the eye, or null while it is too small. */
-export function viewsLabel(n: number): string | null {
-  if (n < VIEWS_SHOWN_FROM) return null;
+/** The compact number shown beside every post's view icon. */
+export function viewsLabel(n: number): string {
   if (n < 1000) return String(n);
   const k = n / 1000;
   return `${k < 10 ? k.toFixed(1).replace(/\.0$/, "") : Math.round(k)}k`;

@@ -698,10 +698,10 @@ function PostCard({
             {team ? (
               <VerifiedTick />
             ) : null}
-            {viewsLabel(post.view_count ?? 0) ? (
+            {viewsLabel(post.view_count ?? 0) !== null ? (
               <span
                 className="inline-flex shrink-0 items-center gap-1 text-[11px] font-normal text-brand-900/55 tabular-nums"
-                aria-label={`${post.view_count} views`}
+                aria-label={`${post.view_count ?? 0} views`}
               >
                 <span aria-hidden>·</span>
                 <ViewsEye className="size-3.5" />
