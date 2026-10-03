@@ -134,12 +134,6 @@ export const EVENT_HERO_SLIDES: {
     src: "/hero/swadeep-briefing.webp",
     alt: "Swadeep Pillarisetti briefing the press at the Government of Andhra Pradesh information centre.",
   },
-  {
-    // The one genuinely AP banner we have, so it leads. Re-hosted rather than
-    // hotlinked from the almashines CDN.
-    src: "https://fncnndrexzmqqengbkvi.supabase.co/storage/v1/object/public/speakers/ap-2026/hero-registration.webp",
-    alt: "PanIIT Andhra Pradesh Summit 2026 — 3 October 2026, Dr. B. R. Ambedkar Kala Vedika, Vijayawada. Registration open.",
-  },
 ];
 
 /**

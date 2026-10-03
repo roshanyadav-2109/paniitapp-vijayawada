@@ -335,8 +335,12 @@ export default async function HomePage() {
           autoplay: a phone will not play sound nobody asked for. */}
       {EVENT_LIVE_STREAM ? (
         <SafeSection className="px-3 sm:px-5 lg:px-6">
-          <SectionHead title="Live now" meta="Live" />
-          <div className="mt-4 overflow-hidden rounded-lg bg-black">
+          <div className="rounded-lg bg-[#E9EAEE] p-3">
+          <p className="mb-2.5 inline-flex items-center gap-1.5 text-[13px] font-bold tracking-[0.08em] text-[#DD002B]">
+            <LiveMark />
+            LIVE
+          </p>
+          <div className="overflow-hidden rounded-md bg-black">
             <div className="relative aspect-video w-full">
               <iframe
                 src={`https://www.youtube.com/embed/${EVENT_LIVE_STREAM.id}?playsinline=1&rel=0&autoplay=1&mute=1`}
@@ -352,6 +356,7 @@ export default async function HomePage() {
           <p className="mt-3 font-display text-[15px] font-semibold leading-snug text-brand-950">
             {EVENT_LIVE_STREAM.caption}
           </p>
+          </div>
         </SafeSection>
       ) : null}
 
@@ -636,6 +641,16 @@ function GoogleMapsPin() {
 }
 
 /* Brand-color social logos — sized 28px so they read at a glance. */
+
+/** A broadcast mark: a dot with a signal on either side, in the live red. */
+function LiveMark() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
+      <circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none" />
+      <path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6M15.8 8.2a5.4 5.4 0 0 1 0 7.6M5.3 5.3a9.5 9.5 0 0 0 0 13.4M18.7 5.3a9.5 9.5 0 0 1 0 13.4" />
+    </svg>
+  );
+}
 
 function YouTubeLogo() {
   return (

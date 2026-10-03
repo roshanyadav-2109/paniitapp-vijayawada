@@ -19,6 +19,8 @@ const SLIDES: Slide[] = EVENT_LIVE_STREAM
 
 const N = SLIDES.length;
 const INTERVAL_MS = 4500;
+/** The live stream stays up a little longer than a picture. */
+const LIVE_MS = 7000;
 const SCROLL_MS = 600;
 /** Quiet time after the last scroll event before the strip moves itself. */
 const IDLE_MS = 2000;
@@ -93,11 +95,23 @@ export function HeroCarousel() {
 
   // Auto-advance forward forever — except while it is being handled. A timer
   // that fires mid-swipe yanks the strip out from under the finger.
+  // Each slide holds for its own time: the live stream longer than a picture.
+  const activeRef = useRef(0);
+  activeRef.current = active;
   useEffect(() => {
+    let since = Date.now();
+    let shown = activeRef.current;
     const id = window.setInterval(() => {
-      if (busyRef.current) return;
+      if (busyRef.current || activeRef.current !== shown) {
+        since = Date.now();
+        shown = activeRef.current;
+        return;
+      }
+      const slide = SLIDES[shown >= N ? 0 : shown];
+      if (Date.now() - since < (slide?.live ? LIVE_MS : INTERVAL_MS)) return;
+      since = Date.now();
       setActive((cur) => (cur + 1) % (N + 1));
-    }, INTERVAL_MS);
+    }, 250);
     return () => window.clearInterval(id);
   }, []);
 
