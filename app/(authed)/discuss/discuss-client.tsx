@@ -42,12 +42,12 @@ import { createClient } from "@/lib/supabase/client";
 import { cn, initials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { sendOrQueue } from "@/components/features/outbox";
+import { ReactionBar, useReactions, type Reactions } from "./reactions";
 import {
   addComment,
   createPost,
   deleteComment,
   deletePost,
-  toggleLike,
   votePoll,
 } from "@/app/actions/discussion";
 
@@ -150,7 +150,10 @@ export function DiscussClient({
   /** Stalls the viewer runs or works on: they can post as these. */
   myExhibitors?: PostAsExhibitor[];
 }) {
-  const liked = useMemo(() => new Set(likedIds), [likedIds]);
+  // likedIds is the old single "Agree"; reactions (0033) now carry it.
+  void likedIds;
+  const postIds = useMemo(() => posts.map((p) => p.id), [posts]);
+  const reactions = useReactions("post", postIds, userId);
 
   return (
     <div className="space-y-4">
@@ -191,7 +194,7 @@ export function DiscussClient({
             <PostCard
               key={p.id}
               post={p}
-              liked={liked.has(p.id)}
+              reactions={reactions}
               myVote={myVotes[p.id] ?? null}
               userId={userId}
               isAdmin={isAdmin}
@@ -399,7 +402,7 @@ function Composer({
             type="button"
             onClick={() => setMedia(null)}
             aria-label="Remove attachment"
-            className="absolute -right-2 -top-2 grid size-6 place-items-center rounded-full bg-brand-950 text-white shadow-sm"
+            className="absolute -right-2 -top-2 grid size-6 place-items-center rounded-full bg-brand-900 text-white shadow-sm"
           >
             <X className="size-3.5" />
           </button>
@@ -561,13 +564,13 @@ const TEAM_LOGO = "/logo/paniit-mark.png";
 
 function PostCard({
   post,
-  liked,
+  reactions,
   myVote,
   userId,
   isAdmin,
 }: {
   post: PostRow;
-  liked: boolean;
+  reactions: Reactions;
   myVote: string | null;
   userId: string | null;
   isAdmin: boolean;
@@ -593,28 +596,6 @@ function PostCard({
     const t = setTimeout(() => setConfirmDelete(false), 4000);
     return () => clearTimeout(t);
   }, [confirmDelete]);
-
-  // Optimistic like — the round trip is long enough to feel broken otherwise.
-  const [likeOn, setLikeOn] = useState(liked);
-  const [likeCount, setLikeCount] = useState(post.like_count);
-  useEffect(() => {
-    setLikeOn(liked);
-    setLikeCount(post.like_count);
-  }, [liked, post.like_count]);
-
-  function onLike() {
-    setLikeOn((v) => !v);
-    setLikeCount((c) => c + (likeOn ? -1 : 1));
-    startTransition(async () => {
-      const res = await toggleLike(post.id);
-      if ("error" in res) {
-        setLikeOn(liked);
-        setLikeCount(post.like_count);
-        return;
-      }
-      router.refresh();
-    });
-  }
 
   function onDelete() {
     startTransition(async () => {
@@ -761,17 +742,7 @@ function PostCard({
       ) : null}
 
       <div className="mt-2.5 flex items-center gap-1">
-        <button
-          type="button"
-          onClick={onLike}
-          className={cn(
-            "inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-[12px] font-medium transition-colors",
-            likeOn ? "text-brand-800" : "text-brand-900/55 hover:bg-paper-deep"
-          )}
-        >
-          <Check className={cn("size-4", likeOn && "text-brand-800")} strokeWidth={1.9} />
-          {likeCount > 0 ? likeCount : "Agree"}
-        </button>
+        <ReactionBar id={post.id} reactions={reactions} />
         <button
           type="button"
           onClick={() => setShowComments((v) => !v)}
@@ -983,6 +954,8 @@ function Comments({
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [rows, setRows] = useState<CommentRow[] | null>(null);
+  const commentIds = useMemo(() => (rows ?? []).map((c) => c.id), [rows]);
+  const replyReactions = useReactions("comment", commentIds, userId);
   const [body, setBody] = useState("");
   const [pending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -1095,6 +1068,9 @@ function Comments({
                     {timeAgo(c.created_at)}
                   </span>
                   <p className="text-[13px] leading-5 text-brand-900">{c.body}</p>
+                  <div className="-ml-1.5 mt-0.5">
+                    <ReactionBar id={c.id} reactions={replyReactions} compact />
+                  </div>
                 </div>
                 {userId != null && (c.user_id === userId || isAdmin) ? (
                   armed === c.id ? (
