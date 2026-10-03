@@ -43,6 +43,7 @@ import { cn, initials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { sendOrQueue } from "@/components/features/outbox";
 import { ReactionBar, useReactions, type Reactions } from "./reactions";
+import { usePostViews, viewsLabel } from "./post-views";
 import {
   addComment,
   createPost,
@@ -81,6 +82,7 @@ export interface PostRow {
   media_type: "image" | "video" | null;
   like_count: number;
   comment_count: number;
+  view_count?: number;
   vote_count: number;
   is_pinned: boolean;
   created_at: string;
@@ -154,6 +156,7 @@ export function DiscussClient({
   void likedIds;
   const postIds = useMemo(() => posts.map((p) => p.id), [posts]);
   const reactions = useReactions("post", postIds, userId);
+  const watch = usePostViews();
 
   return (
     <div className="space-y-4">
@@ -195,6 +198,7 @@ export function DiscussClient({
               key={p.id}
               post={p}
               reactions={reactions}
+              watch={watch}
               myVote={myVotes[p.id] ?? null}
               userId={userId}
               isAdmin={isAdmin}
@@ -565,12 +569,15 @@ const TEAM_LOGO = "/logo/paniit-mark.png";
 function PostCard({
   post,
   reactions,
+  watch,
   myVote,
   userId,
   isAdmin,
 }: {
   post: PostRow;
   reactions: Reactions;
+  /** Counts the post as seen once it has been on screen (post-views.ts). */
+  watch: (el: HTMLElement | null) => void;
   myVote: string | null;
   userId: string | null;
   isAdmin: boolean;
@@ -609,7 +616,7 @@ function PostCard({
   }
 
   return (
-    <li className="rounded-lg border border-rule bg-white p-3.5">
+    <li ref={watch} data-post-id={post.id} className="rounded-lg border border-rule bg-white p-3.5">
       <div className="flex items-start gap-2.5">
         {/* The team's posts lead nowhere: tapping the mark or the name must
             not open the profile of the admin who wrote it. */}
@@ -659,6 +666,11 @@ function PostCard({
             </AuthorLink>
             {team ? (
               <VerifiedTick />
+            ) : null}
+            {viewsLabel(post.view_count ?? 0) ? (
+              <span className="shrink-0 text-[11px] font-normal text-brand-900/55 tabular-nums">
+                · {viewsLabel(post.view_count ?? 0)}
+              </span>
             ) : null}
             {post.is_pinned ? (
               <span className="ml-auto shrink-0 rounded-full bg-paper-deep px-2 py-0.5 text-[10px] font-semibold text-brand-800">
