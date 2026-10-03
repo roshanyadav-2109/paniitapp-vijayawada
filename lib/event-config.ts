@@ -134,12 +134,6 @@ export const EVENT_HERO_SLIDES: {
     src: "/hero/swadeep-briefing.webp",
     alt: "Swadeep Pillarisetti briefing the press at the Government of Andhra Pradesh information centre.",
   },
-  {
-    // The one genuinely AP banner we have, so it leads. Re-hosted rather than
-    // hotlinked from the almashines CDN.
-    src: "https://fncnndrexzmqqengbkvi.supabase.co/storage/v1/object/public/speakers/ap-2026/hero-registration.webp",
-    alt: "PanIIT Andhra Pradesh Summit 2026 — 3 October 2026, Dr. B. R. Ambedkar Kala Vedika, Vijayawada. Registration open.",
-  },
 ];
 
 /**
@@ -509,6 +503,15 @@ export const EVENT_IIT_SLUGS = [
  * state government's channel. It replaced the Bangalore edition's summit
  * video, which was still embedded here.
  */
+/**
+ * The summit's own live stream on YouTube, shown on Home under the venue
+ * map while it runs. Set to null once the day is over.
+ */
+export const EVENT_LIVE_STREAM: { id: string; caption: string } | null = {
+  id: "3AlLPNc3h4I",
+  caption: "PanIIT Andhra Pradesh Summit 2026, live from Kala Vedika",
+};
+
 export const EVENT_VIDEO_EMBED = {
   id: "AVu3iHc925s",
   isLive: false,
@@ -571,6 +574,15 @@ export interface EventPressItem {
 }
 
 export const EVENT_PRESS: EventPressItem[] = [
+  {
+    outlet: "The India Decade",
+    headline:
+      "23 IITs, one stage: PanIIT summit in Vijayawada aims to make Andhra India's deep-tech capital",
+    summary:
+      "Chief Minister N Chandrababu Naidu is chief guest at Saturday's PanIIT Andhra Pradesh Summit, where organisers plan to unveil an IIT council for Amaravati, a deep-tech venture fund and a quantum launch named Q-Shiva.",
+    image: "/press/indiadecade-capital.webp",
+    href: "https://www.theindiadecade.com/technology/paniit-andhra-pradesh-summit-2026-vijayawada-23-iits-deep-tech-capital",
+  },
   {
     outlet: "ThePrint",
     headline:

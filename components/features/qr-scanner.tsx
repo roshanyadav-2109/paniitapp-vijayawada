@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "@/components/icons";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { isNetworkFailure, isOffline, queue } from "@/components/features/outbox";
 
 const PREFIX = "paniit2026:";
 
@@ -129,20 +130,41 @@ export function QrScanner() {
     handlingRef.current = true;
     setPending(true);
     const token = text.startsWith(PREFIX) ? text.slice(PREFIX.length) : text;
+    // No signal in the hall: keep the badge and connect when there is.
+    const holdForLater = async () => {
+      if (!(await queue({ kind: "connect", qrToken: token }))) {
+        toast({ title: "Sign in first", variant: "destructive" });
+        return;
+      }
+      playSuccessChime();
+    };
     try {
+      if (isOffline()) {
+        await holdForLater();
+        return;
+      }
       const supabase = createClient();
       const {
         data: { user },
+        error: userError,
       } = await supabase.auth.getUser();
+      if (userError && isNetworkFailure(userError.message)) {
+        await holdForLater();
+        return;
+      }
       if (!user) {
         toast({ title: "Sign in first", variant: "destructive" });
         return;
       }
-      const { data: target } = await supabase
+      const { data: target, error: lookupError } = await supabase
         .from("profiles")
         .select("id, full_name")
         .eq("qr_token", token)
         .maybeSingle();
+      if (lookupError && isNetworkFailure(lookupError.message)) {
+        await holdForLater();
+        return;
+      }
       if (!target) {
         toast({
           title: "Code didn't match an attendee",

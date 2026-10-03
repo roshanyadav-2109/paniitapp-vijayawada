@@ -126,7 +126,7 @@ export function ProfilePhotoUpload({
     <div className="flex items-center gap-4">
       <div className="relative">
         <Avatar className="size-20 ring-2 ring-brand-50">
-          {photoUrl ? <AvatarImage src={photoUrl} alt="" /> : null}
+          {photoUrl ? <AvatarImage src={photoUrl} alt="" viewable={false} /> : null}
           <AvatarFallback className="bg-paper-deep text-base font-semibold text-brand-800">
             {initials(fallbackName ?? "?")}
           </AvatarFallback>

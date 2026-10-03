@@ -31,7 +31,7 @@ export function ExhibitorsClient({
   initialRows: ExhibitorRow[];
 }) {
   const [search, setSearch] = useState("");
-  // One pavilion is always chosen, Start-ups to begin with; the choice is
+  // One pavilion is always chosen, Startups to begin with; the choice is
   // kept for the visit, so Back from a stall returns to it.
   const [chosen, setOnly] = useRememberedState<string | null>("pavilion", null);
 

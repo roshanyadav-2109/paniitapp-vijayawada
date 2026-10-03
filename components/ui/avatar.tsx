@@ -4,6 +4,7 @@ import * as React from "react";
 import * as AvatarPrimitive from "@radix-ui/react-avatar";
 import { cn } from "@/lib/utils";
 import { PERSON_PLACEHOLDER } from "@/lib/placeholders";
+import { openPhoto } from "@/components/features/photo-viewer";
 
 const Avatar = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Root>,
@@ -17,11 +18,28 @@ const Avatar = React.forwardRef<
 ));
 Avatar.displayName = AvatarPrimitive.Root.displayName;
 
+/**
+ * Tapping a photo opens it full size, as WhatsApp does with a contact's
+ * picture, instead of following whatever link or button the avatar sits in.
+ * Pass `viewable={false}` where the avatar is itself the control (the
+ * header's own photo, the photo uploader).
+ */
 const AvatarImage = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Image>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
->(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Image ref={ref} className={cn("aspect-square h-full w-full", className)} {...props} />
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image> & { viewable?: boolean }
+>(({ className, viewable = true, onClick, ...props }, ref) => (
+  <AvatarPrimitive.Image
+    ref={ref}
+    className={cn("aspect-square h-full w-full", viewable && "pointer-events-auto relative z-[1] cursor-zoom-in", className)}
+    onClick={(e) => {
+      onClick?.(e);
+      if (!viewable || e.defaultPrevented || typeof props.src !== "string") return;
+      e.preventDefault();
+      e.stopPropagation();
+      openPhoto({ src: props.src, name: props.alt ?? "" });
+    }}
+    {...props}
+  />
 ));
 AvatarImage.displayName = AvatarPrimitive.Image.displayName;
 

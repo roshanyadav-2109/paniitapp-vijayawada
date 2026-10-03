@@ -25,7 +25,6 @@ interface ProfileRow {
   asks: string[] | null;
   offers: string[] | null;
   photo_url: string | null;
-  email: string | null;
 }
 
 export const dynamic = "force-dynamic";
@@ -52,14 +51,11 @@ export default async function AttendeeProfilePage({
       data: { user },
     } = await supabase.auth.getUser();
 
-    // A delegate's email is for other delegates: anon holds no grant on that
-    // column, and asking for it anyway made the whole row come back empty —
-    // which landed a signed-out visitor on "this page isn't here" for every
-    // attendee in the directory. Ask for it only when there is somebody to
-    // show it to.
+    // No email: a person's address is never shown on their profile, to
+    // anyone. People reach each other through Chat, Connect and the links
+    // they chose to add.
     const columns =
-      "id, full_name, designation, company, role, bio, iit_campus, graduation_year, branch, linkedin_url, twitter_url, interests, asks, offers, photo_url" +
-      (user ? ", email" : "");
+      "id, full_name, designation, company, role, bio, iit_campus, graduation_year, branch, linkedin_url, twitter_url, interests, asks, offers, photo_url";
 
     const { data } = await supabase
       .from("profiles")
@@ -149,8 +145,7 @@ export default async function AttendeeProfilePage({
           buttons are the thing you do once you have read it. */}
       {profile.bio ||
       profile.linkedin_url ||
-      profile.twitter_url ||
-      profile.email ? (
+      profile.twitter_url ? (
         <section className="space-y-4 rounded-lg border border-rule bg-white p-5">
           <h2 className="font-display text-[17px] font-semibold text-brand-950">
             About
@@ -169,7 +164,6 @@ export default async function AttendeeProfilePage({
           <SocialActions
             linkedin={profile.linkedin_url}
             twitter={profile.twitter_url}
-            email={profile.email}
             size="md"
           />
         </section>

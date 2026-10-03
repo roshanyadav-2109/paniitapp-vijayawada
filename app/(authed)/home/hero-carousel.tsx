@@ -1,14 +1,27 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { EVENT_HERO_SLIDES } from "@/lib/event-config";
+import { EVENT_HERO_SLIDES, EVENT_LIVE_STREAM } from "@/lib/event-config";
+import { LiveEmbed } from "@/components/features/live-embed";
 
-type Slide = (typeof EVENT_HERO_SLIDES)[number];
+type Slide = (typeof EVENT_HERO_SLIDES)[number] & { live?: string };
 
-const SLIDES: Slide[] = EVENT_HERO_SLIDES;
+// While the summit is streaming, the stream is the first slide.
+const SLIDES: Slide[] = EVENT_LIVE_STREAM
+  ? [
+      {
+        live: EVENT_LIVE_STREAM.id,
+        src: `https://i.ytimg.com/vi/${EVENT_LIVE_STREAM.id}/hqdefault_live.jpg`,
+        alt: EVENT_LIVE_STREAM.caption,
+      },
+      ...EVENT_HERO_SLIDES,
+    ]
+  : EVENT_HERO_SLIDES;
 
 const N = SLIDES.length;
 const INTERVAL_MS = 4500;
+/** The live stream stays up a little longer than a picture. */
+const LIVE_MS = 7000;
 const SCROLL_MS = 600;
 /** Quiet time after the last scroll event before the strip moves itself. */
 const IDLE_MS = 2000;
@@ -83,11 +96,23 @@ export function HeroCarousel() {
 
   // Auto-advance forward forever — except while it is being handled. A timer
   // that fires mid-swipe yanks the strip out from under the finger.
+  // Each slide holds for its own time: the live stream longer than a picture.
+  const activeRef = useRef(0);
+  activeRef.current = active;
   useEffect(() => {
+    let since = Date.now();
+    let shown = activeRef.current;
     const id = window.setInterval(() => {
-      if (busyRef.current) return;
+      if (busyRef.current || activeRef.current !== shown) {
+        since = Date.now();
+        shown = activeRef.current;
+        return;
+      }
+      const slide = SLIDES[shown >= N ? 0 : shown];
+      if (Date.now() - since < (slide?.live ? LIVE_MS : INTERVAL_MS)) return;
+      since = Date.now();
       setActive((cur) => (cur + 1) % (N + 1));
-    }, INTERVAL_MS);
+    }, 250);
     return () => window.clearInterval(id);
   }, []);
 
@@ -175,14 +200,22 @@ export function HeroCarousel() {
                 2.17:1 strip — and a 16:9 frame with object-cover cropped each
                 of them differently, taking the top off a poster to fit. The
                 frame follows the artwork instead. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {/* The live slide plays the stream, muted; its copy at the end of
+                the loop is a still, so only one player ever runs. */}
+            {s.live && i < N ? (
+              <div className="relative aspect-video w-full bg-black">
+                <LiveEmbed id={s.live} title={s.alt} />
+              </div>
+            ) : (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={s.src}
               alt={s.alt}
               loading={i === 0 ? "eager" : "lazy"}
               decoding="async"
-              className="block h-auto w-full"
+              className={s.live ? "block aspect-video w-full object-cover" : "block h-auto w-full"}
             />
+            )}
             {/* Caption for slides that label a person. Scrim only where the
                 text sits, so the banner artwork is untouched. */}
             {s.name ? (

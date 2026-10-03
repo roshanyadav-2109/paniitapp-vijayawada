@@ -91,7 +91,7 @@ export async function TopBar() {
               {signedIn ? (
                 <Avatar className="size-9 shrink-0 ring-1 ring-rule">
                   {photoUrl ? (
-                    <AvatarImage src={photoUrl} alt={name ?? "Profile"} />
+                    <AvatarImage src={photoUrl} alt={name ?? "Profile"} viewable={false} />
                   ) : null}
                   <AvatarFallback className="bg-paper-deep text-[12px] font-semibold text-brand-800">
                     {initials(name)}
@@ -144,7 +144,7 @@ export async function TopBar() {
                 {signedIn ? (
                   <Avatar className="size-9 ring-1 ring-rule transition-shadow hover:ring-2 hover:ring-rule-strong">
                     {photoUrl ? (
-                      <AvatarImage src={photoUrl} alt={name ?? "Profile"} />
+                      <AvatarImage src={photoUrl} alt={name ?? "Profile"} viewable={false} />
                     ) : null}
                     <AvatarFallback className="bg-paper-deep text-[12px] font-semibold text-brand-800">
                       {initials(name)}

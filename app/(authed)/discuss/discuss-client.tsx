@@ -41,12 +41,14 @@ import { dayIST, timeIST } from "@/lib/date";
 import { createClient } from "@/lib/supabase/client";
 import { cn, initials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { sendOrQueue } from "@/components/features/outbox";
+import { ReactionBar, useReactions, type Reactions } from "./reactions";
+import { usePostViews, viewsLabel } from "./post-views";
 import {
   addComment,
   createPost,
   deleteComment,
   deletePost,
-  toggleLike,
   votePoll,
 } from "@/app/actions/discussion";
 import { Share2 } from "lucide-react";
@@ -81,6 +83,7 @@ export interface PostRow {
   media_type: "image" | "video" | null;
   like_count: number;
   comment_count: number;
+  view_count?: number;
   vote_count: number;
   is_pinned: boolean;
   created_at: string;
@@ -150,7 +153,11 @@ export function DiscussClient({
   /** Stalls the viewer runs or works on: they can post as these. */
   myExhibitors?: PostAsExhibitor[];
 }) {
-  const liked = useMemo(() => new Set(likedIds), [likedIds]);
+  // likedIds is the old single "Agree"; reactions (0033) now carry it.
+  void likedIds;
+  const postIds = useMemo(() => posts.map((p) => p.id), [posts]);
+  const reactions = useReactions("post", postIds, userId);
+  const watch = usePostViews();
 
   return (
     <div className="space-y-4">
@@ -191,7 +198,8 @@ export function DiscussClient({
             <PostCard
               key={p.id}
               post={p}
-              liked={liked.has(p.id)}
+              reactions={reactions}
+              watch={watch}
               myVote={myVotes[p.id] ?? null}
               userId={userId}
               isAdmin={isAdmin}
@@ -270,15 +278,25 @@ function Composer({
   function submit() {
     if (!canSubmit || pending) return;
     startTransition(async () => {
-      const res = await createPost(
-        body,
-        isPoll ? options : undefined,
-        media ?? undefined,
-        sessionId,
-        isAdmin && postAs === "team",
-        postAs !== "me" && postAs !== "team" ? postAs : undefined
-      );
-      if ("error" in res) {
+      const send = () =>
+        createPost(
+          body,
+          isPoll ? options : undefined,
+          media ?? undefined,
+          sessionId,
+          isAdmin && postAs === "team",
+          postAs !== "me" && postAs !== "team" ? postAs : undefined
+        );
+      // A plain post of your own can wait for signal; one with a photo, or
+      // posted for the team or a stall, needs the network now.
+      const res =
+        !media && postAs === "me"
+          ? await sendOrQueue(
+              { kind: "post", body, options: isPoll ? options : undefined, sessionId },
+              send
+            )
+          : await send();
+      if (res !== "queued" && "error" in res) {
         toast({ title: "Could not post", description: res.error, variant: "destructive" });
         return;
       }
@@ -389,7 +407,7 @@ function Composer({
             type="button"
             onClick={() => setMedia(null)}
             aria-label="Remove attachment"
-            className="absolute -right-2 -top-2 grid size-6 place-items-center rounded-full bg-brand-950 text-white shadow-sm"
+            className="absolute -right-2 -top-2 grid size-6 place-items-center rounded-full bg-brand-900 text-white shadow-sm"
           >
             <X className="size-3.5" />
           </button>
@@ -551,13 +569,16 @@ const TEAM_LOGO = "/logo/paniit-mark.png";
 
 function PostCard({
   post,
-  liked,
+  reactions,
+  watch,
   myVote,
   userId,
   isAdmin,
 }: {
   post: PostRow;
-  liked: boolean;
+  reactions: Reactions;
+  /** Counts the post as seen once it has been on screen (post-views.ts). */
+  watch: (el: HTMLElement | null) => void;
   myVote: string | null;
   userId: string | null;
   isAdmin: boolean;
@@ -584,28 +605,6 @@ function PostCard({
     const t = setTimeout(() => setConfirmDelete(false), 4000);
     return () => clearTimeout(t);
   }, [confirmDelete]);
-
-  // Optimistic like — the round trip is long enough to feel broken otherwise.
-  const [likeOn, setLikeOn] = useState(liked);
-  const [likeCount, setLikeCount] = useState(post.like_count);
-  useEffect(() => {
-    setLikeOn(liked);
-    setLikeCount(post.like_count);
-  }, [liked, post.like_count]);
-
-  function onLike() {
-    setLikeOn((v) => !v);
-    setLikeCount((c) => c + (likeOn ? -1 : 1));
-    startTransition(async () => {
-      const res = await toggleLike(post.id);
-      if ("error" in res) {
-        setLikeOn(liked);
-        setLikeCount(post.like_count);
-        return;
-      }
-      router.refresh();
-    });
-  }
 
   function onDelete() {
     startTransition(async () => {
@@ -643,7 +642,12 @@ function PostCard({
   }
 
   return (
-    <li id={`post-${post.id}`} className="rounded-lg border border-rule bg-white p-3.5">
+    <li
+      id={`post-${post.id}`}
+      ref={watch}
+      data-post-id={post.id}
+      className="rounded-lg border border-rule bg-white p-3.5"
+    >
       <div className="flex items-start gap-2.5">
         {/* The team's posts lead nowhere: tapping the mark or the name must
             not open the profile of the admin who wrote it. */}
@@ -693,6 +697,16 @@ function PostCard({
             </AuthorLink>
             {team ? (
               <VerifiedTick />
+            ) : null}
+            {viewsLabel(post.view_count ?? 0) ? (
+              <span
+                className="inline-flex shrink-0 items-center gap-1 text-[11px] font-normal text-brand-900/55 tabular-nums"
+                aria-label={`${post.view_count} views`}
+              >
+                <span aria-hidden>·</span>
+                <ViewsEye className="size-3.5" />
+                {viewsLabel(post.view_count ?? 0)}
+              </span>
             ) : null}
             {post.is_pinned ? (
               <span className="ml-auto shrink-0 rounded-full bg-paper-deep px-2 py-0.5 text-[10px] font-semibold text-brand-800">
@@ -785,17 +799,7 @@ function PostCard({
       ) : null}
 
       <div className="mt-2.5 flex items-center gap-1">
-        <button
-          type="button"
-          onClick={onLike}
-          className={cn(
-            "inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-[12px] font-medium transition-colors",
-            likeOn ? "text-brand-800" : "text-brand-900/55 hover:bg-paper-deep"
-          )}
-        >
-          <Check className={cn("size-4", likeOn && "text-brand-800")} strokeWidth={1.9} />
-          {likeCount > 0 ? likeCount : "Agree"}
-        </button>
+        <ReactionBar id={post.id} reactions={reactions} />
         <button
           type="button"
           onClick={() => setShowComments((v) => !v)}
@@ -815,6 +819,17 @@ function PostCard({
 
       {showComments ? <Comments postId={post.id} userId={userId} isAdmin={isAdmin} /> : null}
     </li>
+  );
+}
+
+/** The summit's own eye mark for views: an open eye with three lashes. */
+function ViewsEye({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden className={className}>
+      <path d="M2.3 14.5Q12 3.3 21.7 14.5Q12 25.7 2.3 14.5Z" />
+      <circle cx="12" cy="14.5" r="3.5" />
+      <path d="M12 3.2v3.4M4.4 5.4l1.8 2.2M19.6 5.4l-1.8 2.2" />
+    </svg>
   );
 }
 
@@ -894,8 +909,10 @@ function Poll({
     setVoted(optionId);
     move(1);
     startTransition(async () => {
-      const res = await votePoll(post.id, optionId);
-      if ("error" in res) {
+      const res = await sendOrQueue({ kind: "vote", postId: post.id, optionId }, () =>
+        votePoll(post.id, optionId)
+      );
+      if (res !== "queued" && "error" in res) {
         setVoted(before);
         move(-1);
         if (res.error === "unauth") router.push("/login?redirect=%2Fdiscuss");
@@ -1005,6 +1022,8 @@ function Comments({
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [rows, setRows] = useState<CommentRow[] | null>(null);
+  const commentIds = useMemo(() => (rows ?? []).map((c) => c.id), [rows]);
+  const replyReactions = useReactions("comment", commentIds, userId);
   const [body, setBody] = useState("");
   const [pending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -1074,7 +1093,13 @@ function Comments({
     const text = body.trim();
     if (!text || pending) return;
     startTransition(async () => {
-      const res = await addComment(postId, text);
+      const res = await sendOrQueue({ kind: "comment", postId, body: text }, () =>
+        addComment(postId, text)
+      );
+      if (res === "queued") {
+        setBody("");
+        return;
+      }
       if ("error" in res) return;
       setBody("");
       setRows(await load());
@@ -1111,6 +1136,9 @@ function Comments({
                     {timeAgo(c.created_at)}
                   </span>
                   <p className="text-[13px] leading-5 text-brand-900">{c.body}</p>
+                  <div className="-ml-1.5 mt-0.5">
+                    <ReactionBar id={c.id} reactions={replyReactions} compact />
+                  </div>
                 </div>
                 {userId != null && (c.user_id === userId || isAdmin) ? (
                   armed === c.id ? (

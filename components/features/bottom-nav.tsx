@@ -1,29 +1,30 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
-// Supplied flat artwork, one icon per tab rather than the linear/bold pair
-// the generated Solar set used. A single flat icon cannot carry that
-// distinction, so the selected state is opacity instead: full strength when
-// active, dimmed when not — the same contrast the labels already use.
-const TABS = [
-  { href: "/home", label: "Home", icon: "/ui/nav-home.webp" },
-  { href: "/agenda", label: "Agenda", icon: "/ui/nav-agenda.webp" },
-  { href: "/attendees", label: "Network", icon: "/ui/nav-network.webp" },
-  { href: "/discuss", label: "Discuss", icon: "/ui/nav-discuss.webp" },
-  { href: "/exhibitors", label: "Expo", icon: "/ui/nav-expo.webp" },
+
+// The summit's own icon set (public/ui/icons-v3): a thin dark outline for
+// the tabs you are not on, a solid blue shape for the one you are.
+type Tab = { href: string; label: string; icon: string };
+const ICONS = "/ui/icons-v3";
+
+const TABS: Tab[] = [
+  { href: "/home", label: "Home", icon: "nav-home" },
+  { href: "/agenda", label: "Agenda", icon: "nav-agenda" },
+  { href: "/attendees", label: "Network", icon: "nav-network" },
+  { href: "/discuss", label: "Discuss", icon: "nav-discuss" },
+  { href: "/exhibitors", label: "Expo", icon: "nav-expo" },
 ];
 
 /** A sixth tab for organisers and admins, and nobody else. */
-const ADMIN_TAB = { href: "/admin", label: "Admin", icon: "/ui/nav-admin.webp" };
+const ADMIN_TAB: Tab = { href: "/admin", label: "Admin", icon: "nav-admin" };
 
 /** For session moderators: the questions sent to their sessions. An
  *  organiser who also moderates has the admin tab, which leads there too. */
-const MODERATE_TAB = { href: "/moderate", label: "Questions", icon: "/ui/nav-moderate.webp" };
+const MODERATE_TAB: Tab = { href: "/moderate", label: "Questions", icon: "nav-questions" };
 
 export function BottomNav({
   isAdmin = false,
@@ -79,18 +80,17 @@ export function BottomNav({
                 }
                 className={cn(
                   "flex w-full flex-col items-center justify-center gap-1.5 px-0.5 transition-colors",
-                  active ? "text-brand-800" : "text-brand-800/45 hover:text-brand-800"
+                  active ? "text-[#2F6FEB]" : "text-brand-950 hover:text-[#2F6FEB]"
                 )}
               >
-                <Image
-                  src={icon}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`${ICONS}/${icon}${active ? "-selected" : ""}.svg`}
                   alt=""
-                  width={22}
-                  height={22}
-                  className={cn(
-                    "h-[22px] w-[22px] transition-opacity",
-                    active ? "opacity-100" : "opacity-40"
-                  )}
+                  width={26}
+                  height={26}
+                  className="size-[26px]"
+                  draggable={false}
                 />
                 <span className="text-[10px] font-semibold leading-none tracking-tight">
                   {label}

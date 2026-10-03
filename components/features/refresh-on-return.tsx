@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { contentVersion } from "@/components/features/offline-support";
 
 /**
  * Fresh screens without closing the app.
@@ -41,10 +42,19 @@ export function RefreshOnReturn({
     };
     document.addEventListener("visibilitychange", onVisibility);
 
+    // On an interval, ask only whether anything changed (a fingerprint the
+    // CDN answers), and re-read the screen only when it has: an unchanged
+    // programme costs no server render.
     let timer: ReturnType<typeof setTimeout> | null = null;
+    let seen: string | null = null;
     if (everyMs) {
-      const tick = () => {
-        if (!document.hidden) router.refresh();
+      void contentVersion().then((v) => (seen = v));
+      const tick = async () => {
+        if (!document.hidden) {
+          const v = await contentVersion();
+          if (v && seen && v !== seen) router.refresh();
+          if (v) seen = v;
+        }
         timer = setTimeout(tick, everyMs + Math.random() * 15_000);
       };
       timer = setTimeout(tick, everyMs + Math.random() * 15_000);

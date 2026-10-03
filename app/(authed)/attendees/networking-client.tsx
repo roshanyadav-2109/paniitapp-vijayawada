@@ -54,6 +54,17 @@ interface Filters {
 }
 
 const PAGE_SIZE = 50;
+
+// The list as far as it was scrolled, per filter, kept outside the component
+// so it outlives a visit to a profile. Without it Back rebuilt the list from
+// its first 50 people, the place you had scrolled to was not on the page yet,
+// and you landed at the top. Fresh for ten minutes, then fetched again.
+const LIST_FRESH_MS = 10 * 60 * 1000;
+const listCache = new Map<string, { rows: AttendeeRow[]; done: boolean; at: number }>();
+function cached(key: string) {
+  const hit = listCache.get(key);
+  return hit && Date.now() - hit.at < LIST_FRESH_MS ? hit : null;
+}
 const YEAR_MIN = 1970;
 const YEAR_MAX = 2025;
 
@@ -181,6 +192,13 @@ export function NetworkingClient({
   const serverRowsFresh = useRef(initialRows.length > 0);
   useEffect(() => {
     if (tab !== "people") return;
+    const kept = cached(filterKey);
+    if (kept) {
+      serverRowsFresh.current = false;
+      setRows(kept.rows);
+      setDone(kept.done);
+      return;
+    }
     if (serverRowsFresh.current) {
       serverRowsFresh.current = false;
       return;
@@ -192,6 +210,7 @@ export function NetworkingClient({
       if (cancelled) return;
       setRows(page.rows);
       setDone(page.rows.length < PAGE_SIZE);
+      listCache.set(filterKey, { rows: page.rows, done: page.rows.length < PAGE_SIZE, at: Date.now() });
       setLoading(false);
     })();
     return () => {
@@ -248,8 +267,13 @@ export function NetworkingClient({
         if (!entries[0]?.isIntersecting) return;
         setLoading(true);
         const page = await fetchPage(rows.length, filters);
-        setRows((prev) => [...prev, ...page.rows]);
-        if (page.rows.length < PAGE_SIZE) setDone(true);
+        const finished = page.rows.length < PAGE_SIZE;
+        setRows((prev) => {
+          const next = [...prev, ...page.rows];
+          listCache.set(JSON.stringify(filters), { rows: next, done: finished, at: Date.now() });
+          return next;
+        });
+        if (finished) setDone(true);
         setLoading(false);
       },
       { rootMargin: "400px 0px" },
@@ -538,7 +562,7 @@ function AttendeeListItem({
       content ignores the pointer so clicks reach the overlay; the marks take
       it back.
     */
-    <li className="group relative rounded-lg border border-rule bg-white p-3 transition-colors hover:bg-paper-deep/30">
+    <li className="group relative rounded-lg border border-rule bg-white p-3 transition-colors hover:border-rule-strong">
       <Link
         href={`/attendees/${p.id}`}
         aria-label={p.full_name ?? "Attendee"}

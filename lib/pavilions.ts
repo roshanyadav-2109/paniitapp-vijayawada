@@ -20,9 +20,9 @@ export interface Pavilion {
 
 export const PAVILIONS: readonly Pavilion[] = [
   {
-    key: "PanIIT Start-ups",
+    key: "PanIIT Startups",
     art: "/pavilions/paniit-startups-icon.webp",
-    short: "Start-ups",
+    short: "Startups",
     blurb: "Deep-tech companies built by IIT alumni",
     from: "#1B1464",
     to: "#4338CA",
@@ -41,7 +41,7 @@ export const PAVILIONS: readonly Pavilion[] = [
     key: "DST Innovation Hubs",
     art: "/pavilions/dst-innovation-hubs-icon.webp",
     short: "DST Hubs",
-    blurb: "Start-ups from the Technology Innovation Hubs at the IITs",
+    blurb: "Startups from the Technology Innovation Hubs at the IITs",
     from: "#064E3B",
     to: "#0F766E",
     pattern: "grid",
@@ -86,7 +86,9 @@ const OTHER: Pavilion = {
 };
 
 export function pavilionOf(category: string | null): Pavilion {
-  return PAVILIONS.find((p) => p.key === category) ?? OTHER;
+  // Rows saved before "Start-ups" lost its hyphen still find their pavilion.
+  const c = category?.replace("Start-ups", "Startups") ?? null;
+  return PAVILIONS.find((p) => p.key === c) ?? OTHER;
 }
 
 /** White line-work over the pavilion's colour, as a CSS background image. */

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { ManageStall } from "./manage-stall";
+import { BusinessEnquiry, type EnquiryPrefill } from "./business-enquiry";
 import { rethrowIfRedirect } from "@/lib/redirect";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -71,6 +72,10 @@ export default async function ExhibitorDetailPage({
   // stall, as its owner can.
   let myRole: "owner" | "member" | null = null;
   let access: { email: string; role: "owner" | "member" }[] = [];
+  // The enquiry form starts with the signed-in person's own details.
+  let prefill: EnquiryPrefill = { userId: null, name: "", email: "", company: "", designation: "" };
+  // What people have sent this stall; read only by its team (0032).
+  let enquiries: EnquiryRow[] = [];
 
   try {
     const supabase = await createClient();
@@ -101,6 +106,20 @@ export default async function ExhibitorDetailPage({
         data: { user },
       } = await supabase.auth.getUser();
       const email = user?.email?.toLowerCase();
+      if (user) {
+        const { data: me } = await supabase
+          .from("profiles")
+          .select("full_name, company, designation")
+          .eq("id", user.id)
+          .maybeSingle();
+        prefill = {
+          userId: user.id,
+          name: me?.full_name ?? "",
+          email: email ?? "",
+          company: me?.company ?? "",
+          designation: me?.designation ?? "",
+        };
+      }
       if (email) {
         const { data: acc } = await supabase
           .from("exhibitor_access")
@@ -111,6 +130,14 @@ export default async function ExhibitorDetailPage({
         access = (acc as typeof access | null) ?? [];
         myRole = access.find((a) => a.email === email)?.role ?? null;
         if (!myRole && (await getViewer()).isAdmin) myRole = "owner";
+      }
+      if (myRole) {
+        const { data: enq } = await supabase
+          .from("exhibitor_enquiries")
+          .select("id, name, email, company, designation, message, created_at")
+          .eq("exhibitor_id", id)
+          .order("created_at", { ascending: false });
+        enquiries = (enq as EnquiryRow[] | null) ?? [];
       }
     }
   } catch (err) {
@@ -243,7 +270,62 @@ export default async function ExhibitorDetailPage({
           </ul>
         </section>
       ) : null}
+
+      {myRole ? <EnquiryList rows={enquiries} /> : null}
+
+      <BusinessEnquiry exhibitorId={exhibitor.id} exhibitorName={exhibitor.name} prefill={prefill} />
     </div>
+  );
+}
+
+type EnquiryRow = {
+  id: string;
+  name: string;
+  email: string;
+  company: string | null;
+  designation: string | null;
+  message: string;
+  created_at: string;
+};
+
+/** The stall team's own inbox, newest first. Only they see this section. */
+function EnquiryList({ rows }: { rows: EnquiryRow[] }) {
+  return (
+    <section className="mt-3 rounded-[4px] border border-rule bg-white p-3 sm:p-4">
+      <h2 className="text-[16px] font-semibold text-brand-950">
+        Business enquiries{rows.length ? ` (${rows.length})` : ""}
+      </h2>
+      <p className="mt-0.5 text-[12.5px] text-brand-900/60">Only your stall&rsquo;s team can see these.</p>
+      {rows.length === 0 ? (
+        <p className="mt-3 text-[14px] text-brand-900/70">No enquiries yet.</p>
+      ) : (
+        <ul className="mt-3 space-y-2.5">
+          {rows.map((r) => (
+            <li key={r.id} className="rounded-[4px] border border-rule p-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                <span className="text-[14.5px] font-semibold text-brand-950">{r.name}</span>
+                <span className="text-[12px] text-brand-900/60">
+                  {new Date(r.created_at).toLocaleString("en-IN", {
+                    timeZone: "Asia/Kolkata",
+                    day: "numeric",
+                    month: "short",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+              {r.designation || r.company ? (
+                <p className="text-[13px] text-brand-950">{[r.designation, r.company].filter(Boolean).join(", ")}</p>
+              ) : null}
+              <a href={`mailto:${r.email}`} className="text-[13px] font-medium text-brand-800 underline underline-offset-2">
+                {r.email}
+              </a>
+              <p className="mt-2 whitespace-pre-line text-[14px] leading-relaxed text-brand-950">{r.message}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 

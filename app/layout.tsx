@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Lexend, Noto_Sans_Telugu, Poppins } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/toaster";
 import { LaunchSplash } from "@/components/features/launch-splash";
 import { EVENT_APP_NAME, EVENT_NAME, EVENT_TAGLINE } from "@/lib/event-config";
@@ -147,6 +148,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             `,
           }}
         />
+        <Analytics />
       </body>
     </html>
   );

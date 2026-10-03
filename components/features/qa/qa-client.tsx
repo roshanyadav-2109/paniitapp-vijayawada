@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/lib/supabase/client";
 import { timeIST } from "@/lib/date";
+import { isNetworkFailure, isOffline, queue } from "@/components/features/outbox";
 
 export interface MyQuestion {
   id: string;
@@ -71,11 +72,19 @@ export function QaClient({
     if (!text || text.length > MAX || !userId) return;
     setError(null);
     startTransition(async () => {
+      const job = { kind: "question" as const, sessionId, question: text };
+      const held = async () => {
+        if (!(await queue(job))) return false;
+        setBody("");
+        return true;
+      };
+      if (isOffline() && (await held())) return;
       const { data, error: err } = await supabase
         .from("session_questions")
         .insert({ session_id: sessionId, user_id: userId, question: text })
         .select("id, question, status, is_answered, is_anonymous, created_at")
         .single();
+      if (err && isNetworkFailure(err.message) && (await held())) return;
       if (err || !data) {
         setError("Could not send your question. Try again.");
         return;

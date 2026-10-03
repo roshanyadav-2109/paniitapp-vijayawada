@@ -31,7 +31,7 @@ export async function loadPosts(sessionId: string | null): Promise<LoadedPosts> 
     const base = supabase
       .from("posts")
       .select(
-        "media_url, media_type, id, body, kind, as_team, as_exhibitor_id, exhibitor:as_exhibitor_id(id, name, logo_url, booth_number), like_count, comment_count, vote_count, is_pinned, created_at, author_id, author:author_id(id, full_name, designation, company, photo_url, role), poll_options(id, label, position, vote_count)"
+        "media_url, media_type, id, body, kind, as_team, as_exhibitor_id, exhibitor:as_exhibitor_id(id, name, logo_url, booth_number), like_count, comment_count, vote_count, view_count, is_pinned, created_at, author_id, author:author_id(id, full_name, designation, company, photo_url, role), poll_options(id, label, position, vote_count)"
       )
       .eq("event_id", EVENT_ID);
     const { data, error } = await (sessionId ? base.eq("session_id", sessionId) : base.is("session_id", null))

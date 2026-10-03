@@ -100,6 +100,10 @@ const MAP = {
   NavExpoActive: "@shop-2-bold",
   NavMeetings: "calendar-date",
   NavMeetingsActive: "@calendar-date-bold",
+  NavAdmin: "shield-user",
+  NavAdminActive: "@shield-user-bold",
+  NavModerate: "question-circle",
+  NavModerateActive: "@question-circle-bold",
 };
 
 // Solar has no equivalent for these in ANY style, so they stay on Lucide.
