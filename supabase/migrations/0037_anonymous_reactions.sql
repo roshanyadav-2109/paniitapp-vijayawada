@@ -7,18 +7,18 @@ alter table public.post_reactions add column if not exists viewer text;
 update public.post_reactions
 set viewer = 'user:' || user_id::text
 where viewer is null;
+alter table public.post_reactions drop constraint if exists post_reactions_pkey;
 alter table public.post_reactions alter column viewer set not null;
 alter table public.post_reactions alter column user_id drop not null;
-alter table public.post_reactions drop constraint if exists post_reactions_pkey;
 alter table public.post_reactions add primary key (post_id, viewer);
 
 alter table public.comment_reactions add column if not exists viewer text;
 update public.comment_reactions
 set viewer = 'user:' || user_id::text
 where viewer is null;
+alter table public.comment_reactions drop constraint if exists comment_reactions_pkey;
 alter table public.comment_reactions alter column viewer set not null;
 alter table public.comment_reactions alter column user_id drop not null;
-alter table public.comment_reactions drop constraint if exists comment_reactions_pkey;
 alter table public.comment_reactions add primary key (comment_id, viewer);
 
 create or replace function public.toggle_post_reaction(target_id uuid, reaction_key text, device text)
