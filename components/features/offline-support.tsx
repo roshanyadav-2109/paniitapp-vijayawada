@@ -22,8 +22,20 @@ const WARM_PATHS = [
   "/me",
   "/me/qr",
 ];
-const WARM_EVERY_MS = 20 * 60 * 1000;
-const WARMED_AT_KEY = "offline-warmed-at";
+// Saved against this fingerprint of the programme, stalls, speakers and
+// build (app/api/content-version). Saved again only when it changes.
+const WARMED_VERSION_KEY = "offline-warmed-version";
+
+/** The current content fingerprint, or null with no signal. */
+export async function contentVersion(): Promise<string | null> {
+  try {
+    const r = await fetch("/api/content-version", { cache: "no-store" });
+    if (!r.ok) return null;
+    return ((await r.json()) as { v?: string }).v ?? null;
+  } catch {
+    return null;
+  }
+}
 const SCOPE_KEY = "offline-scope";
 
 function read(key: string) {
@@ -58,12 +70,13 @@ export function OfflineWarmup({ scope }: { scope: string | null }) {
       if (read(SCOPE_KEY) !== who) {
         sw.postMessage({ type: "forget-pages" });
         write(SCOPE_KEY, who);
-        write(WARMED_AT_KEY, "0");
+        write(WARMED_VERSION_KEY, "");
       }
 
-      const last = Number(read(WARMED_AT_KEY) ?? 0);
-      if (Date.now() - last < WARM_EVERY_MS) return;
-      write(WARMED_AT_KEY, String(Date.now()));
+      // Nothing new on the server since the last save: keep what we have.
+      const v = await contentVersion();
+      if (!v || cancelled || read(WARMED_VERSION_KEY) === v) return;
+      write(WARMED_VERSION_KEY, v);
       sw.postMessage({ type: "warm", paths: WARM_PATHS });
 
       // The 3D map's code loads only when the map opens; fetch it now so
@@ -119,7 +132,7 @@ export function OfflineBanner() {
   return (
     <div
       role="status"
-      className="sticky top-0 z-40 flex items-center justify-between gap-3 bg-brand-950 px-4 py-2 text-[12.5px] leading-snug text-white"
+      className="sticky top-0 z-40 flex items-center justify-between gap-3 bg-brand-900 px-4 py-2 text-[12.5px] leading-snug text-white"
     >
       <span>
         <span className="font-semibold">Offline.</span>{" "}

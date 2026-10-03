@@ -19,6 +19,10 @@ const nextConfig: NextConfig = {
     staleTimes: { dynamic: 10, static: 30 },
   },
   images: {
+    // Vercel resizing is off: every image here is already a compressed
+    // WebP or a small logo, and the Hobby plan allows 5,000 transformations
+    // a month, which summit day nearly used up. Images are served as they are.
+    unoptimized: true,
     // Speaker portraits and sponsor logos essentially never change, so let
     // the shared optimiser cache hold them for a month instead of the
     // 60s default. Without this every rotation of the guest carousel can
